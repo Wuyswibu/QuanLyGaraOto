@@ -30,32 +30,58 @@ public class GaraManHinhChinh extends JFrame {
         setLayout(new BorderLayout());
 
         // ==================== 1. THANH MENU BAR (PHÍA TRÊN CÙNG) ====================
+     // ==================== 1. THANH MENU BAR (PHÍA TRÊN CÙNG) ====================
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(245, 247, 250));
         
+        // Tăng chiều cao tổng thể và khoảng đệm cho thanh Menu Bar
+        menuBar.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        // Font chữ to rõ cho menu
+        Font menuFont = new Font("Arial", Font.BOLD, 16);
+
         JMenu menuLogo = new JMenu("NIGHT INVADER");
-        menuLogo.setFont(new Font("Arial", Font.BOLD, 14));
+        menuLogo.setFont(new Font("Arial", Font.BOLD, 15));
         menuLogo.setForeground(new Color(210, 30, 30));
+        menuLogo.setMargin(new Insets(5, 10, 5, 10)); // Tạo khoảng trống xung quanh chữ
         menuBar.add(menuLogo);
 
-        // Các menu chức năng dropdown chuẩn Swing
-        menuBar.add(taoMenuDropdown("Hệ thống", new String[]{"Tài khoản cá nhân", "Đổi mật khẩu", "-", "Đăng xuất"}));
-        menuBar.add(taoMenuDropdown("Khách hàng ", new String[]{"Quản lý khách hàng"}));
-        menuBar.add(taoMenuDropdown("Xe ", new String[]{"Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"}));
-        menuBar.add(taoMenuDropdown("Dịch vụ ", new String[]{"Quản lý dịch vụ", "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ", "-", "Lập phiếu tiếp nhận xe", "Lập phiếu sửa chữa / Báo giá", "Cập nhật tình trạng sửa xe"}));
-        menuBar.add(taoMenuDropdown("Phụ tùng", new String[]{"Quản lý phụ tùng"}));
-        menuBar.add(taoMenuDropdown("Kho hàng ", new String[]{"Lập phiếu nhập kho", "Lập phiếu xuất kho"}));
-        menuBar.add(taoMenuDropdown("Hóa đơn ", new String[]{"Lập hóa đơn", "Tra cứu hóa đơn"}));
-        menuBar.add(taoMenuDropdown("Thống kê ", new String[]{"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"}));
-        menuBar.add(taoMenuDropdown("Nhân viên ", new String[]{"Quản lý nhân sự", "Phân công kỹ thuật viên"}));
+        // Mảng tên các menu chức năng
+        String[] tenCacMenu = {
+            "Hệ thống", "Khách hàng ", "Xe ", "Dịch vụ ", 
+            "Phụ tùng", "Kho hàng ", "Hóa đơn ", "Thống kê ", "Nhân viên "
+        };
+        
+        String[][] cacItemMenu = {
+            {"Tài khoản cá nhân", "Đổi mật khẩu", "-", "Đăng xuất"},
+            {"Quản lý khách hàng"},
+            {"Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"},
+            {"Quản lý dịch vụ", "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ", "-", "Lập phiếu tiếp nhận xe", "Lập phiếu sửa chữa / Báo giá", "Cập nhật tình trạng sửa xe"},
+            {"Quản lý phụ tùng"},
+            {"Lập phiếu nhập kho", "Lập phiếu xuất kho"},
+            {"Lập hóa đơn", "Tra cứu hóa đơn"},
+            {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
+            {"Quản lý nhân sự", "Phân công kỹ thuật viên"}
+        };
+
+        // Vòng lặp thêm các menu vào thanh bar và set font to, margin rộng rãi
+        for (int i = 0; i < tenCacMenu.length; i++) {
+            JMenu menu = taoMenuDropdown(tenCacMenu[i], cacItemMenu[i]);
+            menu.setFont(menuFont);
+            menu.setMargin(new Insets(5, 10, 5, 10)); // Làm cho từng mục menu bự và thoáng hơn
+            menuBar.add(menu);
+        }
 
         // Menu tài khoản người dùng ở góc phải thanh menu
         JMenu menuTaiKhoan = new JMenu("Xin chào, Chủ Gara");
-        menuTaiKhoan.setFont(new Font("Arial", Font.PLAIN, 12));
-        ImageIcon iconUserMenu = loadIcon("/img/icon_nguoi.jpg", 18, 18);
+        menuTaiKhoan.setFont(menuFont);
+        menuTaiKhoan.setMargin(new Insets(5, 10, 5, 10));
+        ImageIcon iconUserMenu = loadIcon("/img/icon_nguoi.jpg", 20, 20);
         if (iconUserMenu != null) {
             menuTaiKhoan.setIcon(iconUserMenu);
         }
+        menuBar.add(Box.createHorizontalGlue()); // Đẩy phần tài khoản sang góc phải nhất
+        menuBar.add(menuTaiKhoan);
 
         setJMenuBar(menuBar);
 
@@ -144,7 +170,7 @@ public class GaraManHinhChinh extends JFrame {
         panelGridThe.add(taoNutChucNang("Xe", "Quản lý xe - Tra cứu xe\nXem lịch sử sửa chữa theo biển số", loadIcon("/img/icon_xe.png", 32, 32)));
         panelGridThe.add(taoNutChucNang("Dịch vụ", "Thêm - Sửa - Xóa dịch vụ\nLập phiếu tiếp nhận xe - Lập báo giá", loadIcon("/img/icon-vector.png", 32, 32)));
         
-        panelGridThe.add(taoNutChucNang("Phụ tùng", "Quản lý danh mục phụ tùng\nThêm, sửa - Ngừng kinh doanh", loadIcon("/img/User_box_light.png", 32, 32)));
+        panelGridThe.add(taoNutChucNang("Phụ tùng", "Quản lý danh mục phụ tùng\nThêm, sửa - Ngừng kinh doanh", loadIcon("/img/icon_nhapkho.jpg", 32, 32)));
         panelGridThe.add(taoNutChucNang("Kho hàng", "Lập phiếu nhập kho\nLập phiếu xuất kho", loadIcon("/img/icon_nhapkho.jpg", 32, 32)));
         panelGridThe.add(taoNutChucNang("Hóa đơn", "Lập hóa đơn và ghi nhận thanh toán\nTra cứu - In hóa đơn", loadIcon("/img/icon_hoadon.png", 32, 32)));
         
@@ -209,10 +235,10 @@ public class GaraManHinhChinh extends JFrame {
         return menu;
     }
 
-    // ĐÃ SỬA: Hàm tạo nút bấm nhanh trên Toolbar (Đặt Icon bên trái, Text bên phải, tránh đè chữ)
+    // Hàm tạo nút bấm nhanh trên Toolbar
     private JButton taoNutNhanh(String tieuDe, String phimTat, ImageIcon icon) {
         JButton btn = new JButton();
-        btn.setLayout(new BorderLayout(8, 0)); // Khoảng cách giữa icon và chữ
+        btn.setLayout(new BorderLayout(10, 0));
         
         if (icon != null) {
             JLabel lblIcon = new JLabel(icon);
@@ -248,7 +274,7 @@ public class GaraManHinhChinh extends JFrame {
         return btn;
     }
 
-    // Hàm tạo nút chức năng (Card Button) chuẩn Java Swing thuần, căn giữa nội dung, KHÔNG DÙNG HTML
+    // Hàm tạo nút chức năng (Card Button) chuẩn Java Swing thuần: CHỮ BỰ VÀ IN HOA
     private JButton taoNutChucNang(String tenTieuDe, String moTa, ImageIcon icon) {
         JButton btnCard = new JButton();
         btnCard.setLayout(new BorderLayout(5, 5));
@@ -268,25 +294,26 @@ public class GaraManHinhChinh extends JFrame {
             btnCard.add(lblIcon, BorderLayout.NORTH);
         }
 
-        // Tạo Panel chứa chữ ở giữa (CENTER) để căn giữa hoàn toàn bằng Swing Layout Managers
+        // Tạo Panel chứa chữ ở giữa (CENTER)
         JPanel panelText = new JPanel();
         panelText.setLayout(new BoxLayout(panelText, BoxLayout.Y_AXIS));
         panelText.setOpaque(false);
 
-        JLabel lblTieuDe = new JLabel(tenTieuDe);
-        lblTieuDe.setFont(new Font("Arial", Font.BOLD, 15));
+        // ĐÃ SỬA: Chữ bự (kích thước 17) và IN HOA hoàn toàn (.toUpperCase())
+        JLabel lblTieuDe = new JLabel(tenTieuDe.toUpperCase());
+        lblTieuDe.setFont(new Font("Arial", Font.BOLD, 17));
         lblTieuDe.setForeground(new Color(30, 35, 45));
         lblTieuDe.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         panelText.add(Box.createRigidArea(new Dimension(0, 5)));
         panelText.add(lblTieuDe);
-        panelText.add(Box.createRigidArea(new Dimension(0, 5)));
+        panelText.add(Box.createRigidArea(new Dimension(0, 6)));
 
         // Tách các dòng mô tả bằng \n và tạo các JLabel riêng biệt
         String[] lines = moTa.split("\n");
         for (String line : lines) {
             JLabel lblLine = new JLabel(line);
-            lblLine.setFont(new Font("Arial", Font.PLAIN, 11));
+            lblLine.setFont(new Font("Arial", Font.PLAIN, 12));
             lblLine.setForeground(Color.GRAY);
             lblLine.setAlignmentX(Component.CENTER_ALIGNMENT);
             panelText.add(lblLine);
