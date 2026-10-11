@@ -29,7 +29,6 @@ public class GaraManHinhChinh extends JFrame {
     private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
 
-        // ==================== 1. THANH MENU BAR (PHÍA TRÊN CÙNG) ====================
      // ==================== 1. THANH MENU BAR (PHÍA TRÊN CÙNG) ====================
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(245, 247, 250));
@@ -299,7 +298,6 @@ public class GaraManHinhChinh extends JFrame {
         panelText.setLayout(new BoxLayout(panelText, BoxLayout.Y_AXIS));
         panelText.setOpaque(false);
 
-        // ĐÃ SỬA: Chữ bự (kích thước 17) và IN HOA hoàn toàn (.toUpperCase())
         JLabel lblTieuDe = new JLabel(tenTieuDe.toUpperCase());
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 17));
         lblTieuDe.setForeground(new Color(30, 35, 45));

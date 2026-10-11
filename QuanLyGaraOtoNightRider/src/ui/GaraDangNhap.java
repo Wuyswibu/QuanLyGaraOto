@@ -173,13 +173,13 @@ public class GaraDangNhap extends JFrame {
         khungForm.add(panelPassWrapper, gbc);
 
         // Dòng Quên mật khẩu?
-        lblQuenMatKhau = new JLabel("Quên mật khẩu?");
-        lblQuenMatKhau.setFont(new Font("Arial", Font.ITALIC, 12));
-        lblQuenMatKhau.setForeground(Color.DARK_GRAY);
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        khungForm.add(lblQuenMatKhau, gbc);
+//        lblQuenMatKhau = new JLabel("Quên mật khẩu?");
+//        lblQuenMatKhau.setFont(new Font("Arial", Font.ITALIC, 12));
+//        lblQuenMatKhau.setForeground(Color.DARK_GRAY);
+//        gbc.gridx = 0;
+//        gbc.gridy = 5;
+//        gbc.gridwidth = 2;
+//        khungForm.add(lblQuenMatKhau, gbc);
 
      // Nút Đăng Nhập
         btnDangNhap = new JButton("Đăng Nhập");
