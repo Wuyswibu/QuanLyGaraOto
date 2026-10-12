@@ -7,6 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="src/" kind="src" path=""/>
-	<classpathentry kind="lib" path="D:/dowload/GarageManagement.jar"/>
+	<classpathentry kind="lib" path="lib/GarageManagement.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
