@@ -380,15 +380,34 @@ public class GaraDoiMatKhau extends JFrame {
             } else {
                 JMenuItem item = new JMenuItem(itemName);
                 item.addActionListener(e -> {
-                    if (itemName.equals("Đăng xuất")) {
-                        xuLyDangXuat();
+                    if (itemName.equals("Thống kê doanh thu") ) {
+                        new GaraThongKe(0).setVisible(true);
+                        this.dispose(); // Đóng màn hình chính
+                    } else if (itemName.equals("Thống kê tồn kho")) {
+                        new GaraThongKe(1).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chạy")) {
+                        new GaraThongKe(2).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chậm")) {
+                        new GaraThongKe(3).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Quản lý nhân sự") || itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
                     } else if (itemName.equals("Tài khoản cá nhân")) {
                         new GaraTaiKhoanCaNhan().setVisible(true);
                         this.dispose();
-                    } else if (itemName.equals("Đổi mật khẩu")) {
-                        // Đang ở màn hình này rồi
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Đăng xuất")) {
+                        System.exit(0);
                     } else {
-                        JOptionPane.showMessageDialog(this, "Đang mở chức năng: " + itemName, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this,
+                                "Đang mở chức năng: " + itemName,
+                                "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
                 menu.add(item);

@@ -7,6 +7,9 @@ import java.awt.*;
 
 public class GaraNhanVien extends JFrame {
 
+    // Khai báo tabbedPane làm biến toàn cục của class
+    private JTabbedPane tabbedPane;
+
     // Các Component cho Tab Quản lý nhân sự
     private JTextField txtMaNV, txtHoTen, txtSoDienThoai, txtNgayVaoLam, txtTimKiem;
     private JComboBox<String> cbVaiTro, cbTrangThai;
@@ -17,13 +20,25 @@ public class GaraNhanVien extends JFrame {
     private JTextField txtGhiChuPhanCong;
     private JTable tablePhanCong;
 
+    // Constructor mặc định (mở tab 0: Hồ sơ nhân viên)
     public GaraNhanVien() {
+        this(0);
+    }
+
+    // Constructor có tham số để nhảy thẳng vào tab mong muốn
+    public GaraNhanVien(int tabMacDinh) {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
         setSize(1340, 840);
         setLocationRelativeTo(null);
         setResizable(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         khoiTaoGiaoDien();
+
+        // Mở đúng tab được truyền vào
+        if (tabMacDinh >= 0 && tabbedPane != null && tabMacDinh < tabbedPane.getTabCount()) {
+            tabbedPane.setSelectedIndex(tabMacDinh);
+        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -140,7 +155,7 @@ public class GaraNhanVien extends JFrame {
         panelCardTop.add(pnlTitleWrap, BorderLayout.WEST);
 
         // --- 3.2. JTabbedPane chứa 2 chức năng ---
-        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane(); // CHÚ Ý: Bỏ chữ JTabbedPane để dùng biến toàn cục
         tabbedPane.setFont(new Font("Arial", Font.BOLD, 14));
         tabbedPane.setBackground(new Color(245, 247, 250));
 
@@ -414,7 +429,9 @@ public class GaraNhanVien extends JFrame {
                 Image scaledImg = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
                 return new ImageIcon(scaledImg);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println("Không thể tải ảnh: " + path);
+        }
         return null;
     }
 
@@ -426,13 +443,39 @@ public class GaraNhanVien extends JFrame {
             } else {
                 JMenuItem item = new JMenuItem(itemName);
                 item.addActionListener(e -> {
-                    if (itemName.equals("Đăng xuất")) {
-                        xuLyDangXuat();
-                    } else if (itemName.equals("Màn hình chính")) {
+                    // ĐANG Ở TRONG GARA NHÂN VIÊN -> CHUYỂN TAB TRỰC TIẾP
+                    if (itemName.equals("Quản lý nhân sự")) {
+                        tabbedPane.setSelectedIndex(0);
+                    } else if (itemName.equals("Phân công kỹ thuật viên")) {
+                        tabbedPane.setSelectedIndex(1);
+                    }
+                    // CHUYỂN QUA MÀN HÌNH THỐNG KÊ (Mở đúng tab)
+                    else if (itemName.equals("Thống kê doanh thu")) {
+                        new GaraThongKe(0).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Thống kê tồn kho")) {
+                        new GaraThongKe(1).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chạy")) {
+                        new GaraThongKe(2).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chậm")) {
+                        new GaraThongKe(3).setVisible(true);
+                        this.dispose();
+                    }
+                    // CÁC MÀN HÌNH KHÁC
+                    else if (itemName.equals("Màn hình chính")) {
                         new GaraManHinhChinh().setVisible(true);
                         this.dispose();
+                    } else if (itemName.equals("Tài khoản cá nhân")) {
+                        new GaraTaiKhoanCaNhan().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Đăng xuất")) {
+                        xuLyDangXuat();
                     } else {
-                        JOptionPane.showMessageDialog(this, "Đang mở: " + itemName);
+                        JOptionPane.showMessageDialog(this,
+                                "Đang mở chức năng: " + itemName,
+                                "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
                 menu.add(item);

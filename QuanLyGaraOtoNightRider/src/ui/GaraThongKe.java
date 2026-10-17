@@ -10,12 +10,21 @@ public class GaraThongKe extends JFrame {
     private JTabbedPane tabbedPane;
 
     public GaraThongKe() {
+        this(0);
+    }
+
+    public GaraThongKe(int tabMacDinh) {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
         setSize(1340, 840);
         setLocationRelativeTo(null);
         setResizable(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         khoiTaoGiaoDien();
+
+        if (tabMacDinh >= 0 && tabMacDinh < tabbedPane.getTabCount()) {
+            tabbedPane.setSelectedIndex(tabMacDinh);
+        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -396,13 +405,31 @@ public class GaraThongKe extends JFrame {
             } else {
                 JMenuItem item = new JMenuItem(itemName);
                 item.addActionListener(e -> {
-                    if (itemName.equals("Đăng xuất")) {
-                        xuLyDangXuat();
-                    } else if (itemName.equals("Thống kê doanh thu")) {
+                    if (itemName.equals("Thống kê doanh thu") ) {
                         tabbedPane.setSelectedIndex(0);
+                    } else if (itemName.equals("Thống kê tồn kho")) {
+                        tabbedPane.setSelectedIndex(1);
+                    } else if (itemName.equals("Phụ tùng bán chạy")) {
+                        tabbedPane.setSelectedIndex(2);
+                    } else if (itemName.equals("Phụ tùng bán chậm")) {
+                        tabbedPane.setSelectedIndex(3);
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
                     } else if (itemName.equals("Tài khoản cá nhân")) {
                         new GaraTaiKhoanCaNhan().setVisible(true);
                         this.dispose();
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Đăng xuất")) {
+                        System.exit(0);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Đang mở chức năng: " + itemName,
+                                "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
                 menu.add(item);

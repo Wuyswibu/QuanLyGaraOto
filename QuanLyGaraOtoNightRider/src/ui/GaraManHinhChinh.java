@@ -58,8 +58,7 @@ public class GaraManHinhChinh extends JFrame {
             {"Quản lý dịch vụ", "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ", "-", "Lập phiếu tiếp nhận xe", "Lập phiếu sửa chữa / Báo giá", "Cập nhật tình trạng sửa xe"},
             {"Quản lý phụ tùng"},
             {"Lập phiếu nhập kho", "Lập phiếu xuất kho"},
-            {"Lập hóa đơn", "Tra cứu hóa đơn"},
-                {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
+            {"Lập hóa đơn", "Tra cứu hóa đơn"}, {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
             {"Quản lý nhân sự", "Phân công kỹ thuật viên"}
         };
 
@@ -225,9 +224,37 @@ public class GaraManHinhChinh extends JFrame {
                 menu.addSeparator();
             } else {
                 JMenuItem item = new JMenuItem(itemName);
-                item.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                        "Đang mở chức năng: " + itemName,
-                        "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE));
+                item.addActionListener(e -> {
+                    if (itemName.equals("Thống kê doanh thu") ) {
+                        new GaraThongKe(0).setVisible(true);
+                        this.dispose(); // Đóng màn hình chính
+                    } else if (itemName.equals("Thống kê tồn kho")) {
+                        new GaraThongKe(1).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chạy")) {
+                        new GaraThongKe(2).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Phụ tùng bán chậm")) {
+                        new GaraThongKe(3).setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Quản lý nhân sự") || itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Tài khoản cá nhân")) {
+                        new GaraTaiKhoanCaNhan().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Đăng xuất")) {
+                        System.exit(0);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Đang mở chức năng: " + itemName,
+                                "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                });
                 menu.add(item);
             }
         }
@@ -268,24 +295,9 @@ public class GaraManHinhChinh extends JFrame {
         ));
 
         btn.addActionListener(e -> {
-            if (
-                    btn.equals("Thống kê doanh thu") ||
-                    btn.equals("Thống kê tồn kho")||
-                    btn.equals("Phụ tùng bán chạy")||
-                    btn.equals("Phụ tùng bán chậm")) {
-
-                new GaraThongKe().setVisible(true);
-                this.dispose();
-            } else if (btn.equals("Tài Khoản cá nhân")) {
-                new GaraTaiKhoanCaNhan().setVisible(true);
-                this.dispose();
-            } else if (btn.equals("Đăng Xuất")) {
-                System.exit(0);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Đang mở chức năng: " + btn,
-                        "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
-            }
+            JOptionPane.showMessageDialog(this,
+                    "Đang mở nhanh chức năng: " + tieuDe + " (" + phimTat + ")",
+                    "Phím tắt kích hoạt", JOptionPane.INFORMATION_MESSAGE);
         });
         return btn;
     }
