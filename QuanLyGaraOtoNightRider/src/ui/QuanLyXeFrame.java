@@ -1,12 +1,7 @@
 package ui;
 
 import java.awt.*;
-import java.io.File;
 import java.text.Normalizer;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -15,12 +10,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
-public class LapPhieuTiepNhanXePanel extends JPanel {
+public class QuanLyXeFrame extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -29,70 +23,52 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
     private static final Color VIEN = new Color(216, 222, 230);
     private static final Color DO = new Color(188, 25, 58);
 
-    private static final String[] XAC_NHAN = {
-        "Đã kiểm tra", "Đã xác nhận", "Chờ chẩn đoán"
+    private static final String[] NHAN = {
+        "Biển số", "Chủ xe",
+        "Hãng / dòng xe", "Năm sản xuất",
+        "Số VIN", "Số km"
     };
 
-    private static final DateTimeFormatter DINH_DANG_GIO =
-        DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm")
-            .withResolverStyle(ResolverStyle.STRICT);
+    private static final String[] TRANG_THAI = {
+        "Đang sửa", "Chờ báo giá", "Đã bàn giao"
+    };
 
-    private final JTextField txtMaTiepNhan =
-        taoO("TN001");
+    // Biển số, chủ xe, dòng xe, năm, VIN, số km, tình trạng.
+    private final List<String[]> danhSachXe = new ArrayList<>();
 
-    private final JTextField txtBienSoKhach =
-        taoO("51H-123.45 • Nguyễn Minh An");
+    private final JTextField[] thongTin = new JTextField[6];
+    private final JTextField txtTimKiem = new JTextField();
 
-    private final JTextField txtThoiGianNhan =
-        taoO("05/10/2026 • 08:30");
+    private final JComboBox<String> cboTrangThai = new JComboBox<>(
+        new String[] {
+            "Tất cả", "Đang sửa", "Chờ báo giá", "Đã bàn giao"
+        }
+    );
 
-    private final JTextField txtHenTra =
-        taoO("05/10/2026 • 16:00");
+    private final DefaultTableModel model = new DefaultTableModel(
+        new String[] {
+            "Biển số", "Chủ xe", "Dòng xe",
+            "Năm", "Số km", "Tình trạng"
+        }, 0
+    ) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
 
-    private final JTextField txtSoKmNhienLieu =
-        taoO("40.250 km / ½ bình");
-
-    private final JTextField txtYeuCau =
-        taoO("Bảo dưỡng 40.000 km; phanh có tiếng kêu");
-
-    private final JTextField txtTimKiem = taoOTim();
-
-    private final JComboBox<String> cboTrangThai =
-        new JComboBox<>(
-            new String[] {
-                "Tất cả", "Đã kiểm tra",
-                "Đã xác nhận", "Chờ chẩn đoán"
-            }
-        );
-
-    private final DefaultTableModel model =
-        new DefaultTableModel(
-            new String[] {
-                "Kiểm tra", "Hiện trạng", "Ghi chú", "Xác nhận"
-            }, 0
-        ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column > 0;
-            }
-        };
-
-    private final JTable tableKiemTra = new JTable(model);
+    private final JTable tableXe = new JTable(model);
 
     private final TableRowSorter<DefaultTableModel> boLoc =
         new TableRowSorter<>(model);
 
-    private final JButton btnChonAnh =
-        taoNut("Chọn ảnh xe", false);
+    private final JButton btnSuaXe = taoNut("Sửa xe", false);
 
-    private final List<File> anhXe = new ArrayList<>();
+    public QuanLyXeFrame() {
+        this(null);
+    }
 
-    // Dữ liệu phiếu mẫu đã lưu trong phiên chạy.
-    private String[] thongTinDaLuu;
-    private Object[][] kiemTraDaLuu;
-    private List<File> anhDaLuu = new ArrayList<>();
-
-    public LapPhieuTiepNhanXePanel() {
+    public QuanLyXeFrame(Runnable veManHinhChinh) {
         setLayout(new BorderLayout());
         setBackground(new Color(216, 220, 228));
         setBorder(new EmptyBorder(20, 65, 15, 65));
@@ -104,64 +80,78 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         // ==================== TIÊU ĐỀ ====================
         JPanel tieuDe = new JPanel(new BorderLayout());
         tieuDe.setBackground(new Color(246, 247, 250));
-        tieuDe.setBorder(new EmptyBorder(10, 16, 10, 16));
+        tieuDe.setBorder(new EmptyBorder(8, 16, 8, 16));
 
-        JLabel lblTieuDe = new JLabel("LẬP PHIẾU TIẾP NHẬN XE");
+        JLabel lblTieuDe = new JLabel("QUẢN LÝ XE");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 16));
         lblTieuDe.setForeground(CHU);
 
         tieuDe.add(lblTieuDe, BorderLayout.WEST);
+
+        if (veManHinhChinh != null) {
+            JButton btnTrangChu = taoNut("Màn hình chính", false);
+
+            btnTrangChu.addActionListener(
+                e -> veManHinhChinh.run()
+            );
+
+            tieuDe.add(btnTrangChu, BorderLayout.EAST);
+        }
+
         khung.add(tieuDe, BorderLayout.NORTH);
 
         JPanel noiDung = new JPanel(new BorderLayout(0, 25));
         noiDung.setBackground(Color.WHITE);
         noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
-        // ==================== THÔNG TIN TIẾP NHẬN ====================
+        // ==================== THÔNG TIN XE ====================
         JPanel dau = new JPanel(new BorderLayout(0, 12));
         dau.setOpaque(false);
 
-        JLabel lblMoTa = new JLabel(
-            "Ghi nhận tình trạng ban đầu và yêu cầu của khách trước khi sửa."
+        JLabel moTa = new JLabel(
+            "Mỗi biển số gắn với chủ xe và lịch sử sửa chữa."
         );
 
-        lblMoTa.setFont(new Font("Arial", Font.PLAIN, 13));
-        lblMoTa.setForeground(CHU_PHU);
+        moTa.setForeground(CHU_PHU);
+        moTa.setFont(new Font("Arial", Font.PLAIN, 13));
 
-        dau.add(lblMoTa, BorderLayout.NORTH);
+        dau.add(moTa, BorderLayout.NORTH);
+        dau.add(taoForm(thongTin, false), BorderLayout.CENTER);
 
-        JPanel form = new JPanel(
-            new GridLayout(3, 2, 24, 10)
-        );
-
-        form.setOpaque(false);
-        form.add(taoTruong("Mã tiếp nhận", txtMaTiepNhan));
-        form.add(taoTruong("Biển số / khách", txtBienSoKhach));
-        form.add(taoTruong("Thời gian nhận", txtThoiGianNhan));
-        form.add(taoTruong("Hẹn trả", txtHenTra));
-        form.add(taoTruong("Số km / nhiên liệu", txtSoKmNhienLieu));
-        form.add(taoTruong("Yêu cầu", txtYeuCau));
-
-        txtThoiGianNhan.setToolTipText(
-            "Nhập dd/MM/yyyy • HH:mm hoặc dd/MM/yyyy HH:mm"
-        );
-
-        txtHenTra.setToolTipText(
-            "Nhập dd/MM/yyyy • HH:mm hoặc dd/MM/yyyy HH:mm"
-        );
-
-        dau.add(form, BorderLayout.CENTER);
         noiDung.add(dau, BorderLayout.NORTH);
 
-        // ==================== THANH TÌM KIẾM ====================
+        // ==================== TÌM KIẾM ====================
         JPanel vungBang = new JPanel(new BorderLayout(0, 12));
         vungBang.setOpaque(false);
 
-        JPanel thanhLoc = new JPanel(new BorderLayout(20, 0));
+        JPanel thanhLoc = new JPanel(new BorderLayout(24, 0));
         thanhLoc.setBackground(new Color(237, 241, 245));
-        thanhLoc.setBorder(new EmptyBorder(5, 10, 5, 10));
+        thanhLoc.setBorder(new EmptyBorder(6, 10, 6, 10));
 
-        thanhLoc.add(txtTimKiem, BorderLayout.CENTER);
+        txtTimKiem.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        txtTimKiem.setBorder(
+            BorderFactory.createEmptyBorder(4, 4, 4, 4)
+        );
+
+        txtTimKiem.setToolTipText(
+            "Tìm theo mã chủ xe, tên, biển số hoặc dòng xe"
+        );
+
+        JLabel lblTim = new JLabel(
+            "Tìm kiếm theo mã, tên hoặc biển số..."
+        );
+
+        lblTim.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblTim.setForeground(CHU_PHU);
+
+        JPanel tim = new JPanel(new BorderLayout(10, 0));
+        tim.setOpaque(false);
+
+        tim.add(lblTim, BorderLayout.WEST);
+        tim.add(txtTimKiem, BorderLayout.CENTER);
+
+        thanhLoc.add(tim, BorderLayout.CENTER);
 
         JPanel locTrangThai = new JPanel(
             new FlowLayout(FlowLayout.RIGHT, 5, 0)
@@ -181,54 +171,39 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         thanhLoc.add(locTrangThai, BorderLayout.EAST);
         vungBang.add(thanhLoc, BorderLayout.NORTH);
 
-        // ==================== BẢNG KIỂM TRA ====================
-        tableKiemTra.setFont(new Font("Arial", Font.PLAIN, 13));
-        tableKiemTra.setRowHeight(36);
+        // ==================== BẢNG XE ====================
+        tableXe.setFont(new Font("Arial", Font.PLAIN, 13));
+        tableXe.setRowHeight(36);
 
-        tableKiemTra.setSelectionMode(
+        tableXe.setSelectionMode(
             ListSelectionModel.SINGLE_SELECTION
         );
 
-        tableKiemTra.setRowSorter(boLoc);
-        boLoc.setSortsOnUpdates(true);
+        tableXe.setRowSorter(boLoc);
+        tableXe.setShowGrid(false);
+        tableXe.setIntercellSpacing(new Dimension(0, 0));
 
-        tableKiemTra.setShowGrid(false);
-        tableKiemTra.setIntercellSpacing(new Dimension(0, 0));
-
-        tableKiemTra.setSelectionBackground(
+        tableXe.setSelectionBackground(
             new Color(53, 105, 139)
         );
 
-        tableKiemTra.setSelectionForeground(Color.WHITE);
+        tableXe.setSelectionForeground(Color.WHITE);
 
-        tableKiemTra.getTableHeader().setFont(
+        tableXe.getTableHeader().setFont(
             new Font("Arial", Font.BOLD, 12)
         );
 
-        tableKiemTra.getTableHeader().setBackground(
+        tableXe.getTableHeader().setBackground(
             new Color(237, 241, 245)
         );
 
-        tableKiemTra.getTableHeader().setPreferredSize(
+        tableXe.getTableHeader().setPreferredSize(
             new Dimension(0, 30)
         );
 
-        tableKiemTra.getTableHeader().setReorderingAllowed(false);
+        tableXe.getTableHeader().setReorderingAllowed(false);
 
-        tableKiemTra.putClientProperty(
-            "terminateEditOnFocusLost", Boolean.TRUE
-        );
-
-        // Cột xác nhận dùng danh sách lựa chọn.
-        tableKiemTra.getColumnModel()
-            .getColumn(3)
-            .setCellEditor(
-                new DefaultCellEditor(
-                    new JComboBox<>(XAC_NHAN)
-                )
-            );
-
-        tableKiemTra.setDefaultRenderer(
+        tableXe.setDefaultRenderer(
             Object.class,
             new DefaultTableCellRenderer() {
                 @Override
@@ -261,15 +236,15 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
             }
         );
 
-        int[] doRong = {220, 280, 330, 240};
+        int[] doRong = {160, 220, 200, 100, 160, 190};
 
         for (int i = 0; i < doRong.length; i++) {
-            tableKiemTra.getColumnModel()
-                       .getColumn(i)
-                       .setPreferredWidth(doRong[i]);
+            tableXe.getColumnModel()
+                   .getColumn(i)
+                   .setPreferredWidth(doRong[i]);
         }
 
-        JScrollPane cuon = new JScrollPane(tableKiemTra);
+        JScrollPane cuon = new JScrollPane(tableXe);
         cuon.setBorder(BorderFactory.createEmptyBorder());
         cuon.getViewport().setBackground(Color.WHITE);
 
@@ -283,149 +258,144 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
 
         thaoTac.setOpaque(false);
 
-        JButton btnLuu = taoNut("Lưu và lập báo giá", true);
+        JButton btnThemXe = taoNut("Thêm xe", false);
+        JButton btnTraCuu = taoNut("Tra cứu xe", true);
+        btnTraCuu.setContentAreaFilled(false);
+        btnTraCuu.setOpaque(true);
+        btnTraCuu.setBackground(new Color(188, 25, 58));
+        btnTraCuu.setForeground(Color.WHITE);
+        
+        btnThemXe.addActionListener(
+            e -> moHopThoaiXe(false)
+        );
 
-        btnChonAnh.addActionListener(e -> chonAnhXe());
-        btnLuu.addActionListener(e -> luuPhieu());
+        btnSuaXe.addActionListener(
+            e -> moHopThoaiXe(true)
+        );
 
-        thaoTac.add(btnChonAnh);
-        thaoTac.add(btnLuu);
+        btnTraCuu.addActionListener(
+            e -> chuyenDenTraCuu()
+        );
+
+        thaoTac.add(btnThemXe);
+        thaoTac.add(btnSuaXe);
+        thaoTac.add(btnTraCuu);
 
         noiDung.add(thaoTac, BorderLayout.SOUTH);
         khung.add(noiDung, BorderLayout.CENTER);
 
         add(khung, BorderLayout.CENTER);
 
-        // ==================== DỮ LIỆU MẪU ====================
-        model.addRow(new Object[] {
-            "Ngoại thất",
-            "Xước nhẹ cản sau",
-            "Chụp ảnh tình trạng xe",
-            "Đã kiểm tra"
+        // ==================== SỰ KIỆN ====================
+        tableXe.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                hienThiXeDuocChon();
+            }
         });
 
-        model.addRow(new Object[] {
-            "Tài sản",
-            "01 chìa khóa",
-            "Khách tự giữ tài sản cá nhân",
-            "Đã xác nhận"
-        });
-
-        model.addRow(new Object[] {
-            "Phanh",
-            "Có tiếng kêu",
-            "Cần kiểm tra má phanh",
-            "Chờ chẩn đoán"
-        });
-
-        tableKiemTra.setRowSelectionInterval(0, 0);
-
-        // ==================== SỰ KIỆN TÌM KIẾM ====================
         txtTimKiem.getDocument().addDocumentListener(
             new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
-                    locKiemTra();
+                    locXe();
                 }
 
                 @Override
                 public void removeUpdate(DocumentEvent e) {
-                    locKiemTra();
+                    locXe();
                 }
 
                 @Override
                 public void changedUpdate(DocumentEvent e) {
-                    locKiemTra();
+                    locXe();
                 }
             }
         );
 
-        cboTrangThai.addActionListener(e -> locKiemTra());
+        cboTrangThai.addActionListener(e -> locXe());
+
+        // ==================== DỮ LIỆU MẪU ====================
+        danhSachXe.add(new String[] {
+            "51H-123.45",
+            "KH001 • Nguyễn Minh An",
+            "Toyota Vios",
+            "2021",
+            "RL4B29F3XM100001",
+            "40.250",
+            "Đang sửa"
+        });
+
+        danhSachXe.add(new String[] {
+            "59A-678.90",
+            "KH002 • Lê Hoàng Nam",
+            "Honda City",
+            "2020",
+            "MRHGM6650LP100002",
+            "62.100",
+            "Chờ báo giá"
+        });
+
+        danhSachXe.add(new String[] {
+            "51K-246.80",
+            "KH003 • Võ Thu Hà",
+            "Mazda 3",
+            "2022",
+            "RN2BP2H7XM100003",
+            "28.400",
+            "Đã bàn giao"
+        });
+
+        capNhatBang(0);
     }
 
-    private JPanel taoTruong(
-            String ten, JComponent thanhPhan) {
-
-        JPanel o = new JPanel(new BorderLayout(0, 4));
-        o.setOpaque(false);
-
-        JLabel nhan = new JLabel(ten);
-        nhan.setFont(new Font("Arial", Font.BOLD, 12));
-        nhan.setForeground(new Color(87, 100, 117));
-        nhan.setLabelFor(thanhPhan);
-
-        o.add(nhan, BorderLayout.NORTH);
-        o.add(thanhPhan, BorderLayout.CENTER);
-
-        return o;
-    }
-
-    private static JTextField taoO(String giaTri) {
-        JTextField field = new JTextField(giaTri);
-
-        field.setFont(new Font("Arial", Font.PLAIN, 13));
-        field.setForeground(CHU);
-        field.setBackground(Color.WHITE);
-
-        field.setBorder(
-            BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(VIEN),
-                new EmptyBorder(6, 8, 6, 8)
-            )
+    private JPanel taoForm(JTextField[] fields, boolean choSua) {
+        JPanel form = new JPanel(
+            new GridLayout(3, 2, 24, 10)
         );
 
-        return field;
-    }
+        form.setOpaque(false);
 
-    private static JTextField taoOTim() {
-        JTextField field = new JTextField() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
+        for (int i = 0; i < fields.length; i++) {
+            JPanel o = new JPanel(new BorderLayout(0, 4));
+            o.setOpaque(false);
 
-                if (getText().isEmpty() && !isFocusOwner()) {
-                    Graphics2D g2 = (Graphics2D) g.create();
+            JLabel nhan = new JLabel(NHAN[i]);
+            nhan.setFont(new Font("Arial", Font.BOLD, 12));
+            nhan.setForeground(new Color(87, 100, 117));
 
-                    g2.setRenderingHint(
-                        RenderingHints.KEY_TEXT_ANTIALIASING,
-                        RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-                    );
+            fields[i] = new JTextField();
+            fields[i].setEditable(choSua);
+            fields[i].setBackground(Color.WHITE);
+            fields[i].setForeground(CHU);
+            fields[i].setFont(
+                new Font("Arial", Font.PLAIN, 13)
+            );
 
-                    g2.setColor(CHU_PHU);
-                    g2.setFont(getFont());
+            fields[i].setBorder(
+                BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(VIEN),
+                    new EmptyBorder(6, 8, 6, 8)
+                )
+            );
 
-                    int y = (
-                        getHeight() - g2.getFontMetrics().getHeight()
-                    ) / 2 + g2.getFontMetrics().getAscent();
+            nhan.setLabelFor(fields[i]);
 
-                    g2.drawString(
-                        "Tìm kiếm theo hạng mục, hiện trạng hoặc ghi chú...",
-                        getInsets().left + 1,
-                        y
-                    );
+            o.add(nhan, BorderLayout.NORTH);
+            o.add(fields[i], BorderLayout.CENTER);
 
-                    g2.dispose();
-                }
-            }
-        };
+            form.add(o);
+        }
 
-        field.setFont(new Font("Arial", Font.PLAIN, 13));
-        field.setForeground(CHU);
-        field.setBackground(new Color(237, 241, 245));
-        field.setBorder(new EmptyBorder(5, 4, 5, 4));
-
-        return field;
+        return form;
     }
 
     private static JButton taoNut(String ten, boolean chinh) {
         JButton nut = new JButton(ten);
 
         nut.setFont(new Font("Arial", Font.BOLD, 12));
-        nut.setContentAreaFilled(false);
-        nut.setOpaque(true);
-
         nut.setBackground(chinh ? DO : Color.WHITE);
         nut.setForeground(chinh ? Color.WHITE : CHU);
+        nut.setOpaque(true);
         nut.setFocusPainted(false);
 
         nut.setCursor(
@@ -444,6 +414,29 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         return nut;
     }
 
+    private void hienThiXeDuocChon() {
+        int dong = tableXe.getSelectedRow();
+
+        btnSuaXe.setEnabled(dong >= 0);
+
+        if (dong < 0) {
+            for (JTextField field : thongTin) {
+                field.setText("");
+            }
+
+            return;
+        }
+
+        int dongModel = tableXe.convertRowIndexToModel(dong);
+        String[] xe = danhSachXe.get(dongModel);
+
+        for (int i = 0; i < thongTin.length; i++) {
+            thongTin[i].setText(
+                xe[i] + (i == 5 ? " km" : "")
+            );
+        }
+    }
+
     private static String chuanHoa(String chuoi) {
         return Normalizer.normalize(
                 chuoi, Normalizer.Form.NFD
@@ -454,12 +447,7 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
             .toLowerCase(Locale.ROOT);
     }
 
-    private void locKiemTra() {
-        if (tableKiemTra.isEditing()
-                && !tableKiemTra.getCellEditor().stopCellEditing()) {
-            return;
-        }
-
+    private void locXe() {
         final String tuKhoa = chuanHoa(
             txtTimKiem.getText().trim()
         );
@@ -474,177 +462,202 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
                     Entry<? extends DefaultTableModel,
                           ? extends Integer> entry) {
 
-                    String noiDung =
-                        entry.getStringValue(0) + " "
-                        + entry.getStringValue(1) + " "
-                        + entry.getStringValue(2);
-
-                    boolean dungTuKhoa =
-                        chuanHoa(noiDung).contains(tuKhoa);
+                    String[] xe = danhSachXe.get(
+                        entry.getIdentifier()
+                    );
 
                     boolean dungTrangThai =
                         "Tất cả".equals(trangThai)
-                        || entry.getStringValue(3).equals(trangThai);
+                        || xe[6].equals(trangThai);
 
-                    return dungTuKhoa && dungTrangThai;
+                    boolean dungTuKhoa = chuanHoa(
+                        String.join(" ", xe)
+                    ).contains(tuKhoa);
+
+                    return dungTrangThai && dungTuKhoa;
                 }
             }
         );
 
-        if (tableKiemTra.getSelectedRow() < 0
-                && tableKiemTra.getRowCount() > 0) {
+        if (tableXe.getSelectedRow() < 0
+                && tableXe.getRowCount() > 0) {
 
-            tableKiemTra.setRowSelectionInterval(0, 0);
+            tableXe.setRowSelectionInterval(0, 0);
         }
+
+        hienThiXeDuocChon();
     }
 
-    private void chonAnhXe() {
-        JFileChooser chooser = new JFileChooser();
+    public void chuyenDenTraCuu() {
+        txtTimKiem.requestFocusInWindow();
+        txtTimKiem.selectAll();
+    }
 
-        chooser.setDialogTitle("Chọn ảnh tình trạng xe");
-        chooser.setMultiSelectionEnabled(true);
-        chooser.setAcceptAllFileFilterUsed(false);
+    private void capNhatBang(int dongModel) {
+        model.setRowCount(0);
 
-        chooser.setFileFilter(
-            new FileNameExtensionFilter(
-                "Ảnh xe (JPG, JPEG, PNG)",
-                "jpg", "jpeg", "png"
+        for (String[] xe : danhSachXe) {
+            String chuXe = xe[1];
+
+            if (chuXe.contains(" • ")) {
+                chuXe = chuXe.substring(
+                    chuXe.indexOf(" • ") + 3
+                );
+            }
+
+            model.addRow(new Object[] {
+                xe[0],
+                chuXe,
+                xe[2],
+                xe[3],
+                xe[5],
+                xe[6]
+            });
+        }
+
+        int dongView = tableXe.convertRowIndexToView(dongModel);
+
+        if (dongView >= 0) {
+            tableXe.setRowSelectionInterval(dongView, dongView);
+        }
+
+        hienThiXeDuocChon();
+    }
+
+    private void moHopThoaiXe(boolean sua) {
+        if (sua && tableXe.getSelectedRow() < 0) {
+            return;
+        }
+
+        int dongModel = sua
+            ? tableXe.convertRowIndexToModel(
+                tableXe.getSelectedRow()
             )
+            : -1;
+
+        JTextField[] fields = new JTextField[6];
+
+        JPanel noiDung = new JPanel(
+            new BorderLayout(0, 12)
         );
 
-        if (chooser.showOpenDialog(this)
-                == JFileChooser.APPROVE_OPTION) {
+        noiDung.add(
+            taoForm(fields, true),
+            BorderLayout.CENTER
+        );
 
-            for (File file : chooser.getSelectedFiles()) {
-                String ten = file.getName()
-                    .toLowerCase(Locale.ROOT);
+        JComboBox<String> trangThai =
+            new JComboBox<>(TRANG_THAI);
 
-                boolean dungDinhDang =
-                    ten.endsWith(".jpg")
-                    || ten.endsWith(".jpeg")
-                    || ten.endsWith(".png");
+        JPanel dongTrangThai = new JPanel(
+            new FlowLayout(FlowLayout.LEFT)
+        );
 
-                if (file.isFile()
-                        && dungDinhDang
-                        && !anhXe.contains(file)) {
+        dongTrangThai.add(new JLabel("Tình trạng:"));
+        dongTrangThai.add(trangThai);
 
-                    anhXe.add(file);
+        noiDung.add(dongTrangThai, BorderLayout.SOUTH);
+
+        if (sua) {
+            String[] xe = danhSachXe.get(dongModel);
+
+            for (int i = 0; i < fields.length; i++) {
+                fields[i].setText(xe[i]);
+            }
+
+            trangThai.setSelectedItem(xe[6]);
+        }
+
+        while (JOptionPane.showConfirmDialog(
+                this,
+                noiDung,
+                sua ? "Sửa xe" : "Thêm xe",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+            ) == JOptionPane.OK_OPTION) {
+
+            String[] xe = new String[7];
+            boolean dayDu = true;
+
+            for (int i = 0; i < fields.length; i++) {
+                xe[i] = fields[i].getText().trim();
+                dayDu &= !xe[i].isEmpty();
+            }
+
+            if (!dayDu) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Vui lòng nhập đầy đủ thông tin xe."
+                );
+
+                continue;
+            }
+
+            try {
+                int nam = Integer.parseInt(xe[3]);
+
+                long km = Long.parseLong(
+                    xe[5].replace(".", "").replace(",", "")
+                );
+
+                if (nam < 1886
+                        || nam > java.time.Year.now().getValue() + 1
+                        || km < 0) {
+
+                    throw new NumberFormatException();
+                }
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Năm sản xuất phải hợp lệ; "
+                    + "số km phải là số nguyên không âm."
+                );
+
+                continue;
+            }
+
+            boolean trung = false;
+
+            for (int i = 0; i < danhSachXe.size(); i++) {
+                if (i != dongModel
+                        && danhSachXe.get(i)[0]
+                            .equalsIgnoreCase(xe[0])) {
+
+                    trung = true;
                 }
             }
 
-            btnChonAnh.setText(
-                anhXe.isEmpty()
-                    ? "Chọn ảnh xe"
-                    : "Ảnh xe (" + anhXe.size() + ")"
-            );
+            if (trung) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Biển số đã tồn tại trong danh sách."
+                );
 
-            btnChonAnh.setToolTipText(
-                anhXe.size() + " ảnh đã chọn trong phiên chạy"
-            );
-        }
-    }
-
-    private static LocalDateTime docThoiGian(String text) {
-        String giaTri = text.replace('•', ' ')
-            .trim()
-            .replaceAll("\\s+", " ");
-
-        return LocalDateTime.parse(giaTri, DINH_DANG_GIO);
-    }
-
-    private String kiemTraThongTin() {
-        JTextField[] fields = {
-            txtMaTiepNhan,
-            txtBienSoKhach,
-            txtThoiGianNhan,
-            txtHenTra,
-            txtSoKmNhienLieu,
-            txtYeuCau
-        };
-
-        for (JTextField field : fields) {
-            if (field.getText().trim().isEmpty()) {
-                return "Vui lòng nhập đầy đủ thông tin tiếp nhận xe.";
-            }
-        }
-
-        try {
-            LocalDateTime nhan = docThoiGian(
-                txtThoiGianNhan.getText()
-            );
-
-            LocalDateTime tra = docThoiGian(
-                txtHenTra.getText()
-            );
-
-            if (tra.isBefore(nhan)) {
-                return "Thời gian hẹn trả không được trước thời gian nhận.";
+                continue;
             }
 
-        } catch (DateTimeParseException e) {
-            return "Nhập thời gian hợp lệ theo dạng dd/MM/yyyy • HH:mm.";
-        }
+            xe[6] = (String) trangThai.getSelectedItem();
 
-        return null;
-    }
+            if (sua) {
+                danhSachXe.set(dongModel, xe);
 
-    private void luuPhieu() {
-        if (tableKiemTra.isEditing()
-                && !tableKiemTra.getCellEditor().stopCellEditing()) {
-            return;
-        }
-
-        String loi = kiemTraThongTin();
-
-        if (loi != null) {
-            JOptionPane.showMessageDialog(
-                this,
-                loi,
-                "Thông tin chưa hợp lệ",
-                JOptionPane.WARNING_MESSAGE
-            );
-
-            return;
-        }
-
-        thongTinDaLuu = new String[] {
-            txtMaTiepNhan.getText().trim(),
-            txtBienSoKhach.getText().trim(),
-            txtThoiGianNhan.getText().trim(),
-            txtHenTra.getText().trim(),
-            txtSoKmNhienLieu.getText().trim(),
-            txtYeuCau.getText().trim()
-        };
-
-        // Lưu tất cả hạng mục, kể cả dòng bị ẩn bởi bộ lọc.
-        kiemTraDaLuu = new Object[
-            model.getRowCount()
-        ][model.getColumnCount()];
-
-        for (int i = 0; i < model.getRowCount(); i++) {
-            for (int j = 0; j < model.getColumnCount(); j++) {
-                kiemTraDaLuu[i][j] = model.getValueAt(i, j);
+            } else {
+                danhSachXe.add(xe);
+                dongModel = danhSachXe.size() - 1;
             }
+
+            txtTimKiem.setText("");
+            cboTrangThai.setSelectedIndex(0);
+
+            capNhatBang(dongModel);
+            break;
         }
-
-        anhDaLuu = new ArrayList<>(anhXe);
-
-        JOptionPane.showMessageDialog(
-            this,
-            "Đã lưu phiếu tiếp nhận mẫu: " + thongTinDaLuu[0]
-                + "\nSố ảnh xe: " + anhDaLuu.size()
-                + "\nDữ liệu chỉ lưu trong phiên chạy."
-                + "\nChưa kết nối giao diện lập báo giá.",
-            "Thông báo",
-            JOptionPane.INFORMATION_MESSAGE
-        );
     }
 
     // ==================== CỬA SỔ CHẠY ĐỘC LẬP ====================
     public JFrame taoCuaSo() {
-        JFrame cuaSo = new JFrame(
-            "Lập phiếu tiếp nhận xe - Night Invader"
-        );
+        JFrame cuaSo = new JFrame("Quản lý xe - Night Invader");
 
         cuaSo.setSize(1340, 840);
         cuaSo.setLocationRelativeTo(null);
@@ -877,6 +890,7 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         panelFooter.add(lblTrangThai, BorderLayout.WEST);
         panelFooter.add(lblBanQuyen, BorderLayout.EAST);
 
+        // Gắn các thành phần vào cửa sổ.
         cuaSo.add(panelTopContainer, BorderLayout.NORTH);
         cuaSo.add(this, BorderLayout.CENTER);
         cuaSo.add(panelFooter, BorderLayout.SOUTH);
@@ -942,6 +956,7 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
             String tieuDe, String phimTat, ImageIcon icon) {
 
         JButton btn = new JButton();
+
         btn.setLayout(new BorderLayout(10, 0));
 
         if (icon != null) {
@@ -953,11 +968,13 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         pText.setOpaque(false);
 
         JLabel lblTieuDe = new JLabel(tieuDe);
+
         lblTieuDe.setFont(
             new Font("Arial", Font.BOLD, 12)
         );
 
         JLabel lblPhimTat = new JLabel(phimTat);
+
         lblPhimTat.setFont(
             new Font("Arial", Font.PLAIN, 11)
         );
@@ -1008,9 +1025,7 @@ public class LapPhieuTiepNhanXePanel extends JPanel {
         }
 
         SwingUtilities.invokeLater(() ->
-            new LapPhieuTiepNhanXePanel()
-                .taoCuaSo()
-                .setVisible(true)
+            new QuanLyXeFrame().taoCuaSo().setVisible(true)
         );
     }
 }

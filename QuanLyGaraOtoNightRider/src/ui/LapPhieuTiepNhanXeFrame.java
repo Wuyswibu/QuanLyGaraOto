@@ -1,22 +1,26 @@
 package ui;
 
 import java.awt.*;
+import java.io.File;
 import java.text.Normalizer;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
-public class LichSuSuaChuaPanel extends JPanel {
+public class LapPhieuTiepNhanXeFrame extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -25,75 +29,70 @@ public class LichSuSuaChuaPanel extends JPanel {
     private static final Color VIEN = new Color(216, 222, 230);
     private static final Color DO = new Color(188, 25, 58);
 
-    private static final DateTimeFormatter DINH_DANG_NGAY =
-        DateTimeFormatter.ofPattern("dd/MM/uuuu")
-            .withResolverStyle(ResolverStyle.STRICT);
-
-    // Ngày, phiếu, số km, nội dung, tổng tiền, trạng thái,
-    // biển số, chủ xe, hóa đơn.
-    private final String[][] duLieuLichSu = {
-        {
-            "05/10/2026",
-            "SC001",
-            "40.250",
-            "Bảo dưỡng / thay phanh",
-            "2.484.000 đ",
-            "Đang thực hiện",
-            "51H-123.45",
-            "Nguyễn Minh An",
-            "HD001"
-        },
-        {
-            "10/06/2026",
-            "SC042",
-            "35.100",
-            "Thay dầu / lọc dầu",
-            "950.000 đ",
-            "Đã hoàn thành",
-            "51H-123.45",
-            "Nguyễn Minh An",
-            "HD042"
-        }
+    private static final String[] XAC_NHAN = {
+        "Đã kiểm tra", "Đã xác nhận", "Chờ chẩn đoán"
     };
 
-    private final JTextField txtBienSo = taoO();
-    private final JTextField txtChuXe = taoO();
-    private final JTextField txtTuNgay = taoO();
-    private final JTextField txtDenNgay = taoO();
+    private static final DateTimeFormatter DINH_DANG_GIO =
+        DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm")
+            .withResolverStyle(ResolverStyle.STRICT);
+
+    private final JTextField txtMaTiepNhan =
+        taoO("TN001");
+
+    private final JTextField txtBienSoKhach =
+        taoO("51H-123.45 • Nguyễn Minh An");
+
+    private final JTextField txtThoiGianNhan =
+        taoO("05/10/2026 • 08:30");
+
+    private final JTextField txtHenTra =
+        taoO("05/10/2026 • 16:00");
+
+    private final JTextField txtSoKmNhienLieu =
+        taoO("40.250 km / ½ bình");
+
+    private final JTextField txtYeuCau =
+        taoO("Bảo dưỡng 40.000 km; phanh có tiếng kêu");
+
     private final JTextField txtTimKiem = taoOTim();
 
     private final JComboBox<String> cboTrangThai =
         new JComboBox<>(
             new String[] {
-                "Tất cả", "Đang thực hiện", "Đã hoàn thành"
+                "Tất cả", "Đã kiểm tra",
+                "Đã xác nhận", "Chờ chẩn đoán"
             }
         );
 
     private final DefaultTableModel model =
         new DefaultTableModel(
             new String[] {
-                "Ngày", "Phiếu", "Số km",
-                "Nội dung", "Tổng tiền", "Trạng thái"
+                "Kiểm tra", "Hiện trạng", "Ghi chú", "Xác nhận"
             }, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column > 0;
             }
         };
 
-    private final JTable tableLichSu = new JTable(model);
+    private final JTable tableKiemTra = new JTable(model);
 
     private final TableRowSorter<DefaultTableModel> boLoc =
         new TableRowSorter<>(model);
 
-    private final JButton btnPhieu =
-        taoNut("Xem phiếu sửa chữa", false);
+    private final JButton btnChonAnh =
+        taoNut("Chọn ảnh xe", false);
 
-    private final JButton btnHoaDon =
-        taoNut("Xem hóa đơn", true);
+    private final List<File> anhXe = new ArrayList<>();
 
-    public LichSuSuaChuaPanel() {
+    // Dữ liệu phiếu mẫu đã lưu trong phiên chạy.
+    private String[] thongTinDaLuu;
+    private Object[][] kiemTraDaLuu;
+    private List<File> anhDaLuu = new ArrayList<>();
+
+    public LapPhieuTiepNhanXeFrame() {
         setLayout(new BorderLayout());
         setBackground(new Color(216, 220, 228));
         setBorder(new EmptyBorder(20, 65, 15, 65));
@@ -107,7 +106,7 @@ public class LichSuSuaChuaPanel extends JPanel {
         tieuDe.setBackground(new Color(246, 247, 250));
         tieuDe.setBorder(new EmptyBorder(10, 16, 10, 16));
 
-        JLabel lblTieuDe = new JLabel("LỊCH SỬ SỬA CHỮA");
+        JLabel lblTieuDe = new JLabel("LẬP PHIẾU TIẾP NHẬN XE");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 16));
         lblTieuDe.setForeground(CHU);
 
@@ -118,12 +117,12 @@ public class LichSuSuaChuaPanel extends JPanel {
         noiDung.setBackground(Color.WHITE);
         noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
-        // ==================== THÔNG TIN XE ====================
+        // ==================== THÔNG TIN TIẾP NHẬN ====================
         JPanel dau = new JPanel(new BorderLayout(0, 12));
         dau.setOpaque(false);
 
         JLabel lblMoTa = new JLabel(
-            "Theo dõi dịch vụ, phụ tùng và bảo hành theo từng lần sửa."
+            "Ghi nhận tình trạng ban đầu và yêu cầu của khách trước khi sửa."
         );
 
         lblMoTa.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -132,30 +131,23 @@ public class LichSuSuaChuaPanel extends JPanel {
         dau.add(lblMoTa, BorderLayout.NORTH);
 
         JPanel form = new JPanel(
-            new GridLayout(2, 2, 24, 10)
+            new GridLayout(3, 2, 24, 10)
         );
 
         form.setOpaque(false);
+        form.add(taoTruong("Mã tiếp nhận", txtMaTiepNhan));
+        form.add(taoTruong("Biển số / khách", txtBienSoKhach));
+        form.add(taoTruong("Thời gian nhận", txtThoiGianNhan));
+        form.add(taoTruong("Hẹn trả", txtHenTra));
+        form.add(taoTruong("Số km / nhiên liệu", txtSoKmNhienLieu));
+        form.add(taoTruong("Yêu cầu", txtYeuCau));
 
-        form.add(taoTruong("Biển số", txtBienSo));
-        form.add(taoTruong("Chủ xe", txtChuXe));
-        form.add(taoTruong("Từ ngày", txtTuNgay));
-        form.add(taoTruong("Đến ngày", txtDenNgay));
-
-        txtBienSo.setEditable(false);
-        txtChuXe.setEditable(false);
-
-        txtTuNgay.setText("01/01/2026");
-        txtDenNgay.setText("05/10/2026");
-
-        txtTuNgay.setToolTipText(
-            "Nhập dd/MM/yyyy rồi nhấn Enter để lọc; "
-            + "bỏ trống để không giới hạn"
+        txtThoiGianNhan.setToolTipText(
+            "Nhập dd/MM/yyyy • HH:mm hoặc dd/MM/yyyy HH:mm"
         );
 
-        txtDenNgay.setToolTipText(
-            "Nhập dd/MM/yyyy rồi nhấn Enter để lọc; "
-            + "bỏ trống để không giới hạn"
+        txtHenTra.setToolTipText(
+            "Nhập dd/MM/yyyy • HH:mm hoặc dd/MM/yyyy HH:mm"
         );
 
         dau.add(form, BorderLayout.CENTER);
@@ -189,39 +181,54 @@ public class LichSuSuaChuaPanel extends JPanel {
         thanhLoc.add(locTrangThai, BorderLayout.EAST);
         vungBang.add(thanhLoc, BorderLayout.NORTH);
 
-        // ==================== BẢNG LỊCH SỬ ====================
-        tableLichSu.setFont(new Font("Arial", Font.PLAIN, 13));
-        tableLichSu.setRowHeight(36);
+        // ==================== BẢNG KIỂM TRA ====================
+        tableKiemTra.setFont(new Font("Arial", Font.PLAIN, 13));
+        tableKiemTra.setRowHeight(36);
 
-        tableLichSu.setSelectionMode(
+        tableKiemTra.setSelectionMode(
             ListSelectionModel.SINGLE_SELECTION
         );
 
-        tableLichSu.setRowSorter(boLoc);
-        tableLichSu.setShowGrid(false);
-        tableLichSu.setIntercellSpacing(new Dimension(0, 0));
+        tableKiemTra.setRowSorter(boLoc);
+        boLoc.setSortsOnUpdates(true);
 
-        tableLichSu.setSelectionBackground(
+        tableKiemTra.setShowGrid(false);
+        tableKiemTra.setIntercellSpacing(new Dimension(0, 0));
+
+        tableKiemTra.setSelectionBackground(
             new Color(53, 105, 139)
         );
 
-        tableLichSu.setSelectionForeground(Color.WHITE);
+        tableKiemTra.setSelectionForeground(Color.WHITE);
 
-        tableLichSu.getTableHeader().setFont(
+        tableKiemTra.getTableHeader().setFont(
             new Font("Arial", Font.BOLD, 12)
         );
 
-        tableLichSu.getTableHeader().setBackground(
+        tableKiemTra.getTableHeader().setBackground(
             new Color(237, 241, 245)
         );
 
-        tableLichSu.getTableHeader().setPreferredSize(
+        tableKiemTra.getTableHeader().setPreferredSize(
             new Dimension(0, 30)
         );
 
-        tableLichSu.getTableHeader().setReorderingAllowed(false);
+        tableKiemTra.getTableHeader().setReorderingAllowed(false);
 
-        tableLichSu.setDefaultRenderer(
+        tableKiemTra.putClientProperty(
+            "terminateEditOnFocusLost", Boolean.TRUE
+        );
+
+        // Cột xác nhận dùng danh sách lựa chọn.
+        tableKiemTra.getColumnModel()
+            .getColumn(3)
+            .setCellEditor(
+                new DefaultCellEditor(
+                    new JComboBox<>(XAC_NHAN)
+                )
+            );
+
+        tableKiemTra.setDefaultRenderer(
             Object.class,
             new DefaultTableCellRenderer() {
                 @Override
@@ -254,25 +261,15 @@ public class LichSuSuaChuaPanel extends JPanel {
             }
         );
 
-        int[] doRong = {150, 140, 130, 300, 170, 200};
+        int[] doRong = {220, 280, 330, 240};
 
         for (int i = 0; i < doRong.length; i++) {
-            tableLichSu.getColumnModel()
+            tableKiemTra.getColumnModel()
                        .getColumn(i)
                        .setPreferredWidth(doRong[i]);
         }
 
-        // Sắp xếp ngày theo thời gian.
-        boLoc.setComparator(0, (a, b) ->
-            LocalDate.parse(a.toString(), DINH_DANG_NGAY)
-                .compareTo(
-                    LocalDate.parse(
-                        b.toString(), DINH_DANG_NGAY
-                    )
-                )
-        );
-
-        JScrollPane cuon = new JScrollPane(tableLichSu);
+        JScrollPane cuon = new JScrollPane(tableKiemTra);
         cuon.setBorder(BorderFactory.createEmptyBorder());
         cuon.getViewport().setBackground(Color.WHITE);
 
@@ -286,17 +283,13 @@ public class LichSuSuaChuaPanel extends JPanel {
 
         thaoTac.setOpaque(false);
 
-        // Chỉ thông báo, chưa mở trang khác.
-        btnPhieu.addActionListener(
-            e -> thongBaoChuaKetNoi(false)
-        );
+        JButton btnLuu = taoNut("Lưu và lập báo giá", true);
 
-        btnHoaDon.addActionListener(
-            e -> thongBaoChuaKetNoi(true)
-        );
+        btnChonAnh.addActionListener(e -> chonAnhXe());
+        btnLuu.addActionListener(e -> luuPhieu());
 
-        thaoTac.add(btnPhieu);
-        thaoTac.add(btnHoaDon);
+        thaoTac.add(btnChonAnh);
+        thaoTac.add(btnLuu);
 
         noiDung.add(thaoTac, BorderLayout.SOUTH);
         khung.add(noiDung, BorderLayout.CENTER);
@@ -304,53 +297,50 @@ public class LichSuSuaChuaPanel extends JPanel {
         add(khung, BorderLayout.CENTER);
 
         // ==================== DỮ LIỆU MẪU ====================
-        for (String[] dong : duLieuLichSu) {
-            model.addRow(new Object[] {
-                dong[0], dong[1], dong[2],
-                dong[3], dong[4], dong[5]
-            });
-        }
+        model.addRow(new Object[] {
+            "Ngoại thất",
+            "Xước nhẹ cản sau",
+            "Chụp ảnh tình trạng xe",
+            "Đã kiểm tra"
+        });
 
-        // ==================== SỰ KIỆN ====================
-        tableLichSu.getSelectionModel()
-            .addListSelectionListener(e -> {
-                if (!e.getValueIsAdjusting()) {
-                    hienThiThongTinXe();
-                }
-            });
+        model.addRow(new Object[] {
+            "Tài sản",
+            "01 chìa khóa",
+            "Khách tự giữ tài sản cá nhân",
+            "Đã xác nhận"
+        });
 
+        model.addRow(new Object[] {
+            "Phanh",
+            "Có tiếng kêu",
+            "Cần kiểm tra má phanh",
+            "Chờ chẩn đoán"
+        });
+
+        tableKiemTra.setRowSelectionInterval(0, 0);
+
+        // ==================== SỰ KIỆN TÌM KIẾM ====================
         txtTimKiem.getDocument().addDocumentListener(
             new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
-                    locLichSu(false);
+                    locKiemTra();
                 }
 
                 @Override
                 public void removeUpdate(DocumentEvent e) {
-                    locLichSu(false);
+                    locKiemTra();
                 }
 
                 @Override
                 public void changedUpdate(DocumentEvent e) {
-                    locLichSu(false);
+                    locKiemTra();
                 }
             }
         );
 
-        cboTrangThai.addActionListener(
-            e -> locLichSu(true)
-        );
-
-        txtTuNgay.addActionListener(
-            e -> locLichSu(true)
-        );
-
-        txtDenNgay.addActionListener(
-            e -> locLichSu(true)
-        );
-
-        locLichSu(false);
+        cboTrangThai.addActionListener(e -> locKiemTra());
     }
 
     private JPanel taoTruong(
@@ -370,8 +360,8 @@ public class LichSuSuaChuaPanel extends JPanel {
         return o;
     }
 
-    private static JTextField taoO() {
-        JTextField field = new JTextField();
+    private static JTextField taoO(String giaTri) {
+        JTextField field = new JTextField(giaTri);
 
         field.setFont(new Font("Arial", Font.PLAIN, 13));
         field.setForeground(CHU);
@@ -409,7 +399,7 @@ public class LichSuSuaChuaPanel extends JPanel {
                     ) / 2 + g2.getFontMetrics().getAscent();
 
                     g2.drawString(
-                        "Tìm kiếm theo mã, tên hoặc biển số...",
+                        "Tìm kiếm theo hạng mục, hiện trạng hoặc ghi chú...",
                         getInsets().left + 1,
                         y
                     );
@@ -423,11 +413,6 @@ public class LichSuSuaChuaPanel extends JPanel {
         field.setForeground(CHU);
         field.setBackground(new Color(237, 241, 245));
         field.setBorder(new EmptyBorder(5, 4, 5, 4));
-
-        field.setToolTipText(
-            "Tìm theo phiếu, hóa đơn, tên chủ xe, "
-            + "biển số hoặc nội dung sửa chữa"
-        );
 
         return field;
     }
@@ -466,81 +451,14 @@ public class LichSuSuaChuaPanel extends JPanel {
             .replaceAll("\\p{M}", "")
             .replace('đ', 'd')
             .replace('Đ', 'D')
-            .toLowerCase(Locale.ROOT)
-            .replaceAll("\\s+", "");
+            .toLowerCase(Locale.ROOT);
     }
 
-    private void hienThiThongTinXe() {
-        int dong = tableLichSu.getSelectedRow();
-
-        btnPhieu.setEnabled(dong >= 0);
-        btnHoaDon.setEnabled(dong >= 0);
-
-        if (dong < 0) {
-            txtBienSo.setText("");
-            txtChuXe.setText("");
+    private void locKiemTra() {
+        if (tableKiemTra.isEditing()
+                && !tableKiemTra.getCellEditor().stopCellEditing()) {
             return;
         }
-
-        int dongModel =
-            tableLichSu.convertRowIndexToModel(dong);
-
-        String[] lichSu = duLieuLichSu[dongModel];
-
-        txtBienSo.setText(lichSu[6]);
-        txtChuXe.setText(lichSu[7]);
-    }
-
-    private void locLichSu(boolean thongBao) {
-        LocalDate tuNgay;
-        LocalDate denNgay;
-
-        try {
-            tuNgay = txtTuNgay.getText().trim().isEmpty()
-                ? null
-                : LocalDate.parse(
-                    txtTuNgay.getText().trim(),
-                    DINH_DANG_NGAY
-                );
-
-            denNgay = txtDenNgay.getText().trim().isEmpty()
-                ? null
-                : LocalDate.parse(
-                    txtDenNgay.getText().trim(),
-                    DINH_DANG_NGAY
-                );
-
-        } catch (DateTimeParseException e) {
-            if (thongBao) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Nhập ngày hợp lệ theo dạng dd/MM/yyyy.",
-                    "Ngày không hợp lệ",
-                    JOptionPane.WARNING_MESSAGE
-                );
-            }
-
-            return;
-        }
-
-        if (tuNgay != null
-                && denNgay != null
-                && tuNgay.isAfter(denNgay)) {
-
-            if (thongBao) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Từ ngày không được lớn hơn đến ngày.",
-                    "Khoảng ngày không hợp lệ",
-                    JOptionPane.WARNING_MESSAGE
-                );
-            }
-
-            return;
-        }
-
-        final LocalDate tu = tuNgay;
-        final LocalDate den = denNgay;
 
         final String tuKhoa = chuanHoa(
             txtTimKiem.getText().trim()
@@ -556,64 +474,167 @@ public class LichSuSuaChuaPanel extends JPanel {
                     Entry<? extends DefaultTableModel,
                           ? extends Integer> entry) {
 
-                    String[] lichSu = duLieuLichSu[
-                        entry.getIdentifier()
-                    ];
+                    String noiDung =
+                        entry.getStringValue(0) + " "
+                        + entry.getStringValue(1) + " "
+                        + entry.getStringValue(2);
 
-                    LocalDate ngay = LocalDate.parse(
-                        lichSu[0], DINH_DANG_NGAY
-                    );
+                    boolean dungTuKhoa =
+                        chuanHoa(noiDung).contains(tuKhoa);
 
-                    return (
-                            tu == null || !ngay.isBefore(tu)
-                        )
-                        && (
-                            den == null || !ngay.isAfter(den)
-                        )
-                        && chuanHoa(
-                            String.join(" ", lichSu)
-                        ).contains(tuKhoa)
-                        && (
-                            "Tất cả".equals(trangThai)
-                            || lichSu[5].equals(trangThai)
-                        );
+                    boolean dungTrangThai =
+                        "Tất cả".equals(trangThai)
+                        || entry.getStringValue(3).equals(trangThai);
+
+                    return dungTuKhoa && dungTrangThai;
                 }
             }
         );
 
-        if (tableLichSu.getSelectedRow() < 0
-                && tableLichSu.getRowCount() > 0) {
+        if (tableKiemTra.getSelectedRow() < 0
+                && tableKiemTra.getRowCount() > 0) {
 
-            tableLichSu.setRowSelectionInterval(0, 0);
+            tableKiemTra.setRowSelectionInterval(0, 0);
         }
-
-        hienThiThongTinXe();
     }
 
-    private void thongBaoChuaKetNoi(boolean hoaDon) {
-        int dong = tableLichSu.getSelectedRow();
+    private void chonAnhXe() {
+        JFileChooser chooser = new JFileChooser();
 
-        if (dong < 0) {
+        chooser.setDialogTitle("Chọn ảnh tình trạng xe");
+        chooser.setMultiSelectionEnabled(true);
+        chooser.setAcceptAllFileFilterUsed(false);
+
+        chooser.setFileFilter(
+            new FileNameExtensionFilter(
+                "Ảnh xe (JPG, JPEG, PNG)",
+                "jpg", "jpeg", "png"
+            )
+        );
+
+        if (chooser.showOpenDialog(this)
+                == JFileChooser.APPROVE_OPTION) {
+
+            for (File file : chooser.getSelectedFiles()) {
+                String ten = file.getName()
+                    .toLowerCase(Locale.ROOT);
+
+                boolean dungDinhDang =
+                    ten.endsWith(".jpg")
+                    || ten.endsWith(".jpeg")
+                    || ten.endsWith(".png");
+
+                if (file.isFile()
+                        && dungDinhDang
+                        && !anhXe.contains(file)) {
+
+                    anhXe.add(file);
+                }
+            }
+
+            btnChonAnh.setText(
+                anhXe.isEmpty()
+                    ? "Chọn ảnh xe"
+                    : "Ảnh xe (" + anhXe.size() + ")"
+            );
+
+            btnChonAnh.setToolTipText(
+                anhXe.size() + " ảnh đã chọn trong phiên chạy"
+            );
+        }
+    }
+
+    private static LocalDateTime docThoiGian(String text) {
+        String giaTri = text.replace('•', ' ')
+            .trim()
+            .replaceAll("\\s+", " ");
+
+        return LocalDateTime.parse(giaTri, DINH_DANG_GIO);
+    }
+
+    private String kiemTraThongTin() {
+        JTextField[] fields = {
+            txtMaTiepNhan,
+            txtBienSoKhach,
+            txtThoiGianNhan,
+            txtHenTra,
+            txtSoKmNhienLieu,
+            txtYeuCau
+        };
+
+        for (JTextField field : fields) {
+            if (field.getText().trim().isEmpty()) {
+                return "Vui lòng nhập đầy đủ thông tin tiếp nhận xe.";
+            }
+        }
+
+        try {
+            LocalDateTime nhan = docThoiGian(
+                txtThoiGianNhan.getText()
+            );
+
+            LocalDateTime tra = docThoiGian(
+                txtHenTra.getText()
+            );
+
+            if (tra.isBefore(nhan)) {
+                return "Thời gian hẹn trả không được trước thời gian nhận.";
+            }
+
+        } catch (DateTimeParseException e) {
+            return "Nhập thời gian hợp lệ theo dạng dd/MM/yyyy • HH:mm.";
+        }
+
+        return null;
+    }
+
+    private void luuPhieu() {
+        if (tableKiemTra.isEditing()
+                && !tableKiemTra.getCellEditor().stopCellEditing()) {
             return;
         }
 
-        int dongModel =
-            tableLichSu.convertRowIndexToModel(dong);
+        String loi = kiemTraThongTin();
 
-        String[] lichSu = duLieuLichSu[dongModel];
+        if (loi != null) {
+            JOptionPane.showMessageDialog(
+                this,
+                loi,
+                "Thông tin chưa hợp lệ",
+                JOptionPane.WARNING_MESSAGE
+            );
 
-        String loai = hoaDon
-            ? "hóa đơn"
-            : "phiếu sửa chữa";
+            return;
+        }
 
-        String ma = hoaDon
-            ? lichSu[8]
-            : lichSu[1];
+        thongTinDaLuu = new String[] {
+            txtMaTiepNhan.getText().trim(),
+            txtBienSoKhach.getText().trim(),
+            txtThoiGianNhan.getText().trim(),
+            txtHenTra.getText().trim(),
+            txtSoKmNhienLieu.getText().trim(),
+            txtYeuCau.getText().trim()
+        };
+
+        // Lưu tất cả hạng mục, kể cả dòng bị ẩn bởi bộ lọc.
+        kiemTraDaLuu = new Object[
+            model.getRowCount()
+        ][model.getColumnCount()];
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            for (int j = 0; j < model.getColumnCount(); j++) {
+                kiemTraDaLuu[i][j] = model.getValueAt(i, j);
+            }
+        }
+
+        anhDaLuu = new ArrayList<>(anhXe);
 
         JOptionPane.showMessageDialog(
             this,
-            "Đã chọn " + loai + ": " + ma
-                + "\nChưa kết nối giao diện xem " + loai + ".",
+            "Đã lưu phiếu tiếp nhận mẫu: " + thongTinDaLuu[0]
+                + "\nSố ảnh xe: " + anhDaLuu.size()
+                + "\nDữ liệu chỉ lưu trong phiên chạy."
+                + "\nChưa kết nối giao diện lập báo giá.",
             "Thông báo",
             JOptionPane.INFORMATION_MESSAGE
         );
@@ -622,7 +643,7 @@ public class LichSuSuaChuaPanel extends JPanel {
     // ==================== CỬA SỔ CHẠY ĐỘC LẬP ====================
     public JFrame taoCuaSo() {
         JFrame cuaSo = new JFrame(
-            "Lịch sử sửa chữa - Night Invader"
+            "Lập phiếu tiếp nhận xe - Night Invader"
         );
 
         cuaSo.setSize(1340, 840);
@@ -932,13 +953,11 @@ public class LichSuSuaChuaPanel extends JPanel {
         pText.setOpaque(false);
 
         JLabel lblTieuDe = new JLabel(tieuDe);
-
         lblTieuDe.setFont(
             new Font("Arial", Font.BOLD, 12)
         );
 
         JLabel lblPhimTat = new JLabel(phimTat);
-
         lblPhimTat.setFont(
             new Font("Arial", Font.PLAIN, 11)
         );
@@ -989,7 +1008,9 @@ public class LichSuSuaChuaPanel extends JPanel {
         }
 
         SwingUtilities.invokeLater(() ->
-            new LichSuSuaChuaPanel().taoCuaSo().setVisible(true)
+            new LapPhieuTiepNhanXeFrame()
+                .taoCuaSo()
+                .setVisible(true)
         );
     }
 }

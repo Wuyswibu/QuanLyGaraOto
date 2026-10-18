@@ -14,7 +14,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
-public class QuanLyXePanel extends JPanel {
+public class QuanLyDichVuFrame extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -24,51 +24,56 @@ public class QuanLyXePanel extends JPanel {
     private static final Color DO = new Color(188, 25, 58);
 
     private static final String[] NHAN = {
-        "Biển số", "Chủ xe",
-        "Hãng / dòng xe", "Năm sản xuất",
-        "Số VIN", "Số km"
+        "Mã dịch vụ", "Tên dịch vụ",
+        "Đơn giá tiền công", "Thời gian dự kiến",
+        "Đơn vị tính", "Trạng thái"
     };
 
     private static final String[] TRANG_THAI = {
-        "Đang sửa", "Chờ báo giá", "Đã bàn giao"
+        "Đang áp dụng", "Ngừng áp dụng"
     };
 
-    // Biển số, chủ xe, dòng xe, năm, VIN, số km, tình trạng.
-    private final List<String[]> danhSachXe = new ArrayList<>();
+    // Mã, tên, đơn vị, đơn giá, thời gian, trạng thái.
+    private final List<String[]> danhSachDichVu =
+        new ArrayList<>();
 
-    private final JTextField[] thongTin = new JTextField[6];
-    private final JTextField txtTimKiem = new JTextField();
+    private final JTextField[] thongTin =
+        new JTextField[6];
 
-    private final JComboBox<String> cboTrangThai = new JComboBox<>(
-        new String[] {
-            "Tất cả", "Đang sửa", "Chờ báo giá", "Đã bàn giao"
-        }
-    );
+    private final JTextField txtTimKiem = taoOTim();
 
-    private final DefaultTableModel model = new DefaultTableModel(
-        new String[] {
-            "Biển số", "Chủ xe", "Dòng xe",
-            "Năm", "Số km", "Tình trạng"
-        }, 0
-    ) {
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-    };
+    private final JComboBox<String> cboTrangThai =
+        new JComboBox<>(
+            new String[] {
+                "Tất cả", "Đang áp dụng", "Ngừng áp dụng"
+            }
+        );
 
-    private final JTable tableXe = new JTable(model);
+    private final DefaultTableModel model =
+        new DefaultTableModel(
+            new String[] {
+                "Mã DV", "Tên dịch vụ", "Đơn vị",
+                "Đơn giá công", "Thời gian", "Trạng thái"
+            }, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+    private final JTable tableDichVu = new JTable(model);
 
     private final TableRowSorter<DefaultTableModel> boLoc =
         new TableRowSorter<>(model);
 
-    private final JButton btnSuaXe = taoNut("Sửa xe", false);
+    private final JButton btnSua =
+        taoNut("Sửa dịch vụ", false);
 
-    public QuanLyXePanel() {
-        this(null);
-    }
+    private final JButton btnXoa =
+        taoNut("Xóa dịch vụ", true);
 
-    public QuanLyXePanel(Runnable veManHinhChinh) {
+    public QuanLyDichVuFrame() {
         setLayout(new BorderLayout());
         setBackground(new Color(216, 220, 228));
         setBorder(new EmptyBorder(20, 65, 15, 65));
@@ -80,42 +85,33 @@ public class QuanLyXePanel extends JPanel {
         // ==================== TIÊU ĐỀ ====================
         JPanel tieuDe = new JPanel(new BorderLayout());
         tieuDe.setBackground(new Color(246, 247, 250));
-        tieuDe.setBorder(new EmptyBorder(8, 16, 8, 16));
+        tieuDe.setBorder(new EmptyBorder(10, 16, 10, 16));
 
-        JLabel lblTieuDe = new JLabel("QUẢN LÝ XE");
+        JLabel lblTieuDe = new JLabel("QUẢN LÝ DỊCH VỤ");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 16));
         lblTieuDe.setForeground(CHU);
 
         tieuDe.add(lblTieuDe, BorderLayout.WEST);
-
-        if (veManHinhChinh != null) {
-            JButton btnTrangChu = taoNut("Màn hình chính", false);
-
-            btnTrangChu.addActionListener(
-                e -> veManHinhChinh.run()
-            );
-
-            tieuDe.add(btnTrangChu, BorderLayout.EAST);
-        }
-
         khung.add(tieuDe, BorderLayout.NORTH);
 
         JPanel noiDung = new JPanel(new BorderLayout(0, 25));
         noiDung.setBackground(Color.WHITE);
         noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
-        // ==================== THÔNG TIN XE ====================
+        // ==================== THÔNG TIN DỊCH VỤ ====================
         JPanel dau = new JPanel(new BorderLayout(0, 12));
         dau.setOpaque(false);
 
-        JLabel moTa = new JLabel(
-            "Mỗi biển số gắn với chủ xe và lịch sử sửa chữa."
+        JLabel lblMoTa = new JLabel(
+            "Danh mục dịch vụ độc lập với phụ tùng và kho hàng."
         );
 
-        moTa.setForeground(CHU_PHU);
-        moTa.setFont(new Font("Arial", Font.PLAIN, 13));
+        lblMoTa.setFont(new Font("Arial", Font.PLAIN, 13));
+        lblMoTa.setForeground(CHU_PHU);
 
-        dau.add(moTa, BorderLayout.NORTH);
+        dau.add(lblMoTa, BorderLayout.NORTH);
+
+        // Chỉ hiển thị thông tin; chỉnh sửa bằng nút Sửa dịch vụ.
         dau.add(taoForm(thongTin, false), BorderLayout.CENTER);
 
         noiDung.add(dau, BorderLayout.NORTH);
@@ -124,34 +120,11 @@ public class QuanLyXePanel extends JPanel {
         JPanel vungBang = new JPanel(new BorderLayout(0, 12));
         vungBang.setOpaque(false);
 
-        JPanel thanhLoc = new JPanel(new BorderLayout(24, 0));
+        JPanel thanhLoc = new JPanel(new BorderLayout(20, 0));
         thanhLoc.setBackground(new Color(237, 241, 245));
-        thanhLoc.setBorder(new EmptyBorder(6, 10, 6, 10));
+        thanhLoc.setBorder(new EmptyBorder(5, 10, 5, 10));
 
-        txtTimKiem.setFont(new Font("Arial", Font.PLAIN, 13));
-
-        txtTimKiem.setBorder(
-            BorderFactory.createEmptyBorder(4, 4, 4, 4)
-        );
-
-        txtTimKiem.setToolTipText(
-            "Tìm theo mã chủ xe, tên, biển số hoặc dòng xe"
-        );
-
-        JLabel lblTim = new JLabel(
-            "Tìm kiếm theo mã, tên hoặc biển số..."
-        );
-
-        lblTim.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblTim.setForeground(CHU_PHU);
-
-        JPanel tim = new JPanel(new BorderLayout(10, 0));
-        tim.setOpaque(false);
-
-        tim.add(lblTim, BorderLayout.WEST);
-        tim.add(txtTimKiem, BorderLayout.CENTER);
-
-        thanhLoc.add(tim, BorderLayout.CENTER);
+        thanhLoc.add(txtTimKiem, BorderLayout.CENTER);
 
         JPanel locTrangThai = new JPanel(
             new FlowLayout(FlowLayout.RIGHT, 5, 0)
@@ -171,39 +144,39 @@ public class QuanLyXePanel extends JPanel {
         thanhLoc.add(locTrangThai, BorderLayout.EAST);
         vungBang.add(thanhLoc, BorderLayout.NORTH);
 
-        // ==================== BẢNG XE ====================
-        tableXe.setFont(new Font("Arial", Font.PLAIN, 13));
-        tableXe.setRowHeight(36);
+        // ==================== BẢNG DỊCH VỤ ====================
+        tableDichVu.setFont(new Font("Arial", Font.PLAIN, 13));
+        tableDichVu.setRowHeight(36);
 
-        tableXe.setSelectionMode(
+        tableDichVu.setSelectionMode(
             ListSelectionModel.SINGLE_SELECTION
         );
 
-        tableXe.setRowSorter(boLoc);
-        tableXe.setShowGrid(false);
-        tableXe.setIntercellSpacing(new Dimension(0, 0));
+        tableDichVu.setRowSorter(boLoc);
+        tableDichVu.setShowGrid(false);
+        tableDichVu.setIntercellSpacing(new Dimension(0, 0));
 
-        tableXe.setSelectionBackground(
+        tableDichVu.setSelectionBackground(
             new Color(53, 105, 139)
         );
 
-        tableXe.setSelectionForeground(Color.WHITE);
+        tableDichVu.setSelectionForeground(Color.WHITE);
 
-        tableXe.getTableHeader().setFont(
+        tableDichVu.getTableHeader().setFont(
             new Font("Arial", Font.BOLD, 12)
         );
 
-        tableXe.getTableHeader().setBackground(
+        tableDichVu.getTableHeader().setBackground(
             new Color(237, 241, 245)
         );
 
-        tableXe.getTableHeader().setPreferredSize(
+        tableDichVu.getTableHeader().setPreferredSize(
             new Dimension(0, 30)
         );
 
-        tableXe.getTableHeader().setReorderingAllowed(false);
+        tableDichVu.getTableHeader().setReorderingAllowed(false);
 
-        tableXe.setDefaultRenderer(
+        tableDichVu.setDefaultRenderer(
             Object.class,
             new DefaultTableCellRenderer() {
                 @Override
@@ -236,15 +209,15 @@ public class QuanLyXePanel extends JPanel {
             }
         );
 
-        int[] doRong = {160, 220, 200, 100, 160, 190};
+        int[] doRong = {150, 270, 130, 190, 160, 200};
 
         for (int i = 0; i < doRong.length; i++) {
-            tableXe.getColumnModel()
-                   .getColumn(i)
-                   .setPreferredWidth(doRong[i]);
+            tableDichVu.getColumnModel()
+                       .getColumn(i)
+                       .setPreferredWidth(doRong[i]);
         }
 
-        JScrollPane cuon = new JScrollPane(tableXe);
+        JScrollPane cuon = new JScrollPane(tableDichVu);
         cuon.setBorder(BorderFactory.createEmptyBorder());
         cuon.getViewport().setBackground(Color.WHITE);
 
@@ -258,28 +231,23 @@ public class QuanLyXePanel extends JPanel {
 
         thaoTac.setOpaque(false);
 
-        JButton btnThemXe = taoNut("Thêm xe", false);
-        JButton btnTraCuu = taoNut("Tra cứu xe", true);
-        btnTraCuu.setContentAreaFilled(false);
-        btnTraCuu.setOpaque(true);
-        btnTraCuu.setBackground(new Color(188, 25, 58));
-        btnTraCuu.setForeground(Color.WHITE);
-        
-        btnThemXe.addActionListener(
-            e -> moHopThoaiXe(false)
+        JButton btnThem = taoNut("Thêm dịch vụ", false);
+
+        btnThem.addActionListener(
+            e -> moHopThoaiDichVu(false)
         );
 
-        btnSuaXe.addActionListener(
-            e -> moHopThoaiXe(true)
+        btnSua.addActionListener(
+            e -> moHopThoaiDichVu(true)
         );
 
-        btnTraCuu.addActionListener(
-            e -> chuyenDenTraCuu()
+        btnXoa.addActionListener(
+            e -> xoaDichVu()
         );
 
-        thaoTac.add(btnThemXe);
-        thaoTac.add(btnSuaXe);
-        thaoTac.add(btnTraCuu);
+        thaoTac.add(btnThem);
+        thaoTac.add(btnSua);
+        thaoTac.add(btnXoa);
 
         noiDung.add(thaoTac, BorderLayout.SOUTH);
         khung.add(noiDung, BorderLayout.CENTER);
@@ -287,68 +255,56 @@ public class QuanLyXePanel extends JPanel {
         add(khung, BorderLayout.CENTER);
 
         // ==================== SỰ KIỆN ====================
-        tableXe.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                hienThiXeDuocChon();
-            }
-        });
+        tableDichVu.getSelectionModel()
+            .addListSelectionListener(e -> {
+                if (!e.getValueIsAdjusting()) {
+                    hienThiThongTinDichVu();
+                }
+            });
 
         txtTimKiem.getDocument().addDocumentListener(
             new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
-                    locXe();
+                    locDichVu();
                 }
 
                 @Override
                 public void removeUpdate(DocumentEvent e) {
-                    locXe();
+                    locDichVu();
                 }
 
                 @Override
                 public void changedUpdate(DocumentEvent e) {
-                    locXe();
+                    locDichVu();
                 }
             }
         );
 
-        cboTrangThai.addActionListener(e -> locXe());
+        cboTrangThai.addActionListener(e -> locDichVu());
 
         // ==================== DỮ LIỆU MẪU ====================
-        danhSachXe.add(new String[] {
-            "51H-123.45",
-            "KH001 • Nguyễn Minh An",
-            "Toyota Vios",
-            "2021",
-            "RL4B29F3XM100001",
-            "40.250",
-            "Đang sửa"
+        danhSachDichVu.add(new String[] {
+            "DV001", "Thay dầu động cơ", "Lần",
+            "150.000 đ", "30 phút", "Đang áp dụng"
         });
 
-        danhSachXe.add(new String[] {
-            "59A-678.90",
-            "KH002 • Lê Hoàng Nam",
-            "Honda City",
-            "2020",
-            "MRHGM6650LP100002",
-            "62.100",
-            "Chờ báo giá"
+        danhSachDichVu.add(new String[] {
+            "DV002", "Thay má phanh trước", "Lần",
+            "300.000 đ", "60 phút", "Đang áp dụng"
         });
 
-        danhSachXe.add(new String[] {
-            "51K-246.80",
-            "KH003 • Võ Thu Hà",
-            "Mazda 3",
-            "2022",
-            "RN2BP2H7XM100003",
-            "28.400",
-            "Đã bàn giao"
+        danhSachDichVu.add(new String[] {
+            "DV003", "Kiểm tra điều hòa", "Lần",
+            "200.000 đ", "45 phút", "Đang áp dụng"
         });
 
         capNhatBang(0);
     }
 
-    private JPanel taoForm(JTextField[] fields, boolean choSua) {
+    private JPanel taoForm(
+            JTextField[] fields, boolean choSua) {
+
         JPanel form = new JPanel(
             new GridLayout(3, 2, 24, 10)
         );
@@ -367,6 +323,7 @@ public class QuanLyXePanel extends JPanel {
             fields[i].setEditable(choSua);
             fields[i].setBackground(Color.WHITE);
             fields[i].setForeground(CHU);
+
             fields[i].setFont(
                 new Font("Arial", Font.PLAIN, 13)
             );
@@ -389,13 +346,55 @@ public class QuanLyXePanel extends JPanel {
         return form;
     }
 
+    private static JTextField taoOTim() {
+        JTextField field = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                if (getText().isEmpty() && !isFocusOwner()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+
+                    g2.setRenderingHint(
+                        RenderingHints.KEY_TEXT_ANTIALIASING,
+                        RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+                    );
+
+                    g2.setColor(CHU_PHU);
+                    g2.setFont(getFont());
+
+                    int y = (
+                        getHeight() - g2.getFontMetrics().getHeight()
+                    ) / 2 + g2.getFontMetrics().getAscent();
+
+                    g2.drawString(
+                        "Tìm kiếm theo mã hoặc tên dịch vụ...",
+                        getInsets().left + 1,
+                        y
+                    );
+
+                    g2.dispose();
+                }
+            }
+        };
+
+        field.setFont(new Font("Arial", Font.PLAIN, 13));
+        field.setForeground(CHU);
+        field.setBackground(new Color(237, 241, 245));
+        field.setBorder(new EmptyBorder(5, 4, 5, 4));
+
+        return field;
+    }
+
     private static JButton taoNut(String ten, boolean chinh) {
         JButton nut = new JButton(ten);
 
         nut.setFont(new Font("Arial", Font.BOLD, 12));
+        nut.setContentAreaFilled(false);
+        nut.setOpaque(true);
+
         nut.setBackground(chinh ? DO : Color.WHITE);
         nut.setForeground(chinh ? Color.WHITE : CHU);
-        nut.setOpaque(true);
         nut.setFocusPainted(false);
 
         nut.setCursor(
@@ -414,10 +413,11 @@ public class QuanLyXePanel extends JPanel {
         return nut;
     }
 
-    private void hienThiXeDuocChon() {
-        int dong = tableXe.getSelectedRow();
+    private void hienThiThongTinDichVu() {
+        int dong = tableDichVu.getSelectedRow();
 
-        btnSuaXe.setEnabled(dong >= 0);
+        btnSua.setEnabled(dong >= 0);
+        btnXoa.setEnabled(dong >= 0);
 
         if (dong < 0) {
             for (JTextField field : thongTin) {
@@ -427,13 +427,16 @@ public class QuanLyXePanel extends JPanel {
             return;
         }
 
-        int dongModel = tableXe.convertRowIndexToModel(dong);
-        String[] xe = danhSachXe.get(dongModel);
+        int dongModel =
+            tableDichVu.convertRowIndexToModel(dong);
+
+        String[] dv = danhSachDichVu.get(dongModel);
+
+        // Thứ tự ô thông tin khác thứ tự cột trong bảng.
+        int[] viTri = {0, 1, 3, 4, 2, 5};
 
         for (int i = 0; i < thongTin.length; i++) {
-            thongTin[i].setText(
-                xe[i] + (i == 5 ? " km" : "")
-            );
+            thongTin[i].setText(dv[viTri[i]]);
         }
     }
 
@@ -447,7 +450,7 @@ public class QuanLyXePanel extends JPanel {
             .toLowerCase(Locale.ROOT);
     }
 
-    private void locXe() {
+    private void locDichVu() {
         final String tuKhoa = chuanHoa(
             txtTimKiem.getText().trim()
         );
@@ -462,167 +465,147 @@ public class QuanLyXePanel extends JPanel {
                     Entry<? extends DefaultTableModel,
                           ? extends Integer> entry) {
 
-                    String[] xe = danhSachXe.get(
+                    String[] dv = danhSachDichVu.get(
                         entry.getIdentifier()
                     );
 
-                    boolean dungTrangThai =
-                        "Tất cả".equals(trangThai)
-                        || xe[6].equals(trangThai);
-
                     boolean dungTuKhoa = chuanHoa(
-                        String.join(" ", xe)
+                        dv[0] + " " + dv[1]
                     ).contains(tuKhoa);
 
-                    return dungTrangThai && dungTuKhoa;
+                    boolean dungTrangThai =
+                        "Tất cả".equals(trangThai)
+                        || dv[5].equals(trangThai);
+
+                    return dungTuKhoa && dungTrangThai;
                 }
             }
         );
 
-        if (tableXe.getSelectedRow() < 0
-                && tableXe.getRowCount() > 0) {
+        if (tableDichVu.getSelectedRow() < 0
+                && tableDichVu.getRowCount() > 0) {
 
-            tableXe.setRowSelectionInterval(0, 0);
+            tableDichVu.setRowSelectionInterval(0, 0);
         }
 
-        hienThiXeDuocChon();
-    }
-
-    public void chuyenDenTraCuu() {
-        txtTimKiem.requestFocusInWindow();
-        txtTimKiem.selectAll();
+        hienThiThongTinDichVu();
     }
 
     private void capNhatBang(int dongModel) {
         model.setRowCount(0);
 
-        for (String[] xe : danhSachXe) {
-            String chuXe = xe[1];
+        for (String[] dv : danhSachDichVu) {
+            model.addRow(dv);
+        }
 
-            if (chuXe.contains(" • ")) {
-                chuXe = chuXe.substring(
-                    chuXe.indexOf(" • ") + 3
+        txtTimKiem.setText("");
+        cboTrangThai.setSelectedIndex(0);
+
+        if (dongModel >= 0
+                && dongModel < model.getRowCount()) {
+
+            int dongView =
+                tableDichVu.convertRowIndexToView(dongModel);
+
+            if (dongView >= 0) {
+                tableDichVu.setRowSelectionInterval(
+                    dongView, dongView
                 );
             }
-
-            model.addRow(new Object[] {
-                xe[0],
-                chuXe,
-                xe[2],
-                xe[3],
-                xe[5],
-                xe[6]
-            });
         }
 
-        int dongView = tableXe.convertRowIndexToView(dongModel);
-
-        if (dongView >= 0) {
-            tableXe.setRowSelectionInterval(dongView, dongView);
-        }
-
-        hienThiXeDuocChon();
+        hienThiThongTinDichVu();
     }
 
-    private void moHopThoaiXe(boolean sua) {
-        if (sua && tableXe.getSelectedRow() < 0) {
+    private void moHopThoaiDichVu(boolean sua) {
+        int dong = tableDichVu.getSelectedRow();
+
+        if (sua && dong < 0) {
             return;
         }
 
         int dongModel = sua
-            ? tableXe.convertRowIndexToModel(
-                tableXe.getSelectedRow()
-            )
+            ? tableDichVu.convertRowIndexToModel(dong)
             : -1;
 
         JTextField[] fields = new JTextField[6];
+        JPanel form = taoForm(fields, true);
 
-        JPanel noiDung = new JPanel(
+        fields[5].setEditable(false);
+
+        JPanel hopThoai = new JPanel(
             new BorderLayout(0, 12)
         );
 
-        noiDung.add(
-            taoForm(fields, true),
-            BorderLayout.CENTER
-        );
+        hopThoai.add(form, BorderLayout.CENTER);
 
         JComboBox<String> trangThai =
             new JComboBox<>(TRANG_THAI);
 
-        JPanel dongTrangThai = new JPanel(
+        JPanel pTrangThai = new JPanel(
             new FlowLayout(FlowLayout.LEFT)
         );
 
-        dongTrangThai.add(new JLabel("Tình trạng:"));
-        dongTrangThai.add(trangThai);
+        pTrangThai.add(new JLabel("Chọn trạng thái:"));
+        pTrangThai.add(trangThai);
 
-        noiDung.add(dongTrangThai, BorderLayout.SOUTH);
+        hopThoai.add(pTrangThai, BorderLayout.SOUTH);
+
+        trangThai.addActionListener(e ->
+            fields[5].setText(
+                (String) trangThai.getSelectedItem()
+            )
+        );
 
         if (sua) {
-            String[] xe = danhSachXe.get(dongModel);
+            String[] dv = danhSachDichVu.get(dongModel);
+            int[] viTri = {0, 1, 3, 4, 2, 5};
 
             for (int i = 0; i < fields.length; i++) {
-                fields[i].setText(xe[i]);
+                fields[i].setText(dv[viTri[i]]);
             }
 
-            trangThai.setSelectedItem(xe[6]);
+            fields[0].setEditable(false);
+            trangThai.setSelectedItem(dv[5]);
+
+        } else {
+            fields[4].setText("Lần");
+            fields[5].setText(TRANG_THAI[0]);
         }
 
         while (JOptionPane.showConfirmDialog(
                 this,
-                noiDung,
-                sua ? "Sửa xe" : "Thêm xe",
+                hopThoai,
+                sua ? "Sửa dịch vụ" : "Thêm dịch vụ",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE
             ) == JOptionPane.OK_OPTION) {
 
-            String[] xe = new String[7];
+            String[] nhap = new String[6];
             boolean dayDu = true;
 
             for (int i = 0; i < fields.length; i++) {
-                xe[i] = fields[i].getText().trim();
-                dayDu &= !xe[i].isEmpty();
+                nhap[i] = fields[i].getText().trim();
+                dayDu &= !nhap[i].isEmpty();
             }
 
             if (!dayDu) {
                 JOptionPane.showMessageDialog(
                     this,
-                    "Vui lòng nhập đầy đủ thông tin xe."
+                    "Vui lòng nhập đầy đủ thông tin dịch vụ."
                 );
 
                 continue;
             }
 
-            try {
-                int nam = Integer.parseInt(xe[3]);
-
-                long km = Long.parseLong(
-                    xe[5].replace(".", "").replace(",", "")
-                );
-
-                if (nam < 1886
-                        || nam > java.time.Year.now().getValue() + 1
-                        || km < 0) {
-
-                    throw new NumberFormatException();
-                }
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Năm sản xuất phải hợp lệ; "
-                    + "số km phải là số nguyên không âm."
-                );
-
-                continue;
-            }
+            nhap[0] = nhap[0].toUpperCase(Locale.ROOT);
 
             boolean trung = false;
 
-            for (int i = 0; i < danhSachXe.size(); i++) {
+            for (int i = 0; i < danhSachDichVu.size(); i++) {
                 if (i != dongModel
-                        && danhSachXe.get(i)[0]
-                            .equalsIgnoreCase(xe[0])) {
+                        && danhSachDichVu.get(i)[0]
+                            .equalsIgnoreCase(nhap[0])) {
 
                     trung = true;
                 }
@@ -631,33 +614,98 @@ public class QuanLyXePanel extends JPanel {
             if (trung) {
                 JOptionPane.showMessageDialog(
                     this,
-                    "Biển số đã tồn tại trong danh sách."
+                    "Mã dịch vụ đã tồn tại."
                 );
 
                 continue;
             }
 
-            xe[6] = (String) trangThai.getSelectedItem();
+            long gia;
+            int phut;
 
-            if (sua) {
-                danhSachXe.set(dongModel, xe);
+            try {
+                gia = Long.parseLong(
+                    nhap[2].replaceAll("[.,\\sđĐ]", "")
+                );
 
-            } else {
-                danhSachXe.add(xe);
-                dongModel = danhSachXe.size() - 1;
+                phut = Integer.parseInt(
+                    nhap[3].replace("phút", "").trim()
+                );
+
+                if (gia < 0 || phut <= 0) {
+                    throw new NumberFormatException();
+                }
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Đơn giá phải là số nguyên không âm; "
+                    + "thời gian phải là số phút lớn hơn 0."
+                );
+
+                continue;
             }
 
-            txtTimKiem.setText("");
-            cboTrangThai.setSelectedIndex(0);
+            String[] dv = {
+                nhap[0],
+                nhap[1],
+                nhap[4],
+                String.format(
+                    Locale.US, "%,d", gia
+                ).replace(',', '.') + " đ",
+                phut + " phút",
+                (String) trangThai.getSelectedItem()
+            };
+
+            if (sua) {
+                danhSachDichVu.set(dongModel, dv);
+
+            } else {
+                danhSachDichVu.add(dv);
+                dongModel = danhSachDichVu.size() - 1;
+            }
 
             capNhatBang(dongModel);
             break;
         }
     }
 
+    private void xoaDichVu() {
+        int dong = tableDichVu.getSelectedRow();
+
+        if (dong < 0) {
+            return;
+        }
+
+        int dongModel =
+            tableDichVu.convertRowIndexToModel(dong);
+
+        String[] dv = danhSachDichVu.get(dongModel);
+
+        int chon = JOptionPane.showConfirmDialog(
+            this,
+            "Xóa dịch vụ " + dv[0] + " - " + dv[1] + "?",
+            "Xác nhận xóa",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (chon == JOptionPane.YES_OPTION) {
+            danhSachDichVu.remove(dongModel);
+
+            capNhatBang(
+                Math.min(
+                    dongModel, danhSachDichVu.size() - 1
+                )
+            );
+        }
+    }
+
     // ==================== CỬA SỔ CHẠY ĐỘC LẬP ====================
     public JFrame taoCuaSo() {
-        JFrame cuaSo = new JFrame("Quản lý xe - Night Invader");
+        JFrame cuaSo = new JFrame(
+            "Quản lý dịch vụ - Night Invader"
+        );
 
         cuaSo.setSize(1340, 840);
         cuaSo.setLocationRelativeTo(null);
@@ -890,7 +938,6 @@ public class QuanLyXePanel extends JPanel {
         panelFooter.add(lblTrangThai, BorderLayout.WEST);
         panelFooter.add(lblBanQuyen, BorderLayout.EAST);
 
-        // Gắn các thành phần vào cửa sổ.
         cuaSo.add(panelTopContainer, BorderLayout.NORTH);
         cuaSo.add(this, BorderLayout.CENTER);
         cuaSo.add(panelFooter, BorderLayout.SOUTH);
@@ -956,7 +1003,6 @@ public class QuanLyXePanel extends JPanel {
             String tieuDe, String phimTat, ImageIcon icon) {
 
         JButton btn = new JButton();
-
         btn.setLayout(new BorderLayout(10, 0));
 
         if (icon != null) {
@@ -1025,7 +1071,7 @@ public class QuanLyXePanel extends JPanel {
         }
 
         SwingUtilities.invokeLater(() ->
-            new QuanLyXePanel().taoCuaSo().setVisible(true)
+            new QuanLyDichVuFrame().taoCuaSo().setVisible(true)
         );
     }
 }
