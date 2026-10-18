@@ -29,10 +29,5 @@ public class Main {
             );
             return;
         }
-
-        SwingUtilities.invokeLater(() -> {
-            QuanLyXeFrame giaoDien = new QuanLyXeFrame();
-            giaoDien.taoCuaSo().setVisible(true);
-        });
     }
 }
