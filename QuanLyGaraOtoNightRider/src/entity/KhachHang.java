@@ -1,7 +1,7 @@
 package entity;
 
 public class KhachHang {
-	private String maKhachHang;
+    private String maKhachHang;
     private String hoTen;
     private String soDienThoai;
     private String email;
@@ -13,12 +13,12 @@ public class KhachHang {
     }
 
     public KhachHang(String maKhachHang, String hoTen, String soDienThoai, String email, String diaChi, boolean trangThai) {
-        this.maKhachHang = maKhachHang;
-        this.hoTen = hoTen;
-        this.soDienThoai = soDienThoai;
-        this.email = email;
-        this.diaChi = diaChi;
-        this.trangThai = trangThai;
+        setMaKhachHang(maKhachHang);
+        setHoTen(hoTen);
+        setSoDienThoai(soDienThoai);
+        setEmail(email);
+        setDiaChi(diaChi);
+        setTrangThai(trangThai);
     }
 
     public String getMaKhachHang() {
@@ -26,7 +26,10 @@ public class KhachHang {
     }
 
     public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
+        if (maKhachHang == null || maKhachHang.trim().isEmpty() || maKhachHang.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã khách hàng không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maKhachHang = maKhachHang.trim();
     }
 
     public String getHoTen() {
@@ -34,7 +37,10 @@ public class KhachHang {
     }
 
     public void setHoTen(String hoTen) {
-        this.hoTen = hoTen;
+        if (hoTen == null || hoTen.trim().isEmpty() || hoTen.trim().length() > 120) {
+            throw new IllegalArgumentException("Họ tên không được rỗng và tối đa 120 ký tự.");
+        }
+        this.hoTen = hoTen.trim();
     }
 
     public String getSoDienThoai() {
@@ -42,7 +48,10 @@ public class KhachHang {
     }
 
     public void setSoDienThoai(String soDienThoai) {
-        this.soDienThoai = soDienThoai;
+        if (soDienThoai == null || soDienThoai.trim().isEmpty() || soDienThoai.trim().length() > 15) {
+            throw new IllegalArgumentException("Số điện thoại không được rỗng và tối đa 15 ký tự.");
+        }
+        this.soDienThoai = soDienThoai.trim();
     }
 
     public String getEmail() {
@@ -50,7 +59,15 @@ public class KhachHang {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        if (email == null || email.trim().isEmpty()) {
+            this.email = null;
+            return;
+        }
+
+        if (email.trim().length() > 254) {
+            throw new IllegalArgumentException("Email tối đa 254 ký tự.");
+        }
+        this.email = email.trim();
     }
 
     public String getDiaChi() {
@@ -58,7 +75,15 @@ public class KhachHang {
     }
 
     public void setDiaChi(String diaChi) {
-        this.diaChi = diaChi;
+        if (diaChi == null || diaChi.trim().isEmpty()) {
+            this.diaChi = null;
+            return;
+        }
+
+        if (diaChi.trim().length() > 255) {
+            throw new IllegalArgumentException("Địa chỉ tối đa 255 ký tự.");
+        }
+        this.diaChi = diaChi.trim();
     }
 
     public boolean isTrangThai() {
@@ -71,6 +96,11 @@ public class KhachHang {
 
     @Override
     public String toString() {
-        return hoTen + " (" + soDienThoai + ")";
+        return "KhachHang [maKhachHang=" + maKhachHang
+                + ", hoTen=" + hoTen
+                + ", soDienThoai=" + soDienThoai
+                + ", email=" + email
+                + ", diaChi=" + diaChi
+                + ", trangThai=" + trangThai + "]";
     }
 }

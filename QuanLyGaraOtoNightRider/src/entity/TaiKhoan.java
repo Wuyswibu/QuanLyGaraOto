@@ -1,8 +1,6 @@
-
 package entity;
 
 public class TaiKhoan {
-
     public static final String HOAT_DONG = "Hoạt động";
     public static final String KHOA = "Khóa";
 
@@ -16,13 +14,11 @@ public class TaiKhoan {
         this.trangThai = HOAT_DONG;
     }
 
-    public TaiKhoan(String maTaiKhoan, String maNhanVien,
-                    String tenDangNhap, String matKhau,
-                    String trangThai) {
-        this.maTaiKhoan = maTaiKhoan;
-        this.maNhanVien = maNhanVien;
-        this.tenDangNhap = tenDangNhap;
-        this.matKhau = matKhau;
+    public TaiKhoan(String maTaiKhoan, String maNhanVien, String tenDangNhap, String matKhau, String trangThai) {
+        setMaTaiKhoan(maTaiKhoan);
+        setMaNhanVien(maNhanVien);
+        setTenDangNhap(tenDangNhap);
+        setMatKhau(matKhau);
         setTrangThai(trangThai);
     }
 
@@ -31,7 +27,10 @@ public class TaiKhoan {
     }
 
     public void setMaTaiKhoan(String maTaiKhoan) {
-        this.maTaiKhoan = maTaiKhoan;
+        if (maTaiKhoan == null || maTaiKhoan.trim().isEmpty() || maTaiKhoan.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã tài khoản không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maTaiKhoan = maTaiKhoan.trim();
     }
 
     public String getMaNhanVien() {
@@ -39,7 +38,10 @@ public class TaiKhoan {
     }
 
     public void setMaNhanVien(String maNhanVien) {
-        this.maNhanVien = maNhanVien;
+        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maNhanVien = maNhanVien.trim();
     }
 
     public String getTenDangNhap() {
@@ -47,7 +49,10 @@ public class TaiKhoan {
     }
 
     public void setTenDangNhap(String tenDangNhap) {
-        this.tenDangNhap = tenDangNhap;
+        if (tenDangNhap == null || tenDangNhap.trim().isEmpty() || tenDangNhap.trim().length() > 80) {
+            throw new IllegalArgumentException("Tên đăng nhập không được rỗng và tối đa 80 ký tự.");
+        }
+        this.tenDangNhap = tenDangNhap.trim();
     }
 
     public String getMatKhau() {
@@ -55,6 +60,9 @@ public class TaiKhoan {
     }
 
     public void setMatKhau(String matKhau) {
+        if (matKhau == null || matKhau.trim().isEmpty() || matKhau.length() > 255) {
+            throw new IllegalArgumentException("Mật khẩu không được rỗng và tối đa 255 ký tự.");
+        }
         this.matKhau = matKhau;
     }
 
@@ -64,13 +72,16 @@ public class TaiKhoan {
 
     public void setTrangThai(String trangThai) {
         if (!HOAT_DONG.equals(trangThai) && !KHOA.equals(trangThai)) {
-            throw new IllegalArgumentException("Trạng thái tài khoản không hợp lệ: " + trangThai);
+            throw new IllegalArgumentException("Trạng thái tài khoản phải là Hoạt động hoặc Khóa.");
         }
         this.trangThai = trangThai;
     }
 
     @Override
     public String toString() {
-        return tenDangNhap;
+        return "TaiKhoan [maTaiKhoan=" + maTaiKhoan
+                + ", maNhanVien=" + maNhanVien
+                + ", tenDangNhap=" + tenDangNhap
+                + ", trangThai=" + trangThai + "]";
     }
 }

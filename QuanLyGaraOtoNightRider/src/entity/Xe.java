@@ -1,6 +1,9 @@
 package entity;
 
 public class Xe {
+    public static final String HOAT_DONG = "Hoạt động";
+    public static final String NGUNG_THEO_DOI = "Ngừng theo dõi";
+
     private String maPhuongTien;
     private String maKhachHang;
     private String bienSo;
@@ -8,14 +11,15 @@ public class Xe {
     private String trangThai;
 
     public Xe() {
+        this.trangThai = HOAT_DONG;
     }
 
     public Xe(String maPhuongTien, String maKhachHang, String bienSo, String mauXe, String trangThai) {
-        this.maPhuongTien = maPhuongTien;
-        this.maKhachHang = maKhachHang;
-        this.bienSo = bienSo;
-        this.mauXe = mauXe;
-        this.trangThai = trangThai;
+        setMaPhuongTien(maPhuongTien);
+        setMaKhachHang(maKhachHang);
+        setBienSo(bienSo);
+        setMauXe(mauXe);
+        setTrangThai(trangThai);
     }
 
     public String getMaPhuongTien() {
@@ -23,7 +27,10 @@ public class Xe {
     }
 
     public void setMaPhuongTien(String maPhuongTien) {
-        this.maPhuongTien = maPhuongTien;
+        if (maPhuongTien == null || maPhuongTien.trim().isEmpty() || maPhuongTien.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã phương tiện không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maPhuongTien = maPhuongTien.trim();
     }
 
     public String getMaKhachHang() {
@@ -31,7 +38,10 @@ public class Xe {
     }
 
     public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
+        if (maKhachHang == null || maKhachHang.trim().isEmpty() || maKhachHang.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã khách hàng không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maKhachHang = maKhachHang.trim();
     }
 
     public String getBienSo() {
@@ -39,7 +49,10 @@ public class Xe {
     }
 
     public void setBienSo(String bienSo) {
-        this.bienSo = bienSo;
+        if (bienSo == null || bienSo.trim().isEmpty() || bienSo.trim().length() > 20) {
+            throw new IllegalArgumentException("Biển số không được rỗng và tối đa 20 ký tự.");
+        }
+        this.bienSo = bienSo.trim();
     }
 
     public String getMauXe() {
@@ -47,7 +60,10 @@ public class Xe {
     }
 
     public void setMauXe(String mauXe) {
-        this.mauXe = mauXe;
+        if (mauXe == null || mauXe.trim().isEmpty() || mauXe.trim().length() > 100) {
+            throw new IllegalArgumentException("Mẫu xe không được rỗng và tối đa 100 ký tự.");
+        }
+        this.mauXe = mauXe.trim();
     }
 
     public String getTrangThai() {
@@ -55,6 +71,9 @@ public class Xe {
     }
 
     public void setTrangThai(String trangThai) {
+        if (!HOAT_DONG.equals(trangThai) && !NGUNG_THEO_DOI.equals(trangThai)) {
+            throw new IllegalArgumentException("Trạng thái xe phải là Hoạt động hoặc Ngừng theo dõi.");
+        }
         this.trangThai = trangThai;
     }
 
