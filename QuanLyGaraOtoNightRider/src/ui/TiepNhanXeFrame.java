@@ -24,9 +24,7 @@ public class TiepNhanXeFrame extends JPanel implements ActionListener {
     private static final Color VIEN = new Color(216, 222, 230);
     private static final Color DO = new Color(188, 25, 58);
 
-    private static final DateTimeFormatter DINH_DANG =
-            DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm")
-                    .withResolverStyle(ResolverStyle.STRICT);
+    private static final DateTimeFormatter DINH_DANG = DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
     // Thông tin khách hàng
     private final JTextField txtMaKH = new JTextField();
@@ -46,17 +44,13 @@ public class TiepNhanXeFrame extends JPanel implements ActionListener {
 
     // Thông tin tiếp nhận
     private final JTextField txtMaTiepNhan = new JTextField();
-    private final JTextField txtNhanVien =
-            new JTextField("NV002 • Nguyễn Thị Lan");
+    private final JTextField txtNhanVien = new JTextField("NV002 • Nguyễn Thị Lan");
     private final JTextField txtNgayNhan = new JTextField();
     private final JTextField txtHenTra = new JTextField();
     private final JTextField txtSoKm = new JTextField();
     private final JTextField txtTrangThai = new JTextField();
 
-    private final JComboBox<String> cboNhienLieu = new JComboBox<>(
-            new String[]{
-                "-- Chọn --", "Cạn", "1/4", "1/2", "3/4", "Đầy"
-            });
+    private final JComboBox<String> cboNhienLieu = new JComboBox<>(new String[]{"-- Chọn --", "Cạn", "1/4", "1/2", "3/4", "Đầy"});
 
     private final JTextArea txtTinhTrang = new JTextArea(3, 20);
     private final JTextArea txtYeuCau = new JTextArea(3, 20);
@@ -64,10 +58,7 @@ public class TiepNhanXeFrame extends JPanel implements ActionListener {
 
     // Tra cứu danh sách phiếu
     private final JTextField txtTimKiem = new JTextField();
-    private final JComboBox<String> cboLocTrangThai = new JComboBox<>(
-            new String[]{
-                "Tất cả", "Đã tiếp nhận", "Đang sửa chữa", "Đã giao xe"
-            });
+    private final JComboBox<String> cboLocTrangThai = new JComboBox<>( new String[]{"Tất cả", "Đã tiếp nhận", "Đang sửa chữa", "Đã giao xe"});
 
     private final JLabel lblSoLuong = new JLabel();
 
@@ -75,8 +66,7 @@ public class TiepNhanXeFrame extends JPanel implements ActionListener {
     private final JButton btnMoi = taoNut("Làm mới", false);
     private final JButton btnLuu = taoNut("Lưu tiếp nhận", true);
 
-    private final DefaultTableModel model = new DefaultTableModel(
-            new String[]{
+    private final DefaultTableModel model = new DefaultTableModel(new String[]{
                 "Mã tiếp nhận", "Biển số", "Chủ xe",
                 "Số điện thoại", "Ngày tiếp nhận",
                 "Hẹn trả", "Trạng thái"
@@ -88,8 +78,7 @@ public class TiepNhanXeFrame extends JPanel implements ActionListener {
     };
 
     private final JTable table = new JTable(model);
-    private final TableRowSorter<DefaultTableModel> boLoc =
-            new TableRowSorter<>(model);
+    private final TableRowSorter<DefaultTableModel> boLoc = new TableRowSorter<>(model);
 
     private final ArrayList<KhachMau> danhSachKH = new ArrayList<>();
     private final ArrayList<XeMau> danhSachXe = new ArrayList<>();
