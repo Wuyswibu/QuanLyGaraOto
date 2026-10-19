@@ -14,15 +14,15 @@ public class PhanCongCa {
     }
 
     public PhanCongCa(String maPhanCongCa, String maNhanVien, String maCa, LocalDate ngayLamViec, String trangThai, String ghiChu) {
-        setMaPhanCongCa(maPhanCongCa);
-        setMaNhanVien(maNhanVien);
-        setMaCa(maCa);
-        setNgayLamViec(ngayLamViec);
-        setTrangThai(trangThai);
-        setGhiChu(ghiChu);
-    }
+		this.maPhanCongCa = maPhanCongCa;
+		this.maNhanVien = maNhanVien;
+		this.maCa = maCa;
+		this.ngayLamViec = ngayLamViec;
+		this.trangThai = trangThai;
+		this.ghiChu = ghiChu;
+	}
 
-    public String getMaPhanCongCa() {
+	public String getMaPhanCongCa() {
         return maPhanCongCa;
     }
 

@@ -14,13 +14,13 @@ public class PhanQuyen {
     }
 
     public PhanQuyen(String maPhanQuyen, String tenChuc, boolean choPhep, LocalDateTime ngayCap) {
-        setMaPhanQuyen(maPhanQuyen);
-        setTenChuc(tenChuc);
-        setChoPhep(choPhep);
-        setNgayCap(ngayCap);
-    }
+		this.maPhanQuyen = maPhanQuyen;
+		this.tenChuc = tenChuc;
+		this.choPhep = choPhep;
+		this.ngayCap = ngayCap;
+	}
 
-    public String getMaPhanQuyen() {
+	public String getMaPhanQuyen() {
         return maPhanQuyen;
     }
 

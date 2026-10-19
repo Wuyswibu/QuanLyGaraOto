@@ -14,14 +14,14 @@ public class ChiTietHoaDon {
     }
 
     public ChiTietHoaDon(String maHoaDon, String maPhuTung, int soLuong, BigDecimal donGia, BigDecimal giamGia) {
-        setMaHoaDon(maHoaDon);
-        setMaPhuTung(maPhuTung);
-        setSoLuong(soLuong);
-        setDonGia(donGia);
-        setGiamGia(giamGia);
-    }
+		this.maHoaDon = maHoaDon;
+		this.maPhuTung = maPhuTung;
+		this.soLuong = soLuong;
+		this.donGia = donGia;
+		this.giamGia = giamGia;
+	}
 
-    public String getMaHoaDon() {
+	public String getMaHoaDon() {
         return maHoaDon;
     }
 

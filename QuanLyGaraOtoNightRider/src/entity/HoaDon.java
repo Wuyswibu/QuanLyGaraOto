@@ -15,17 +15,19 @@ public class HoaDon {
         this.ngayLap = LocalDateTime.now();
     }
 
-    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, String trangThai) {
-        setMaHoaDon(maHoaDon);
-        setMaPhieuSuaChua(maPhieuSuaChua);
-        setMaKhachHang(maKhachHang);
-        setMaPhuongTien(maPhuongTien);
-        setMaNhanVien(maNhanVien);
-        setNgayLap(ngayLap);
-        setTrangThai(trangThai);
-    }
 
-    public String getMaHoaDon() {
+    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, String trangThai) {
+		this.maHoaDon = maHoaDon;
+		this.maPhieuSuaChua = maPhieuSuaChua;
+		this.maKhachHang = maKhachHang;
+		this.maPhuongTien = maPhuongTien;
+		this.maNhanVien = maNhanVien;
+		this.ngayLap = ngayLap;
+		this.trangThai = trangThai;
+	}
+
+
+	public String getMaHoaDon() {
         return maHoaDon;
     }
 

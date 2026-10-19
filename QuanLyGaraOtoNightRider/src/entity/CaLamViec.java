@@ -12,14 +12,14 @@ public class CaLamViec {
     public CaLamViec() {
         this.trangThai = true;
     }
-
+    
     public CaLamViec(String maCa, String tenCa, LocalTime gioBatDau, LocalTime gioKetThuc, boolean trangThai) {
-        setMaCa(maCa);
-        setTenCa(tenCa);
-        setGioBatDau(gioBatDau);
-        setGioKetThuc(gioKetThuc);
-        setTrangThai(trangThai);
-    }
+		this.maCa = maCa;
+		this.tenCa = tenCa;
+		this.gioBatDau = gioBatDau;
+		this.gioKetThuc = gioKetThuc;
+		this.trangThai = trangThai;
+	}
 
     public String getMaCa() {
         return maCa;

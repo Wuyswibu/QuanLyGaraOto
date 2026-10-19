@@ -18,18 +18,18 @@ public class PhieuBaoHanh {
     }
 
     public PhieuBaoHanh(String maBaoHanh, String maPhieuSuaChua, String maPhuongTien, LocalDateTime ngayYeuCau, String noiDungYeuCau, String ketQuaKiemTra, String ketQuaXuLy, String lyDoTuChoi, String trangThai) {
-        setMaBaoHanh(maBaoHanh);
-        setMaPhieuSuaChua(maPhieuSuaChua);
-        setMaPhuongTien(maPhuongTien);
-        setNgayYeuCau(ngayYeuCau);
-        setNoiDungYeuCau(noiDungYeuCau);
-        setKetQuaKiemTra(ketQuaKiemTra);
-        setKetQuaXuLy(ketQuaXuLy);
-        setLyDoTuChoi(lyDoTuChoi);
-        setTrangThai(trangThai);
-    }
+		this.maBaoHanh = maBaoHanh;
+		this.maPhieuSuaChua = maPhieuSuaChua;
+		this.maPhuongTien = maPhuongTien;
+		this.ngayYeuCau = ngayYeuCau;
+		this.noiDungYeuCau = noiDungYeuCau;
+		this.ketQuaKiemTra = ketQuaKiemTra;
+		this.ketQuaXuLy = ketQuaXuLy;
+		this.lyDoTuChoi = lyDoTuChoi;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaBaoHanh() {
+	public String getMaBaoHanh() {
         return maBaoHanh;
     }
 

@@ -17,19 +17,21 @@ public class PhuTung {
         this.donGia = BigDecimal.ZERO;
     }
 
-    public PhuTung(String maPhuTung, String maPhieuSuaChua, String tenPhuTung, String moTa, String donViTinh, BigDecimal donGia, int soLuongTon, int mucTonToiThieu, String trangThai) {
-        setMaPhuTung(maPhuTung);
-        setMaPhieuSuaChua(maPhieuSuaChua);
-        setTenPhuTung(tenPhuTung);
-        setMoTa(moTa);
-        setDonViTinh(donViTinh);
-        setDonGia(donGia);
-        setSoLuongTon(soLuongTon);
-        setMucTonToiThieu(mucTonToiThieu);
-        setTrangThai(trangThai);
-    }
+    public PhuTung(String maPhuTung, String maPhieuSuaChua, String tenPhuTung, String moTa, String donViTinh,
+			BigDecimal donGia, int soLuongTon, int mucTonToiThieu, String trangThai) {
+		super();
+		this.maPhuTung = maPhuTung;
+		this.maPhieuSuaChua = maPhieuSuaChua;
+		this.tenPhuTung = tenPhuTung;
+		this.moTa = moTa;
+		this.donViTinh = donViTinh;
+		this.donGia = donGia;
+		this.soLuongTon = soLuongTon;
+		this.mucTonToiThieu = mucTonToiThieu;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaPhuTung() {
+	public String getMaPhuTung() {
         return maPhuTung;
     }
 

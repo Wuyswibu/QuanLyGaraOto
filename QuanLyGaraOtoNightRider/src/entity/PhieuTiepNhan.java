@@ -20,20 +20,20 @@ public class PhieuTiepNhan {
     }
 
     public PhieuTiepNhan(String maTiepNhan, String maPhuongTien, String maNhanVien, LocalDateTime ngayGioTiepNhan, LocalDateTime ngayGioHenTra, int odo, String mucNhienLieu, String tinhTrangBanDau, String yeuCauKhachHang, String ghiChu, String trangThai) {
-        setMaTiepNhan(maTiepNhan);
-        setMaPhuongTien(maPhuongTien);
-        setMaNhanVien(maNhanVien);
-        setNgayGioTiepNhan(ngayGioTiepNhan);
-        setNgayGioHenTra(ngayGioHenTra);
-        setOdo(odo);
-        setMucNhienLieu(mucNhienLieu);
-        setTinhTrangBanDau(tinhTrangBanDau);
-        setYeuCauKhachHang(yeuCauKhachHang);
-        setGhiChu(ghiChu);
-        setTrangThai(trangThai);
-    }
+		this.maTiepNhan = maTiepNhan;
+		this.maPhuongTien = maPhuongTien;
+		this.maNhanVien = maNhanVien;
+		this.ngayGioTiepNhan = ngayGioTiepNhan;
+		this.ngayGioHenTra = ngayGioHenTra;
+		this.odo = odo;
+		this.mucNhienLieu = mucNhienLieu;
+		this.tinhTrangBanDau = tinhTrangBanDau;
+		this.yeuCauKhachHang = yeuCauKhachHang;
+		this.ghiChu = ghiChu;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaTiepNhan() {
+	public String getMaTiepNhan() {
         return maTiepNhan;
     }
 

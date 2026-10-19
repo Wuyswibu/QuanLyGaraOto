@@ -15,15 +15,15 @@ public class PhuongThucThanhToan {
     }
 
     public PhuongThucThanhToan(String maThanhToan, String maHoaDon, LocalDateTime ngayThanhToan, String phuongThuc, String maGiaoDich, String trangThai) {
-        setMaThanhToan(maThanhToan);
-        setMaHoaDon(maHoaDon);
-        setNgayThanhToan(ngayThanhToan);
-        setPhuongThuc(phuongThuc);
-        setMaGiaoDich(maGiaoDich);
-        setTrangThai(trangThai);
-    }
+		this.maThanhToan = maThanhToan;
+		this.maHoaDon = maHoaDon;
+		this.ngayThanhToan = ngayThanhToan;
+		this.phuongThuc = phuongThuc;
+		this.maGiaoDich = maGiaoDich;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaThanhToan() {
+	public String getMaThanhToan() {
         return maThanhToan;
     }
 

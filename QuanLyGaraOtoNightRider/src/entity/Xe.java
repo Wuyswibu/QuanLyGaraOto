@@ -15,14 +15,15 @@ public class Xe {
     }
 
     public Xe(String maPhuongTien, String maKhachHang, String bienSo, String mauXe, String trangThai) {
-        setMaPhuongTien(maPhuongTien);
-        setMaKhachHang(maKhachHang);
-        setBienSo(bienSo);
-        setMauXe(mauXe);
-        setTrangThai(trangThai);
-    }
+		super();
+		this.maPhuongTien = maPhuongTien;
+		this.maKhachHang = maKhachHang;
+		this.bienSo = bienSo;
+		this.mauXe = mauXe;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaPhuongTien() {
+	public String getMaPhuongTien() {
         return maPhuongTien;
     }
 

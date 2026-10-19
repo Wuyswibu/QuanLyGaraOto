@@ -14,14 +14,14 @@ public class DichVu {
     }
 
     public DichVu(String maDichVu, String tenDichVu, String moTa, BigDecimal donGia, boolean trangThai) {
-        setMaDichVu(maDichVu);
-        setTenDichVu(tenDichVu);
-        setMoTa(moTa);
-        setDonGia(donGia);
-        setTrangThai(trangThai);
-    }
+		this.maDichVu = maDichVu;
+		this.tenDichVu = tenDichVu;
+		this.moTa = moTa;
+		this.donGia = donGia;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaDichVu() {
+	public String getMaDichVu() {
         return maDichVu;
     }
 

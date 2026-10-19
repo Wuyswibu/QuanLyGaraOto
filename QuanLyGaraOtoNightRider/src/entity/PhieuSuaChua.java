@@ -16,16 +16,16 @@ public class PhieuSuaChua {
     }
 
     public PhieuSuaChua(String maPhieuSuaChua, String maTiepNhan, LocalDateTime ngayLap, String chanDoan, String loaiPhieu, String trangThai, String ghiChu) {
-        setMaPhieuSuaChua(maPhieuSuaChua);
-        setMaTiepNhan(maTiepNhan);
-        setNgayLap(ngayLap);
-        setChanDoan(chanDoan);
-        setLoaiPhieu(loaiPhieu);
-        setTrangThai(trangThai);
-        setGhiChu(ghiChu);
-    }
+		this.maPhieuSuaChua = maPhieuSuaChua;
+		this.maTiepNhan = maTiepNhan;
+		this.ngayLap = ngayLap;
+		this.chanDoan = chanDoan;
+		this.loaiPhieu = loaiPhieu;
+		this.trangThai = trangThai;
+		this.ghiChu = ghiChu;
+	}
 
-    public String getMaPhieuSuaChua() {
+	public String getMaPhieuSuaChua() {
         return maPhieuSuaChua;
     }
 

@@ -15,18 +15,21 @@ public class NhanVien {
     public NhanVien() {
     }
 
-    public NhanVien(String maNhanVien, String maPhanQuyen, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
-        setMaNhanVien(maNhanVien);
-        setMaPhanQuyen(maPhanQuyen);
-        setHoTen(hoTen);
-        setSoDienThoai(soDienThoai);
-        setEmail(email);
-        setNgaySinh(ngaySinh);
-        setNgayVaoLam(ngayVaoLam);
-        setTrangThai(trangThai);
-    }
 
-    public String getMaNhanVien() {
+    public NhanVien(String maNhanVien, String maPhanQuyen, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
+
+		this.maNhanVien = maNhanVien;
+		this.maPhanQuyen = maPhanQuyen;
+		this.hoTen = hoTen;
+		this.soDienThoai = soDienThoai;
+		this.email = email;
+		this.ngaySinh = ngaySinh;
+		this.ngayVaoLam = ngayVaoLam;
+		this.trangThai = trangThai;
+	}
+
+
+	public String getMaNhanVien() {
         return maNhanVien;
     }
 

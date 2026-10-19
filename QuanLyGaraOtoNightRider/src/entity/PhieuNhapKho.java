@@ -13,13 +13,13 @@ public class PhieuNhapKho {
     }
 
     public PhieuNhapKho(String maPhieuNhap, LocalDateTime ngayNhap, String trangThai, String ghiChu) {
-        setMaPhieuNhap(maPhieuNhap);
-        setNgayNhap(ngayNhap);
-        setTrangThai(trangThai);
-        setGhiChu(ghiChu);
-    }
+		this.maPhieuNhap = maPhieuNhap;
+		this.ngayNhap = ngayNhap;
+		this.trangThai = trangThai;
+		this.ghiChu = ghiChu;
+	}
 
-    public String getMaPhieuNhap() {
+	public String getMaPhieuNhap() {
         return maPhieuNhap;
     }
 

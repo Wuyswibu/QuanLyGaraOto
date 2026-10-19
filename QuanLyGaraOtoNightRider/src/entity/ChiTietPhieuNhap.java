@@ -12,13 +12,13 @@ public class ChiTietPhieuNhap {
     }
 
     public ChiTietPhieuNhap(String maPhieuNhap, String maPhuTung, int soLuong, BigDecimal donGia) {
-        setMaPhieuNhap(maPhieuNhap);
-        setMaPhuTung(maPhuTung);
-        setSoLuong(soLuong);
-        setDonGia(donGia);
-    }
+		this.maPhieuNhap = maPhieuNhap;
+		this.maPhuTung = maPhuTung;
+		this.soLuong = soLuong;
+		this.donGia = donGia;
+	}
 
-    public String getMaPhieuNhap() {
+	public String getMaPhieuNhap() {
         return maPhieuNhap;
     }
 

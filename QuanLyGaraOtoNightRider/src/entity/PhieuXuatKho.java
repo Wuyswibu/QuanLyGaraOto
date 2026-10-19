@@ -14,14 +14,14 @@ public class PhieuXuatKho {
     }
 
     public PhieuXuatKho(String maPhieuXuat, LocalDateTime ngayXuat, String lyDoXuat, String trangThai, String ghiChu) {
-        setMaPhieuXuat(maPhieuXuat);
-        setNgayXuat(ngayXuat);
-        setLyDoXuat(lyDoXuat);
-        setTrangThai(trangThai);
-        setGhiChu(ghiChu);
-    }
+		this.maPhieuXuat = maPhieuXuat;
+		this.ngayXuat = ngayXuat;
+		this.lyDoXuat = lyDoXuat;
+		this.trangThai = trangThai;
+		this.ghiChu = ghiChu;
+	}
 
-    public String getMaPhieuXuat() {
+	public String getMaPhieuXuat() {
         return maPhieuXuat;
     }
 

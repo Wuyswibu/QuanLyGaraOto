@@ -19,21 +19,21 @@ public class HangMucDichVu {
         this.chiPhiThucTe = BigDecimal.ZERO;
     }
 
-    public HangMucDichVu(String maHangMuc, String maPhieuSuaChua, String maDichVu, String tenHangMuc, String moTa, String trangThai, BigDecimal chiPhiDuKien,
-            BigDecimal chiPhiThucTe, String ketQua, String ghiChu) {
-        setMaHangMuc(maHangMuc);
-        setMaPhieuSuaChua(maPhieuSuaChua);
-        setMaDichVu(maDichVu);
-        setTenHangMuc(tenHangMuc);
-        setMoTa(moTa);
-        setTrangThai(trangThai);
-        setChiPhiDuKien(chiPhiDuKien);
-        setChiPhiThucTe(chiPhiThucTe);
-        setKetQua(ketQua);
-        setGhiChu(ghiChu);
-    }
 
-    public String getMaHangMuc() {
+    public HangMucDichVu(String maHangMuc, String maPhieuSuaChua, String maDichVu, String tenHangMuc, String moTa, String trangThai, BigDecimal chiPhiDuKien, BigDecimal chiPhiThucTe, String ketQua, String ghiChu) {
+		this.maHangMuc = maHangMuc;
+		this.maPhieuSuaChua = maPhieuSuaChua;
+		this.maDichVu = maDichVu;
+		this.tenHangMuc = tenHangMuc;
+		this.moTa = moTa;
+		this.trangThai = trangThai;
+		this.chiPhiDuKien = chiPhiDuKien;
+		this.chiPhiThucTe = chiPhiThucTe;
+		this.ketQua = ketQua;
+		this.ghiChu = ghiChu;
+	}
+
+	public String getMaHangMuc() {
         return maHangMuc;
     }
 

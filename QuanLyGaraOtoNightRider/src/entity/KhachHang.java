@@ -13,15 +13,15 @@ public class KhachHang {
     }
 
     public KhachHang(String maKhachHang, String hoTen, String soDienThoai, String email, String diaChi, boolean trangThai) {
-        setMaKhachHang(maKhachHang);
-        setHoTen(hoTen);
-        setSoDienThoai(soDienThoai);
-        setEmail(email);
-        setDiaChi(diaChi);
-        setTrangThai(trangThai);
-    }
+		this.maKhachHang = maKhachHang;
+		this.hoTen = hoTen;
+		this.soDienThoai = soDienThoai;
+		this.email = email;
+		this.diaChi = diaChi;
+		this.trangThai = trangThai;
+	}
 
-    public String getMaKhachHang() {
+	public String getMaKhachHang() {
         return maKhachHang;
     }
 
