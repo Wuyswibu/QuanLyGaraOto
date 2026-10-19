@@ -1,69 +1,35 @@
-
 package entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HoaDon {
-
     public static final String CHUA_THANH_TOAN = "Chưa thanh toán";
     public static final String DA_THANH_TOAN = "Đã thanh toán";
     public static final String DA_HUY = "Đã hủy";
 
     private String maHoaDon;
-    private String maKhachHang;
-    private String maNhanVien;
-    private String maPhuongTien;
     private String maPhieuSuaChua;
+    private String maKhachHang;
+    private String maPhuongTien;
+    private String maNhanVien;
     private LocalDateTime ngayLap;
-    private String trangThai;
-
-    private String tenKhachHang;
-    private String soDienThoaiKhach;
-    private String diaChiKhach;
-    private String tenNhanVien;
-    private String bienSo;
-    private String loaiXe;
-
-    private BigDecimal tienDichVu;
-    private BigDecimal tienPhuTung;
-    private BigDecimal giamGia;
     private BigDecimal vat;
-    private BigDecimal tongTien;
-    private BigDecimal daThanhToan;
-
-    private List<ChiTietHoaDon> details;
+    private String trangThai;
 
     public HoaDon() {
         this.ngayLap = LocalDateTime.now();
         this.trangThai = CHUA_THANH_TOAN;
-
-        this.tienDichVu = BigDecimal.ZERO;
-        this.tienPhuTung = BigDecimal.ZERO;
-        this.giamGia = BigDecimal.ZERO;
-        this.vat = BigDecimal.ZERO;
-        this.tongTien = BigDecimal.ZERO;
-        this.daThanhToan = BigDecimal.ZERO;
-
-        this.details = new ArrayList<>();
     }
 
-    public HoaDon(String maHoaDon, String maKhachHang, String maNhanVien, String maPhuongTien, String maPhieuSuaChua, LocalDateTime ngayLap, String trangThai) {
-        this();
-
+    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, BigDecimal vat, String trangThai) {
         this.maHoaDon = maHoaDon;
-        this.maKhachHang = maKhachHang;
-        this.maNhanVien = maNhanVien;
-        this.maPhuongTien = maPhuongTien;
         this.maPhieuSuaChua = maPhieuSuaChua;
+        this.maKhachHang = maKhachHang;
+        this.maPhuongTien = maPhuongTien;
+        this.maNhanVien = maNhanVien;
         this.ngayLap = ngayLap;
         setTrangThai(trangThai);
-    }
-
-    private BigDecimal zeroIfNull(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
     }
 
     public String getMaHoaDon() {
@@ -71,79 +37,10 @@ public class HoaDon {
     }
 
     public void setMaHoaDon(String maHoaDon) {
-        this.maHoaDon = maHoaDon;
-    }
-
-    public String getMaKhachHang() {
-        return maKhachHang;
-    }
-
-    public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
-    }
-
-    public String getTenKhachHang() {
-        return tenKhachHang;
-    }
-
-    public void setTenKhachHang(String tenKhachHang) {
-        this.tenKhachHang = tenKhachHang;
-    }
-
-    public String getSoDienThoaiKhach() {
-        return soDienThoaiKhach;
-    }
-
-    public void setSoDienThoaiKhach(String soDienThoaiKhach) {
-        this.soDienThoaiKhach = soDienThoaiKhach;
-    }
-
-    public String getDiaChiKhach() {
-        return diaChiKhach;
-    }
-
-    public void setDiaChiKhach(String diaChiKhach) {
-        this.diaChiKhach = diaChiKhach;
-    }
-
-    public String getMaNhanVien() {
-        return maNhanVien;
-    }
-
-    public void setMaNhanVien(String maNhanVien) {
-        this.maNhanVien = maNhanVien;
-    }
-
-    public String getTenNhanVien() {
-        return tenNhanVien;
-    }
-
-    public void setTenNhanVien(String tenNhanVien) {
-        this.tenNhanVien = tenNhanVien;
-    }
-
-    public String getMaPhuongTien() {
-        return maPhuongTien;
-    }
-
-    public void setMaPhuongTien(String maPhuongTien) {
-        this.maPhuongTien = maPhuongTien;
-    }
-
-    public String getBienSo() {
-        return bienSo;
-    }
-
-    public void setBienSo(String bienSo) {
-        this.bienSo = bienSo;
-    }
-
-    public String getLoaiXe() {
-        return loaiXe;
-    }
-
-    public void setLoaiXe(String loaiXe) {
-        this.loaiXe = loaiXe;
+        if (maHoaDon == null || maHoaDon.trim().isEmpty() || maHoaDon.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã hóa đơn không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maHoaDon = maHoaDon.trim();
     }
 
     public String getMaPhieuSuaChua() {
@@ -151,7 +48,43 @@ public class HoaDon {
     }
 
     public void setMaPhieuSuaChua(String maPhieuSuaChua) {
-        this.maPhieuSuaChua = maPhieuSuaChua;
+        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty() || maPhieuSuaChua.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã phiếu sửa chữa không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maPhieuSuaChua = maPhieuSuaChua.trim();
+    }
+
+    public String getMaKhachHang() {
+        return maKhachHang;
+    }
+
+    public void setMaKhachHang(String maKhachHang) {
+        if (maKhachHang == null || maKhachHang.trim().isEmpty() || maKhachHang.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã khách hàng không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maKhachHang = maKhachHang.trim();
+    }
+
+    public String getMaPhuongTien() {
+        return maPhuongTien;
+    }
+
+    public void setMaPhuongTien(String maPhuongTien) {
+        if (maPhuongTien == null || maPhuongTien.trim().isEmpty() || maPhuongTien.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã phương tiện không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maPhuongTien = maPhuongTien.trim();
+    }
+
+    public String getMaNhanVien() {
+        return maNhanVien;
+    }
+
+    public void setMaNhanVien(String maNhanVien) {
+        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+            throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
+        }
+        this.maNhanVien = maNhanVien.trim();
     }
 
     public LocalDateTime getNgayLap() {
@@ -159,85 +92,65 @@ public class HoaDon {
     }
 
     public void setNgayLap(LocalDateTime ngayLap) {
+        if (ngayLap == null) {
+            throw new IllegalArgumentException("Ngày lập không được để trống.");
+        }
+
+        if (ngayLap.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Ngày lập không được ở tương lai.");
+        }
+
         this.ngayLap = ngayLap;
     }
 
     public String getTrangThai() {
         return trangThai;
     }
-
-    public void setTrangThai(String trangThai) {
-        if (!CHUA_THANH_TOAN.equals(trangThai)
-                && !DA_THANH_TOAN.equals(trangThai)
-                && !DA_HUY.equals(trangThai)) {
-            throw new IllegalArgumentException(
-                "Trạng thái hóa đơn không hợp lệ: " + trangThai
-            );
-        }
-
-        this.trangThai = trangThai;
-    }
-
-    public BigDecimal getTienDichVu() {
-        return zeroIfNull(tienDichVu);
-    }
-
-    public void setTienDichVu(BigDecimal tienDichVu) {
-        this.tienDichVu = zeroIfNull(tienDichVu);
-    }
-
-    public BigDecimal getTienPhuTung() {
-        return zeroIfNull(tienPhuTung);
-    }
-
-    public void setTienPhuTung(BigDecimal tienPhuTung) {
-        this.tienPhuTung = zeroIfNull(tienPhuTung);
-    }
-
-    public BigDecimal getGiamGia() {
-        return zeroIfNull(giamGia);
-    }
-
-    public void setGiamGia(BigDecimal giamGia) {
-        this.giamGia = zeroIfNull(giamGia);
-    }
-
+    
     public BigDecimal getVat() {
-        return zeroIfNull(vat);
+        return vat;
     }
 
     public void setVat(BigDecimal vat) {
-        this.vat = zeroIfNull(vat);
+        if (vat == null) {
+            throw new IllegalArgumentException(
+                    "VAT không được để trống.");
+        }
+
+        if (vat.compareTo(BigDecimal.ZERO) < 0
+                || vat.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException(
+                    "VAT phải từ 0 đến 100.");
+        }
+
+        if (vat.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException(
+                    "VAT tối đa 2 chữ số thập phân.");
+        }
+
+        this.vat = vat;
+    }
+    
+    public void setTrangThai(String trangThai) {
+        if (trangThai == null) {
+            throw new IllegalArgumentException("Trạng thái hóa đơn không được để trống.");
+        }
+
+        String tt = trangThai.trim();
+
+        if (!CHUA_THANH_TOAN.equals(tt) && !DA_THANH_TOAN.equals(tt) && !DA_HUY.equals(tt)) {
+            throw new IllegalArgumentException("Trạng thái hóa đơn phải là Chưa thanh toán, Đã thanh toán hoặc Đã hủy.");
+        }
+        this.trangThai = tt;
     }
 
-    public BigDecimal getTongTien() {
-        return zeroIfNull(tongTien);
-    }
+	@Override
+	public String toString() {
+		return "HoaDon [maHoaDon=" + maHoaDon + ", maPhieuSuaChua=" + maPhieuSuaChua + ", maKhachHang=" + maKhachHang
+				+ ", maPhuongTien=" + maPhuongTien + ", maNhanVien=" + maNhanVien + ", ngayLap=" + ngayLap + ", vat="
+				+ vat + ", trangThai=" + trangThai + "]";
+	}
 
-    public void setTongTien(BigDecimal tongTien) {
-        this.tongTien = zeroIfNull(tongTien);
-    }
-
-    public BigDecimal getDaThanhToan() {
-        return zeroIfNull(daThanhToan);
-    }
-
-    public void setDaThanhToan(BigDecimal daThanhToan) {
-        this.daThanhToan = zeroIfNull(daThanhToan);
-    }
-
-    public List<ChiTietHoaDon> getDetails() {
-        return details;
-    }
-
-    public void setDetails(List<ChiTietHoaDon> details) {
-        this.details = details == null
-                ? new ArrayList<>()
-                : new ArrayList<>(details);
-    }
-
-    @Override
-    public String toString() {
-        return maHoaDon + " - " + trangThai;
-    }
+    
+    
 }
