@@ -1,5 +1,6 @@
 package entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class HoaDon {
@@ -13,6 +14,7 @@ public class HoaDon {
     private String maPhuongTien;
     private String maNhanVien;
     private LocalDateTime ngayLap;
+    private BigDecimal vat;
     private String trangThai;
 
     public HoaDon() {
@@ -20,7 +22,7 @@ public class HoaDon {
         this.trangThai = CHUA_THANH_TOAN;
     }
 
-    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, String trangThai) {
+    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, BigDecimal vat, String trangThai) {
         this.maHoaDon = maHoaDon;
         this.maPhieuSuaChua = maPhieuSuaChua;
         this.maKhachHang = maKhachHang;
@@ -104,7 +106,31 @@ public class HoaDon {
     public String getTrangThai() {
         return trangThai;
     }
+    
+    public BigDecimal getVat() {
+        return vat;
+    }
 
+    public void setVat(BigDecimal vat) {
+        if (vat == null) {
+            throw new IllegalArgumentException(
+                    "VAT không được để trống.");
+        }
+
+        if (vat.compareTo(BigDecimal.ZERO) < 0
+                || vat.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException(
+                    "VAT phải từ 0 đến 100.");
+        }
+
+        if (vat.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException(
+                    "VAT tối đa 2 chữ số thập phân.");
+        }
+
+        this.vat = vat;
+    }
+    
     public void setTrangThai(String trangThai) {
         if (trangThai == null) {
             throw new IllegalArgumentException("Trạng thái hóa đơn không được để trống.");
@@ -118,14 +144,13 @@ public class HoaDon {
         this.trangThai = tt;
     }
 
-    @Override
-    public String toString() {
-        return "HoaDon [maHoaDon=" + maHoaDon
-                + ", maPhieuSuaChua=" + maPhieuSuaChua
-                + ", maKhachHang=" + maKhachHang
-                + ", maPhuongTien=" + maPhuongTien
-                + ", maNhanVien=" + maNhanVien
-                + ", ngayLap=" + ngayLap
-                + ", trangThai=" + trangThai + "]";
-    }
+	@Override
+	public String toString() {
+		return "HoaDon [maHoaDon=" + maHoaDon + ", maPhieuSuaChua=" + maPhieuSuaChua + ", maKhachHang=" + maKhachHang
+				+ ", maPhuongTien=" + maPhuongTien + ", maNhanVien=" + maNhanVien + ", ngayLap=" + ngayLap + ", vat="
+				+ vat + ", trangThai=" + trangThai + "]";
+	}
+
+    
+    
 }
