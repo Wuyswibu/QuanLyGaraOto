@@ -3,6 +3,10 @@ package entity;
 import java.time.LocalDateTime;
 
 public class HoaDon {
+    public static final String CHUA_THANH_TOAN = "Chưa thanh toán";
+    public static final String DA_THANH_TOAN = "Đã thanh toán";
+    public static final String DA_HUY = "Đã hủy";
+
     private String maHoaDon;
     private String maPhieuSuaChua;
     private String maKhachHang;
@@ -13,21 +17,20 @@ public class HoaDon {
 
     public HoaDon() {
         this.ngayLap = LocalDateTime.now();
+        this.trangThai = CHUA_THANH_TOAN;
     }
 
-
     public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, String trangThai) {
-		this.maHoaDon = maHoaDon;
-		this.maPhieuSuaChua = maPhieuSuaChua;
-		this.maKhachHang = maKhachHang;
-		this.maPhuongTien = maPhuongTien;
-		this.maNhanVien = maNhanVien;
-		this.ngayLap = ngayLap;
-		this.trangThai = trangThai;
-	}
+        this.maHoaDon = maHoaDon;
+        this.maPhieuSuaChua = maPhieuSuaChua;
+        this.maKhachHang = maKhachHang;
+        this.maPhuongTien = maPhuongTien;
+        this.maNhanVien = maNhanVien;
+        this.ngayLap = ngayLap;
+        setTrangThai(trangThai);
+    }
 
-
-	public String getMaHoaDon() {
+    public String getMaHoaDon() {
         return maHoaDon;
     }
 
@@ -103,10 +106,16 @@ public class HoaDon {
     }
 
     public void setTrangThai(String trangThai) {
-        if (trangThai == null || trangThai.trim().isEmpty() || trangThai.trim().length() > 40) {
-            throw new IllegalArgumentException("Trạng thái không được rỗng và tối đa 40 ký tự.");
+        if (trangThai == null) {
+            throw new IllegalArgumentException("Trạng thái hóa đơn không được để trống.");
         }
-        this.trangThai = trangThai.trim();
+
+        String tt = trangThai.trim();
+
+        if (!CHUA_THANH_TOAN.equals(tt) && !DA_THANH_TOAN.equals(tt) && !DA_HUY.equals(tt)) {
+            throw new IllegalArgumentException("Trạng thái hóa đơn phải là Chưa thanh toán, Đã thanh toán hoặc Đã hủy.");
+        }
+        this.trangThai = tt;
     }
 
     @Override
