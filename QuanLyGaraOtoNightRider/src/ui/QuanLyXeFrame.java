@@ -92,7 +92,7 @@ public class QuanLyXeFrame extends JFrame implements ActionListener {
     public QuanLyXeFrame() {
 
         setTitle("Quản lý xe - Night Invader");
-        setSize(1340, 840);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setResizable(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

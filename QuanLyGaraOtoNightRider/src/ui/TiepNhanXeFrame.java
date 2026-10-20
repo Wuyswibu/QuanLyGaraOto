@@ -120,7 +120,7 @@ public class TiepNhanXeFrame extends JFrame implements ActionListener {
         this.maNhanVienDangNhap = maNhanVienDangNhap;
 
         setTitle("Tiếp nhận xe - Night Invader");
-        setSize(1340, 960);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setResizable(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
