@@ -10,7 +10,7 @@ import java.util.Locale;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-public final class CustomerFrame extends JFrame {
+public final class KhachHangFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
@@ -98,7 +98,7 @@ public final class CustomerFrame extends JFrame {
 
     private final JTable customerTable = new JTable(tableModel);
 
-    public CustomerFrame() {
+    public KhachHangFrame() {
         super("Hệ thống Quản lý Gara Ô Tô - Quản lý khách hàng");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -729,7 +729,7 @@ public final class CustomerFrame extends JFrame {
                 exception.printStackTrace();
             }
 
-            new CustomerFrame().setVisible(true);
+            new KhachHangFrame().setVisible(true);
         });
     }
 }
