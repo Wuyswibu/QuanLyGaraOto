@@ -13,7 +13,7 @@ public class main {
         SwingUtilities.invokeLater(() -> {
             try {
                 ConnectDB.getInstance().connect();
-                System.out.println("Kết nối database thành công!");
+                
                 new GaraManHinhChinh().setVisible(true);
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(
