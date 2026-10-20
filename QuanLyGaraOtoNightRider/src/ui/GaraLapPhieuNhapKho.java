@@ -2,7 +2,35 @@ package ui;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import connectDB.ConnectDB;
+import dao.ChiTietPhieuNhapDao;
+import dao.NhanVienDao;
+import dao.PhieuNhapKhoDao;
+import dao.PhuTungDao;
+import entity.ChiTietPhieuNhap;
+import entity.NhanVien;
+import entity.PhieuNhapKho;
+import entity.PhuTung;
+
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class GaraLapPhieuNhapKho extends JFrame {
 
