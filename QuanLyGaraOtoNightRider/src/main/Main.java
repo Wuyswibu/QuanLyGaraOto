@@ -1,12 +1,16 @@
 package main;
 
 import java.sql.SQLException;
+
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import connectDB.ConnectDB;
+import ui.GaraManHinhChinh;
 import ui.QuanLyXeFrame;
+import ui.TiepNhanXeFrame;
 
 public class Main {
     public static void main(String[] args) {
@@ -29,5 +33,9 @@ public class Main {
             );
             return;
         }
+        
+        SwingUtilities.invokeLater(() -> {
+            new GaraManHinhChinh().setVisible(true);
+        });
     }
 }
