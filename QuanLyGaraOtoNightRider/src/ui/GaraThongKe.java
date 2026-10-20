@@ -413,16 +413,18 @@ public class GaraThongKe extends JFrame {
                         tabbedPane.setSelectedIndex(2);
                     } else if (itemName.equals("Phụ tùng bán chậm")) {
                         tabbedPane.setSelectedIndex(3);
-                    } else if (itemName.equals("Quản lý nhân sự")) {
-                        new GaraQuanLyNhanSu().setVisible(true);
-                        this.dispose();
-                    } else if (itemName.equals("Phân công kỹ thuật viên")) {
-                        new GaraPhanCongKTV().setVisible(true);
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
                         this.dispose();
                     } else if (itemName.equals("Tài khoản cá nhân")) {
                         new GaraTaiKhoanCaNhan().setVisible(true);
                         this.dispose();
-                    }  else if (itemName.equals("Đăng xuất")) {
+                    } else if (itemName.equals("Quản lý nhân sự") ||
+                            itemName.equals("Phân công kỹ thuật viên")) {
+                        new GaraNhanVien().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Đăng xuất")) {
                         System.exit(0);
                     } else {
                         JOptionPane.showMessageDialog(this,
