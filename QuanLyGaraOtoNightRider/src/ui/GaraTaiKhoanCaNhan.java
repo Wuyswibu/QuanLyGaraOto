@@ -371,18 +371,13 @@ public class GaraTaiKhoanCaNhan extends JFrame {
                         new GaraNhanVien().setVisible(true);
                         this.dispose();
                     } else if (itemName.equals("Tài khoản cá nhân")) {
-                        new GaraTaiKhoanCaNhan().setVisible(true);
-                        this.dispose();
-                    } else if (itemName.equals("Quản lý nhân sự") ||
-                            itemName.equals("Phân công kỹ thuật viên")) {
-                        new GaraNhanVien().setVisible(true);
-                        this.dispose();
-                    } else if (itemName.equals("Đăng xuất")) {
-                        System.exit(0);
+                        JOptionPane.showMessageDialog(this, "Đang ở giao diện Tài khoản cá nhân.");
+                    } else if (itemName.equals("Đổi mật khẩu")) {
+                        JOptionPane.showMessageDialog(this, "Chuyển sang giao diện Đổi mật khẩu.");
+                         new GaraDoiMatKhau().setVisible(true);
+                         this.dispose();
                     } else {
-                        JOptionPane.showMessageDialog(this,
-                                "Đang mở chức năng: " + itemName,
-                                "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Đang mở chức năng: " + itemName, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
                 menu.add(item);
