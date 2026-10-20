@@ -13,6 +13,7 @@ public class ConnectDB {
     }
 
     public Connection connect() throws SQLException {
+
     	String url = "jdbc:sqlserver://localhost:1433;databaseName=NightInvader;encrypt=false;trustServerCertificate=true";
     	String user = "sa";
     	String password = "sapassword";
@@ -25,7 +26,7 @@ public class ConnectDB {
             try {
                 conn.close();
             } catch (SQLException e) {
-                // TODO: handle exception
+
                 e.printStackTrace();
             }
         }
@@ -35,3 +36,4 @@ public class ConnectDB {
         return conn;
     }
 }
+
