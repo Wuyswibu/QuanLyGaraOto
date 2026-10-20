@@ -59,7 +59,7 @@ public class GaraManHinhChinh extends JFrame {
             {"Quản lý phụ tùng"},
             {"Lập phiếu nhập kho", "Lập phiếu xuất kho"},
             {"Lập hóa đơn", "Tra cứu hóa đơn"},
-            {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
+                {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
             {"Quản lý nhân sự", "Phân công kỹ thuật viên"}
         };
 
@@ -266,10 +266,27 @@ public class GaraManHinhChinh extends JFrame {
                 BorderFactory.createLineBorder(new Color(200, 205, 210), 1),
                 BorderFactory.createEmptyBorder(6, 10, 6, 10)
         ));
-        
-        btn.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Đang mở nhanh chức năng: " + tieuDe + " (" + phimTat + ")",
-                "Phím tắt kích hoạt", JOptionPane.INFORMATION_MESSAGE));
+
+        btn.addActionListener(e -> {
+            if (
+                    btn.equals("Thống kê doanh thu") ||
+                    btn.equals("Thống kê tồn kho")||
+                    btn.equals("Phụ tùng bán chạy")||
+                    btn.equals("Phụ tùng bán chậm")) {
+
+                new GaraThongKe().setVisible(true);
+                this.dispose();
+            } else if (btn.equals("Tài Khoản cá nhân")) {
+                new GaraTaiKhoanCaNhan().setVisible(true);
+                this.dispose();
+            } else if (btn.equals("Đăng Xuất")) {
+                System.exit(0);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Đang mở chức năng: " + btn,
+                        "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
         return btn;
     }
 
@@ -321,9 +338,16 @@ public class GaraManHinhChinh extends JFrame {
         btnCard.add(panelText, BorderLayout.CENTER);
 
         // Sự kiện khi bấm vào nút thẻ chuyển hướng
-        btnCard.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Đang chuyển hướng đến module: " + tenTieuDe,
-                "Điều hướng", JOptionPane.INFORMATION_MESSAGE));
+        btnCard.addActionListener(e -> {
+            if (tenTieuDe.equalsIgnoreCase("Thống kê")) {
+                new GaraThongKe().setVisible(true);
+                this.dispose(); // Đóng màn hình chính
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Đang chuyển hướng đến module: " + tenTieuDe,
+                        "Điều hướng", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
 
         return btnCard;
     }
