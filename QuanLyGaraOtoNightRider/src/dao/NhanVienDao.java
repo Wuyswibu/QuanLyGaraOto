@@ -30,6 +30,7 @@ public class NhanVienDao {
         return new NhanVien(
                 rs.getString("maNhanVien"),
                 rs.getString("maPhanQuyen"),
+                rs.getString("tenChuc"),
                 rs.getString("hoTen"),
                 rs.getString("soDienThoai"),
                 rs.getString("email"),
@@ -41,17 +42,40 @@ public class NhanVienDao {
     public ArrayList<NhanVien> layDanhSachNhanVien() throws SQLException {
         ArrayList<NhanVien> danhSach = new ArrayList<>();
 
-        String sql = "SELECT maNhanVien, maPhanQuyen, hoTen, "
-                + "soDienThoai, email, ngaySinh, ngayVaoLam, trangThai "
-                + "FROM dbo.NhanVien ORDER BY maNhanVien";
+        String sql = "SELECT nv.maNhanVien, nv.hoTen, nv.soDienThoai, nv.email, " +
+                "nv.ngayVaoLam, nv.trangThai, nv.maPhanQuyen, pq.tenChuc " +
+                "FROM dbo.NhanVien nv " +
+                "LEFT JOIN dbo.PhanQuyen pq ON nv.maPhanQuyen = pq.maPhanQuyen";
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                danhSach.add(docNhanVien(rs));
+        try {
+            Connection con = ConnectDB.getConnection();
+            if (con == null || con.isClosed()) {
+                con = ConnectDB.getInstance().connect();
             }
-        }
 
+            PreparedStatement stmt = con.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                NhanVien nv = new NhanVien();
+                nv.setMaNhanVien(rs.getString("maNhanVien"));
+                nv.setHoTen(rs.getString("hoTen"));
+                nv.setSoDienThoai(rs.getString("soDienThoai"));
+                nv.setEmail(rs.getString("email"));
+                nv.setMaPhanQuyen(rs.getString("maPhanQuyen"));
+                nv.setTenChuc(rs.getString("tenChuc")); // Tên chức vụ từ bảng PhanQuyen
+
+                java.sql.Date sqlNgayVao = rs.getDate("ngayVaoLam");
+                if (sqlNgayVao != null) {
+                    nv.setNgayVaoLam(sqlNgayVao.toLocalDate());
+                }
+
+                nv.setTrangThai(rs.getString("trangThai"));
+                danhSach.add(nv);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return danhSach;
     }
 
