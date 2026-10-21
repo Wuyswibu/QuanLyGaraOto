@@ -1,9 +1,16 @@
 package ui;
 
+import connectDB.ConnectDB;
+import dao.NhanVienDao;
+import entity.NhanVien;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class GaraNhanVien extends JFrame {
 
@@ -20,6 +27,12 @@ public class GaraNhanVien extends JFrame {
     private JTextField txtGhiChuPhanCong;
     private JTable tablePhanCong;
 
+    private NhanVienDao nhanVienDao;
+
+    // Model quản lý dữ liệu cho 2 bảng
+    private DefaultTableModel tableModelNhanVien;
+    private DefaultTableModel tableModelPhanCong;
+
     // Constructor mặc định (mở tab 0: Hồ sơ nhân viên)
     public GaraNhanVien() {
         this(0);
@@ -27,6 +40,16 @@ public class GaraNhanVien extends JFrame {
 
     // Constructor có tham số để nhảy thẳng vào tab mong muốn
     public GaraNhanVien(int tabMacDinh) {
+        try {
+            ConnectDB.getInstance().connect();
+            System.out.println("Kết nối CSDL NightInvader thành công!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi kết nối Cơ sở dữ liệu: " + e.getMessage());
+        }
+
+        nhanVienDao = new NhanVienDao();
+
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
         setSize(1340, 840);
         setLocationRelativeTo(null);
@@ -35,9 +58,39 @@ public class GaraNhanVien extends JFrame {
 
         khoiTaoGiaoDien();
 
-        // Mở đúng tab được truyền vào
         if (tabMacDinh >= 0 && tabbedPane != null && tabMacDinh < tabbedPane.getTabCount()) {
             tabbedPane.setSelectedIndex(tabMacDinh);
+        }
+
+        // ĐỔ DỮ LIỆU TỪ DB LÊN BẢNG NHÂN VIÊN
+        loadDataToTableNhanVien();
+    }
+
+    // ========== HÀM TẢI DỮ LIỆU TỪ SQL LÊN BẢNG NHÂN VIÊN ==========
+    private void loadDataToTableNhanVien() {
+        if (tableModelNhanVien == null) return;
+        tableModelNhanVien.setRowCount(0);
+
+        List<NhanVien> listNV = null;
+        try {
+            listNV = nhanVienDao.layDanhSachNhanVien();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        for (NhanVien nv : listNV) {
+            String ngayVaoStr = (nv.getNgayVaoLam() != null) ? nv.getNgayVaoLam().format(dtf) : "";
+            String vaiTro = (nv.getTenChuc() != null) ? nv.getTenChuc() : nv.getMaPhanQuyen();
+
+            tableModelNhanVien.addRow(new Object[]{
+                    nv.getMaNhanVien(),
+                    nv.getHoTen(),
+                    nv.getSoDienThoai(),
+                    vaiTro,
+                    ngayVaoStr,
+                    nv.getTrangThai()
+            });
         }
     }
 
@@ -121,10 +174,10 @@ public class GaraNhanVien extends JFrame {
         panelToolbarWrapper.add(panelToolbar, BorderLayout.CENTER);
         panelToolbarWrapper.add(panelLabelTieuDe, BorderLayout.EAST);
 
-        // ==================== 3. NỘI DUNG CHÍNH: KHUNG CARD ====================
-        JPanel panelCenter = new JPanel();
+        // ==================== 3. NỘI DUNG CHÍNH: KHUNG CARD MỞ RỘNG TOÀN MÀN HÌNH ====================
+        JPanel panelCenter = new JPanel(new BorderLayout());
         panelCenter.setBackground(new Color(240, 243, 246));
-        panelCenter.setLayout(new GridBagLayout());
+        panelCenter.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20)); // Lề xung quanh card
 
         JPanel panelCardChinh = new JPanel(new BorderLayout());
         panelCardChinh.setBackground(Color.WHITE);
@@ -132,7 +185,6 @@ public class GaraNhanVien extends JFrame {
                 BorderFactory.createLineBorder(new Color(210, 215, 220), 1),
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
-        panelCardChinh.setPreferredSize(new Dimension(1220, 680));
 
         // --- 3.1. Tiêu đề chung của Card ---
         JPanel panelCardTop = new JPanel(new BorderLayout());
@@ -155,7 +207,7 @@ public class GaraNhanVien extends JFrame {
         panelCardTop.add(pnlTitleWrap, BorderLayout.WEST);
 
         // --- 3.2. JTabbedPane chứa 2 chức năng ---
-        tabbedPane = new JTabbedPane(); // CHÚ Ý: Bỏ chữ JTabbedPane để dùng biến toàn cục
+        tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.BOLD, 14));
         tabbedPane.setBackground(new Color(245, 247, 250));
 
@@ -166,7 +218,7 @@ public class GaraNhanVien extends JFrame {
         panelCardChinh.add(panelCardTop, BorderLayout.NORTH);
         panelCardChinh.add(tabbedPane, BorderLayout.CENTER);
 
-        panelCenter.add(panelCardChinh, new GridBagConstraints());
+        panelCenter.add(panelCardChinh, BorderLayout.CENTER);
 
         // ==================== 4. THANH TRẠNG THÁI (FOOTER) ====================
         JPanel panelFooter = new JPanel(new BorderLayout());
@@ -196,20 +248,14 @@ public class GaraNhanVien extends JFrame {
         panelTab.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         // 1. Khối nhập liệu
-        txtMaNV = new JTextField("NV004");
-        txtMaNV.setEditable(false);
-        txtMaNV.setBackground(new Color(245, 247, 250));
+        txtMaNV = new JTextField(); txtMaNV.setEditable(false); txtMaNV.setBackground(new Color(245, 247, 250));
         txtHoTen = new JTextField();
         txtSoDienThoai = new JTextField();
-        txtNgayVaoLam = new JTextField("12/10/2026");
-
+        txtNgayVaoLam = new JTextField();
         cbVaiTro = new JComboBox<>(new String[]{"Tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân", "Quản lý"});
-        cbVaiTro.setFont(new Font("Arial", Font.PLAIN, 13));
-        cbVaiTro.setBackground(Color.WHITE);
-
+        cbVaiTro.setFont(new Font("Arial", Font.PLAIN, 13)); cbVaiTro.setBackground(Color.WHITE);
         cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc", "Đã nghỉ / Khóa"});
-        cbTrangThai.setFont(new Font("Arial", Font.PLAIN, 13));
-        cbTrangThai.setBackground(Color.WHITE);
+        cbTrangThai.setFont(new Font("Arial", Font.PLAIN, 13)); cbTrangThai.setBackground(Color.WHITE);
 
         JPanel panelGridFields = new JPanel(new GridLayout(2, 3, 30, 15));
         panelGridFields.setBackground(Color.WHITE);
@@ -235,21 +281,34 @@ public class GaraNhanVien extends JFrame {
         txtTimKiem.setBorder(null);
         txtTimKiem.setOpaque(false);
 
-        JComboBox<String> cbLocVaiTro = new JComboBox<>(new String[]{"Tất cả vai trò", "Tiếp nhận", "Kỹ thuật viên", "Kho", "Thu ngân"});
+        JComboBox<String> cbLocVaiTro = new JComboBox<>(new String[]{"Tất cả vai trò", "Tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân"});
         cbLocVaiTro.setFont(new Font("Arial", Font.PLAIN, 12));
         cbLocVaiTro.setBackground(Color.WHITE);
 
-        panelSearchFilter.add(new JLabel(loadIcon("/img/icon_tim.png", 16, 16)), BorderLayout.WEST);
+        ImageIcon iconTim = loadIcon("/img/icon_tim.png", 16, 16);
+        if (iconTim != null) {
+            panelSearchFilter.add(new JLabel(iconTim), BorderLayout.WEST);
+        }
         panelSearchFilter.add(txtTimKiem, BorderLayout.CENTER);
         panelSearchFilter.add(cbLocVaiTro, BorderLayout.EAST);
 
         String[] columnNames = {"Mã NV", "Họ Tên", "SĐT", "Vai Trò", "Ngày Vào Làm", "Trạng Thái"};
-        Object[][] data = {
-                {"NV001", "Võ Thị Bích Trân", "0987654321", "Thu ngân", "10/08/2026", "Đang làm việc"},
-                {"NV002", "Trần Ngọc Huy", "0912345678", "Kỹ thuật viên", "12/08/2026", "Đang làm việc"},
-                {"NV003", "Nguyễn Mạnh Quân", "0909090909", "Nhân viên Kho", "15/08/2026", "Khóa"}
+        tableModelNhanVien = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
         };
-        tableNhanVien = taoBangDuLieu(columnNames, data);
+        tableNhanVien = new JTable(tableModelNhanVien);
+
+        // Custom giao diện bảng
+        tableNhanVien.setRowHeight(32);
+        tableNhanVien.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        tableNhanVien.getTableHeader().setBackground(new Color(230, 235, 240));
+        tableNhanVien.setFont(new Font("Arial", Font.PLAIN, 13));
+        tableNhanVien.setSelectionBackground(new Color(40, 100, 150));
+        tableNhanVien.setSelectionForeground(Color.WHITE);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        tableNhanVien.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
 
         JPanel panelTableSection = new JPanel(new BorderLayout(0, 10));
         panelTableSection.setBackground(Color.WHITE);
@@ -302,7 +361,6 @@ public class GaraNhanVien extends JFrame {
         panelGridFields.add(taoOnhapLieu("Chọn Phiếu Sửa Chữa (Xe)", cbPhieuSuaChua));
         panelGridFields.add(taoOnhapLieu("Chọn Kỹ Thuật Viên Phụ Trách", cbKyThuatVien));
         panelGridFields.add(taoOnhapLieu("Ghi chú / Nhắc nhở cho KTV", txtGhiChuPhanCong));
-        // Ô thứ 4 trống để cân bằng lưới
         panelGridFields.add(new JLabel());
 
         // 2. Bảng danh sách đang phân công
@@ -319,7 +377,22 @@ public class GaraNhanVien extends JFrame {
                 {"PC001", "SC00212", "51H-555.55", "Trần Ngọc Huy", "12/10/2026", "Đang sửa chữa (50%)"},
                 {"PC002", "SC00214", "61A-123.88", "Lê Văn Tám", "12/10/2026", "Chờ phụ tùng"}
         };
-        tablePhanCong = taoBangDuLieu(columnNames, data);
+
+        tableModelPhanCong = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        tablePhanCong = new JTable(tableModelPhanCong);
+        tablePhanCong.setRowHeight(32);
+        tablePhanCong.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        tablePhanCong.getTableHeader().setBackground(new Color(230, 235, 240));
+        tablePhanCong.setFont(new Font("Arial", Font.PLAIN, 13));
+        tablePhanCong.setSelectionBackground(new Color(40, 100, 150));
+        tablePhanCong.setSelectionForeground(Color.WHITE);
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        tablePhanCong.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
 
         JPanel panelTableSection = new JPanel(new BorderLayout(0, 5));
         panelTableSection.setBackground(Color.WHITE);
@@ -373,25 +446,6 @@ public class GaraNhanVien extends JFrame {
         return panel;
     }
 
-    private JTable taoBangDuLieu(String[] columns, Object[][] data) {
-        DefaultTableModel model = new DefaultTableModel(data, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
-        JTable table = new JTable(model);
-        table.setRowHeight(32);
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
-        table.getTableHeader().setBackground(new Color(230, 235, 240));
-        table.setFont(new Font("Arial", Font.PLAIN, 13));
-        table.setSelectionBackground(new Color(40, 100, 150));
-        table.setSelectionForeground(Color.WHITE);
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
-        return table;
-    }
-
     private JButton taoNutChucNang(String text, Color bg, Color fg) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Arial", Font.BOLD, 13));
@@ -443,13 +497,11 @@ public class GaraNhanVien extends JFrame {
             } else {
                 JMenuItem item = new JMenuItem(itemName);
                 item.addActionListener(e -> {
-                    // ĐANG Ở TRONG GARA NHÂN VIÊN -> CHUYỂN TAB TRỰC TIẾP
                     if (itemName.equals("Quản lý nhân sự")) {
                         tabbedPane.setSelectedIndex(0);
                     } else if (itemName.equals("Phân công kỹ thuật viên")) {
                         tabbedPane.setSelectedIndex(1);
                     }
-                    // CHUYỂN QUA MÀN HÌNH THỐNG KÊ (Mở đúng tab)
                     else if (itemName.equals("Thống kê doanh thu")) {
                         new GaraThongKe(0).setVisible(true);
                         this.dispose();
@@ -472,6 +524,37 @@ public class GaraNhanVien extends JFrame {
                         this.dispose();
                     } else if (itemName.equals("Đăng xuất")) {
                         xuLyDangXuat();
+                    } else if (itemName.equals("Quản lý khách hàng")) {
+                        new KhachHangFrame().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Lịch sử sửa chữa")) {
+                        new LichSuSuaChuaFrame().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Quản lý xe") || itemName.equals("Tra cứu xe")) {
+                        new QuanLyXeFrame().setVisible(true);
+                        this.dispose();
+                    } else if (itemName.equals("Thêm dịch vụ")) {
+
+                    } else if (itemName.equals("Quản lý dịch vụ")) {
+
+                    } else if (itemName.equals("Lập phiếu tiếp nhận xe")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
+                    } else if (itemName.equals("")) {
+
                     } else {
                         JOptionPane.showMessageDialog(this,
                                 "Đang mở chức năng: " + itemName,
