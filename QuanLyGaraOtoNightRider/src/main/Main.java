@@ -35,7 +35,7 @@ public class Main {
         }
         
         SwingUtilities.invokeLater(() -> {
-            new QuanLyXeFrame().setVisible(true);
+            new GaraManHinhChinh().setVisible(true);
         });
     }
 }

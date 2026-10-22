@@ -3,9 +3,8 @@ package ui;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.Normalizer;
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -17,6 +16,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+
+import dao.PhieuSuaChuaDao;
+import entity.PhieuSuaChua;
 
 public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
@@ -49,8 +51,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
     private final JButton btnTimXe = taoNut("Tìm xe", false);
     private final JButton btnLoc = taoNut("Lọc lịch sử", false);
     private final JButton btnLamMoi = taoNut("Làm mới", false);
-    private final JButton btnXemPhieu =
-            taoNut("Xem phiếu sửa chữa", false);
+    private final JButton btnXemPhieu = taoNut("Xem phiếu sửa chữa", false);
 
     private final JLabel lblSoLuong = new JLabel("Số lần sửa: 0");
 
@@ -58,9 +59,9 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
             new String[]{
                 "Ngày lập phiếu",
                 "Mã phiếu sửa chữa",
-                "Số km lúc tiếp nhận",
-                "Nội dung sửa chữa",
-                "Tổng tiền hóa đơn",
+                "Mã tiếp nhận",
+                "Chẩn đoán / Nội dung",
+                "Loại phiếu",
                 "Trạng thái sửa chữa"
             }, 0) {
         @Override
@@ -73,23 +74,15 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
             if (column == 0) {
                 return LocalDate.class;
             }
-            if (column == 2) {
-                return Integer.class;
-            }
-            if (column == 4) {
-                return BigDecimal.class;
-            }
             return String.class;
         }
     };
 
     private final JTable table = new JTable(model);
 
-    private final ArrayList<XeMau> danhSachXe = new ArrayList<>();
-    private final ArrayList<LanSuaMau> danhSachLichSu = new ArrayList<>();
-    private final ArrayList<LanSuaMau> danhSachHienThi = new ArrayList<>();
-
-    private XeMau xeDangXem;
+    // GIỮ NGUYÊN FILE DAO, KHÔNG CẦN CHỈNH SỬA DAO
+    private final PhieuSuaChuaDao phieuSuaChuaDao = new PhieuSuaChuaDao();
+    private final ArrayList<PhieuSuaChua> danhSachHienThi = new ArrayList<>();
 
     public LichSuSuaChuaFrame() {
         setLayout(new BorderLayout());
@@ -116,11 +109,10 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
         // ==================== THÔNG TIN XE ====================
-
         JPanel phanTren = new JPanel(new BorderLayout(0, 12));
         phanTren.setOpaque(false);
 
-        JLabel moTa = new JLabel("Tra cứu các lần sửa chữa và hóa đơn của phương tiện.");
+        JLabel moTa = new JLabel("Tra cứu các lần sửa chữa của phương tiện theo biển số hoặc mã phiếu.");
         moTa.setFont(new Font("Arial", Font.PLAIN, 13));
         moTa.setForeground(CHU_PHU);
         phanTren.add(moTa, BorderLayout.NORTH);
@@ -133,7 +125,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         timXe.add(txtBienSo, BorderLayout.CENTER);
         timXe.add(btnTimXe, BorderLayout.EAST);
 
-        themO(form, "Biển số", timXe);
+        themO(form, "Biển số / Mã phiếu", timXe);
         themO(form, "Chủ xe", txtChuXe);
         themO(form, "Mẫu xe", txtMauXe);
         themO(form, "Từ ngày (dd/MM/yyyy)", txtTuNgay);
@@ -144,10 +136,8 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         noiDung.add(phanTren, BorderLayout.NORTH);
 
         // ==================== BẢNG LỊCH SỬ ====================
-
         JPanel vungBang = new JPanel(new BorderLayout(0, 10));
         vungBang.setOpaque(false);
-
 
         table.setFont(new Font("Arial", Font.PLAIN, 13));
         table.setRowHeight(36);
@@ -162,30 +152,18 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         table.getTableHeader().setBackground(new Color(237, 241, 245));
         table.getTableHeader().setReorderingAllowed(false);
 
-        DefaultTableCellRenderer renderer =
-                new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
                     JTable bang, Object value, boolean selected,
                     boolean focus, int row, int column) {
-                super.getTableCellRendererComponent(
-                        bang, value, selected, focus, row, column);
+                super.getTableCellRendererComponent(bang, value, selected, focus, row, column);
 
                 setBorder(new EmptyBorder(0, 8, 0, 8));
                 setHorizontalAlignment(SwingConstants.LEFT);
 
                 if (value instanceof LocalDate) {
                     setText(((LocalDate) value).format(DINH_DANG));
-                } else if (column == 2 && value instanceof Integer) {
-                    setText(NumberFormat.getIntegerInstance(
-                            Locale.forLanguageTag("vi-VN"))
-                            .format(value));
-                    setHorizontalAlignment(SwingConstants.RIGHT);
-                } else if (column == 4) {
-                    setText(value == null
-                            ? "Chưa lập hóa đơn"
-                            : dinhDangTien((BigDecimal) value));
-                    setHorizontalAlignment(SwingConstants.RIGHT);
                 }
 
                 if (!selected) {
@@ -199,13 +177,10 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
         table.setDefaultRenderer(String.class, renderer);
         table.setDefaultRenderer(LocalDate.class, renderer);
-        table.setDefaultRenderer(Integer.class, renderer);
-        table.setDefaultRenderer(BigDecimal.class, renderer);
 
-        int[] rong = {120, 150, 145, 300, 165, 160};
+        int[] rong = {130, 160, 140, 350, 140, 150};
         for (int i = 0; i < rong.length; i++) {
-            table.getColumnModel().getColumn(i)
-                    .setPreferredWidth(rong[i]);
+            table.getColumnModel().getColumn(i).setPreferredWidth(rong[i]);
         }
 
         JScrollPane cuon = new JScrollPane(table);
@@ -237,25 +212,91 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         btnXemPhieu.addActionListener(this);
 
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) {
-                return;
+            if (!e.getValueIsAdjusting()) {
+                btnXemPhieu.setEnabled(table.getSelectedRow() >= 0);
             }
         });
 
-        taoDuLieuMau();
-        btnLamMoi.doClick();
+        // Tự động load toàn bộ phiếu từ CSDL lên bảng ngay khi mở giao diện
+        loadDuLieuTuCSDL();
     }
 
+    private void loadDuLieuTuCSDL() {
+    	table.setRowSorter(null);
+        table.clearSelection();
+        
+        model.setRowCount(0);
+        danhSachHienThi.clear();
+        btnXemPhieu.setEnabled(false);
+
+        try {
+            ArrayList<PhieuSuaChua> danhSachGoc = phieuSuaChuaDao.layDanhSachPhieuSuaChua();
+            if (danhSachGoc == null || danhSachGoc.isEmpty()) {
+                lblSoLuong.setText("Số lần sửa: 0");
+                return;
+            }
+            String tuKhoa = chuanHoa(txtBienSo.getText().trim());
+            LocalDate tuNgay = txtTuNgay.getText().trim().isEmpty() ? null : LocalDate.parse(txtTuNgay.getText().trim(), DINH_DANG);
+            LocalDate denNgay = txtDenNgay.getText().trim().isEmpty() ? null : LocalDate.parse(txtDenNgay.getText().trim(), DINH_DANG);
+            String trangThai = (String) cboTrangThai.getSelectedItem();
+
+            for (PhieuSuaChua psc : danhSachGoc) {
+                LocalDate ngayLap = psc.getNgayLap() != null ? psc.getNgayLap().toLocalDate() : null;
+
+                // Lọc ngày
+                if (tuNgay != null && ngayLap != null && ngayLap.isBefore(tuNgay)) {
+                    continue;
+                }
+                if (denNgay != null && ngayLap != null && ngayLap.isAfter(denNgay)) {
+                    continue;
+                }
+
+                // Lọc trạng thái
+                if (!"Tất cả".equals(trangThai) && !trangThai.equalsIgnoreCase(psc.getTrangThai())) {
+                    continue;
+                }
+
+                // Lọc từ khóa tìm kiếm
+                if (!tuKhoa.isEmpty()) {
+                    String chuoi = chuanHoa(psc.getMaPhieuSuaChua() + " " + psc.getMaTiepNhan() + " " + (psc.getChanDoan() != null ? psc.getChanDoan() : ""));
+                    if (!chuoi.contains(tuKhoa)) {
+                        continue;
+                    }
+                }
+
+                danhSachHienThi.add(psc);
+            }
+
+            // Đổ lên bảng
+            for (PhieuSuaChua psc : danhSachHienThi) {
+                model.addRow(new Object[]{
+                    psc.getNgayLap() != null ? psc.getNgayLap().toLocalDate() : null,
+                    psc.getMaPhieuSuaChua(),
+                    psc.getMaTiepNhan(),
+                    psc.getChanDoan() != null ? psc.getChanDoan() : "-",
+                    psc.getLoaiPhieu(),
+                    psc.getTrangThai()
+                });
+            }
+
+            lblSoLuong.setText("Số lần sửa tìm thấy: " + danhSachHienThi.size());
+
+            table.setAutoCreateRowSorter(true);
+
+            if (table.getRowCount() > 0) {
+                table.setRowSelectionInterval(0, 0);
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối CSDL: " + ex.getMessage());
+        }
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
         Object nguon = e.getSource();
 
         if (nguon == btnLamMoi) {
-            table.clearSelection();
-            model.setRowCount(0);
-            danhSachHienThi.clear();
-            xeDangXem = null;
-
             txtBienSo.setText("");
             txtChuXe.setText("");
             txtMauXe.setText("");
@@ -264,9 +305,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
             txtTimKiem.setText("");
             cboTrangThai.setSelectedIndex(0);
 
-            btnXemPhieu.setEnabled(false);
-            lblSoLuong.setText("Số lần sửa: 0");
-
+            loadDuLieuTuCSDL();
             txtBienSo.requestFocusInWindow();
 
         } else if (nguon == btnTimXe || nguon == txtBienSo
@@ -277,124 +316,39 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
                 return;
             }
 
-            String bienSo = chuanHoaBienSo(txtBienSo.getText());
-            XeMau xeTim = null;
-
-            for (XeMau xe : danhSachXe) {
-                if (chuanHoaBienSo(xe.bienSo).equals(bienSo)) {
-                    xeTim = xe;
-                    break;
-                }
-            }
-
-            table.clearSelection();
-            model.setRowCount(0);
-            danhSachHienThi.clear();
-
-            btnXemPhieu.setEnabled(false);
-
-            if (xeTim == null) {
-                xeDangXem = null;
-                txtChuXe.setText("");
-                txtMauXe.setText("");
-                lblSoLuong.setText("Số lần sửa: 0");
-
-                JOptionPane.showMessageDialog(
-                        this, "Không tìm thấy xe có biển số này.");
-                return;
-            }
-
-            xeDangXem = xeTim;
-            txtBienSo.setText(xeTim.bienSo);
-            txtChuXe.setText(xeTim.chuXe);
-            txtMauXe.setText(xeTim.mauXe);
-
-            LocalDate tuNgay = txtTuNgay.getText().trim().isEmpty()
-                    ? null
-                    : LocalDate.parse(
-                            txtTuNgay.getText().trim(), DINH_DANG);
-
-            LocalDate denNgay = txtDenNgay.getText().trim().isEmpty()
-                    ? null
-                    : LocalDate.parse(
-                            txtDenNgay.getText().trim(), DINH_DANG);
-
-            String tuKhoa = chuanHoa(txtTimKiem.getText().trim());
-            String trangThai =
-                    (String) cboTrangThai.getSelectedItem();
-
-            for (LanSuaMau lanSua : danhSachLichSu) {
-                if (!lanSua.maXe.equals(xeTim.ma)) {
-                    continue;
-                }
-
-                if (tuNgay != null && lanSua.ngayLap.isBefore(tuNgay)) {
-                    continue;
-                }
-
-                if (denNgay != null && lanSua.ngayLap.isAfter(denNgay)) {
-                    continue;
-                }
-
-                if (!"Tất cả".equals(trangThai)
-                        && !lanSua.trangThai.equals(trangThai)) {
-                    continue;
-                }
-
-                String noiDung = chuanHoa(
-                        lanSua.maPhieu + " " + lanSua.noiDung);
-
-                if (!noiDung.contains(tuKhoa)) {
-                    continue;
-                }
-
-                danhSachHienThi.add(lanSua);
-            }
-
-            danhSachHienThi.sort((a, b) -> b.ngayLap.compareTo(a.ngayLap));
-
-            for (LanSuaMau lanSua : danhSachHienThi) {
-                model.addRow(new Object[]{
-                    lanSua.ngayLap,
-                    lanSua.maPhieu,
-                    lanSua.soKm,
-                    lanSua.noiDung,
-                    lanSua.tongTien(),
-                    lanSua.trangThai
-                });
-            }
-
-            lblSoLuong.setText("Số lần sửa tìm thấy: " + danhSachHienThi.size());
+            loadDuLieuTuCSDL();
 
             if (danhSachHienThi.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Không có lịch sử phù hợp với bộ lọc.");
+                JOptionPane.showMessageDialog(this, "Không có lịch sử sửa chữa phù hợp.");
             }
 
         } else if (nguon == btnXemPhieu) {
             int dong = table.getSelectedRow();
-
-            if (dong < 0 || xeDangXem == null) {
-                JOptionPane.showMessageDialog(
-                        this, "Chọn một lần sửa để xem.");
+            
+            // Thêm điều kiện kiểm tra tránh lệch index của Sorter
+            if (dong < 0 || dong >= table.getRowCount()) {
+                JOptionPane.showMessageDialog(this, "Chọn một lần sửa trên bảng để xem chi tiết.");
                 return;
             }
 
-            LanSuaMau lanSua = danhSachHienThi.get( table.convertRowIndexToModel(dong));
+            int dongThuc = table.convertRowIndexToModel(dong);
+            if (dongThuc >= danhSachHienThi.size()) {
+                return;
+            }
+
+            PhieuSuaChua psc = danhSachHienThi.get(dongThuc);
+            String ngayLapStr = (psc.getNgayLap() != null)
+                    ? psc.getNgayLap().toLocalDate().format(DINH_DANG)
+                    : "—";
 
             JTextArea chiTiet = new JTextArea(
-                    "Mã phiếu sửa chữa: " + lanSua.maPhieu
-                    + "\nMã tiếp nhận: " + lanSua.maTiepNhan
-                    + "\nNgày lập: " + lanSua.ngayLap.format(DINH_DANG)
-                    + "\nBiển số: " + xeDangXem.bienSo
-                    + "\nMẫu xe: " + xeDangXem.mauXe
-                    + "\nChủ xe: " + xeDangXem.chuXe
-                    + "\nSố km lúc tiếp nhận: " + lanSua.soKm
-                    + "\nTrạng thái: " + lanSua.trangThai
-                    + "\n\nYêu cầu khách hàng:\n" + lanSua.yeuCau
-                    + "\n\nChẩn đoán:\n" + lanSua.chanDoan
-                    + "\n\nHạng mục dịch vụ:\n" + lanSua.hangMuc
-                    + "\n\nKết quả thực hiện:\n" + lanSua.ketQua
-                    + "\n\nGhi chú:\n" + lanSua.ghiChu);
+                    "Mã phiếu sửa chữa: " + psc.getMaPhieuSuaChua()
+                    + "\nMã tiếp nhận: " + psc.getMaTiepNhan()
+                    + "\nNgày lập phiếu: " + ngayLapStr
+                    + "\nLoại phiếu: " + psc.getLoaiPhieu()
+                    + "\nTrạng thái: " + psc.getTrangThai()
+                    + "\n\nChẩn đoán / Nội dung sửa chữa:\n" + (psc.getChanDoan() != null ? psc.getChanDoan() : "(Không có)")
+                    + "\n\nGhi chú:\n" + (psc.getGhiChu() != null ? psc.getGhiChu() : "(Không có)"));
 
             chiTiet.setEditable(false);
             chiTiet.setLineWrap(true);
@@ -403,28 +357,13 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
             chiTiet.setCaretPosition(0);
 
             JScrollPane cuon = new JScrollPane(chiTiet);
-            cuon.setPreferredSize(new Dimension(650, 450));
+            cuon.setPreferredSize(new Dimension(650, 420));
 
-            JOptionPane.showMessageDialog(
-                    this, cuon, "Chi tiết phiếu sửa chữa",
-                    JOptionPane.INFORMATION_MESSAGE);
-
-        } 
+            JOptionPane.showMessageDialog(this, cuon, "Chi tiết phiếu sửa chữa", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private boolean validData() {
-        if (chuanHoaBienSo(txtBienSo.getText()).isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập biển số.");
-            txtBienSo.requestFocusInWindow();
-            return false;
-        }
-
-        if (txtBienSo.getText().trim().length() > 20) {
-            JOptionPane.showMessageDialog( this, "Biển số tối đa 20 ký tự.");
-            txtBienSo.requestFocusInWindow();
-            return false;
-        }
-
         LocalDate tuNgay = null;
         LocalDate denNgay = null;
 
@@ -440,8 +379,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
         if (!txtDenNgay.getText().trim().isEmpty()) {
             try {
-                denNgay = LocalDate.parse(
-                        txtDenNgay.getText().trim(), DINH_DANG);
+                denNgay = LocalDate.parse(txtDenNgay.getText().trim(), DINH_DANG);
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Đến ngày phải đúng dạng dd/MM/yyyy.");
                 txtDenNgay.requestFocusInWindow();
@@ -449,119 +387,13 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
             }
         }
 
-        if (tuNgay != null && denNgay != null
-                && tuNgay.isAfter(denNgay)) {
+        if (tuNgay != null && denNgay != null && tuNgay.isAfter(denNgay)) {
             JOptionPane.showMessageDialog(this, "Từ ngày không được lớn hơn đến ngày.");
             txtTuNgay.requestFocusInWindow();
             return false;
         }
 
         return true;
-    }
-
-    private void taoDuLieuMau() {
-        danhSachXe.add(new XeMau(
-                "PT001", "51H-123.45",
-                "Toyota Vios", "Nguyễn Minh An"));
-
-        danhSachXe.add(new XeMau(
-                "PT002", "51K-678.90",
-                "Honda City", "Trần Thị Bình"));
-
-        danhSachXe.add(new XeMau(
-                "PT003", "50H-456.78",
-                "Mazda 3", "Nguyễn Minh An"));
-
-        danhSachLichSu.add(new LanSuaMau(
-                "PSC001", "PTN001", "PT001",
-                LocalDate.of(2026, 6, 10), 35100,
-                "Thay dầu động cơ và lọc dầu",
-                "Bảo dưỡng định kỳ.",
-                "Dầu động cơ và lọc dầu cần thay.",
-                "- Thay dầu động cơ\n- Thay lọc dầu",
-                "Xe vận hành ổn định sau bảo dưỡng.",
-                "Khách đã nhận xe.",
-                "Đã hoàn thành",
-                "HD0001",
-                "- Dầu động cơ: 4 lít\n- Lọc dầu: 1 cái",
-                new BigDecimal("150000"),
-                new BigDecimal("800000"),
-                BigDecimal.ZERO,
-                new BigDecimal("8"),
-                "Đã thanh toán"));
-
-        danhSachLichSu.add(new LanSuaMau(
-                "PSC002", "PTN002", "PT001",
-                LocalDate.of(2026, 10, 5), 40250,
-                "Bảo dưỡng và thay má phanh trước",
-                "Kiểm tra tiếng kêu khi phanh, bảo dưỡng.",
-                "Má phanh trước mòn, dầu động cơ đến hạn thay.",
-                "- Thay dầu động cơ\n- Thay má phanh trước",
-                "Đã thay phụ tùng và kiểm tra phanh.",
-                "Hướng dẫn khách theo dõi sau sửa chữa.",
-                "Đã hoàn thành",
-                "HD0002",
-                "- Dầu động cơ: 4 lít\n- Lọc dầu: 1 cái"
-                        + "\n- Má phanh trước: 1 bộ",
-                new BigDecimal("450000"),
-                new BigDecimal("1850000"),
-                BigDecimal.ZERO,
-                new BigDecimal("8"),
-                "Đã thanh toán"));
-
-        danhSachLichSu.add(new LanSuaMau(
-                "PSC003", "PTN003", "PT001",
-                LocalDate.of(2026, 10, 18), 42500,
-                "Kiểm tra điều hòa",
-                "Điều hòa làm lạnh yếu.",
-                "Đang kiểm tra nguyên nhân.",
-                "- Kiểm tra hệ thống điều hòa",
-                "Chưa hoàn thành.",
-                "Chờ kết quả kiểm tra.",
-                "Đang sửa chữa",
-                null,
-                "",
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                ""));
-
-        danhSachLichSu.add(new LanSuaMau(
-                "PSC004", "PTN004", "PT002",
-                LocalDate.of(2026, 9, 12), 28000,
-                "Vệ sinh lọc gió",
-                "Kiểm tra và vệ sinh lọc gió.",
-                "Lọc gió bám nhiều bụi.",
-                "- Vệ sinh lọc gió",
-                "Đã vệ sinh và lắp lại.",
-                "",
-                "Đã hoàn thành",
-                "HD0003",
-                "Không thay phụ tùng.",
-                new BigDecimal("80000"),
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                new BigDecimal("8"),
-                "Đã thanh toán"));
-
-        danhSachLichSu.add(new LanSuaMau(
-                "PSC005", "PTN005", "PT003",
-                LocalDate.of(2026, 10, 19), 53000,
-                "Kiểm tra đèn cảnh báo động cơ",
-                "Đèn cảnh báo động cơ sáng.",
-                "Chưa có chẩn đoán.",
-                "- Kiểm tra lỗi động cơ",
-                "Chưa thực hiện.",
-                "",
-                "Chờ sửa chữa",
-                null,
-                "",
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                ""));
     }
 
     private void themO(JPanel form, String ten, JComponent field) {
@@ -590,8 +422,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         nut.setContentAreaFilled(false);
         nut.setOpaque(true);
         nut.setFocusPainted(false);
-        nut.setCursor(
-                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        nut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         nut.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(chinh ? DO : VIEN),
                 new EmptyBorder(8, 14, 8, 14)));
@@ -606,91 +437,10 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
                 .toLowerCase(Locale.ROOT);
     }
 
-    private static String chuanHoaBienSo(String s) {
-        return s.replaceAll("[\\s.\\-]", "")
-                .toUpperCase(Locale.ROOT);
-    }
-
-    private static String dinhDangTien(BigDecimal tien) {
-        NumberFormat format = NumberFormat.getNumberInstance(
-                Locale.forLanguageTag("vi-VN"));
-        format.setMinimumFractionDigits(0);
-        format.setMaximumFractionDigits(2);
-        return format.format(tien) + " đ";
-    }
-
-    // ==================== DỮ LIỆU TẠM ====================
-
-    private static class XeMau {
-        String ma, bienSo, mauXe, chuXe;
-
-        XeMau(String ma, String bienSo,
-                String mauXe, String chuXe) {
-            this.ma = ma;
-            this.bienSo = bienSo;
-            this.mauXe = mauXe;
-            this.chuXe = chuXe;
-        }
-    }
-
-    private static class LanSuaMau {
-        String maPhieu, maTiepNhan, maXe;
-        LocalDate ngayLap;
-        int soKm;
-        String noiDung, yeuCau, chanDoan;
-        String hangMuc, ketQua, ghiChu, trangThai;
-        String maHoaDon, phuTung, trangThaiHoaDon;
-        BigDecimal tienDichVu, tienPhuTung, giamGia, vat;
-
-        LanSuaMau(String maPhieu, String maTiepNhan, String maXe,
-                LocalDate ngayLap, int soKm, String noiDung,
-                String yeuCau, String chanDoan, String hangMuc,
-                String ketQua, String ghiChu, String trangThai,
-                String maHoaDon, String phuTung,
-                BigDecimal tienDichVu, BigDecimal tienPhuTung,
-                BigDecimal giamGia, BigDecimal vat,
-                String trangThaiHoaDon) {
-            this.maPhieu = maPhieu;
-            this.maTiepNhan = maTiepNhan;
-            this.maXe = maXe;
-            this.ngayLap = ngayLap;
-            this.soKm = soKm;
-            this.noiDung = noiDung;
-            this.yeuCau = yeuCau;
-            this.chanDoan = chanDoan;
-            this.hangMuc = hangMuc;
-            this.ketQua = ketQua;
-            this.ghiChu = ghiChu;
-            this.trangThai = trangThai;
-            this.maHoaDon = maHoaDon;
-            this.phuTung = phuTung;
-            this.tienDichVu = tienDichVu;
-            this.tienPhuTung = tienPhuTung;
-            this.giamGia = giamGia;
-            this.vat = vat;
-            this.trangThaiHoaDon = trangThaiHoaDon;
-        }
-
-        BigDecimal tongTien() {
-            if (maHoaDon == null) {
-                return null;
-            }
-
-            BigDecimal truocThue =
-                    tienDichVu.add(tienPhuTung).subtract(giamGia);
-
-            BigDecimal tienVAT = truocThue.multiply(vat)
-                    .divide(new BigDecimal("100"), 2,
-                            java.math.RoundingMode.HALF_UP);
-
-            return truocThue.add(tienVAT);
-        }
-    }
-
     // ==================== MENU, HEADER, FOOTER ====================
 
     public JFrame taoCuaSo() {
-        JFrame cuaSo = new JFrame( "Lịch sử sửa chữa - Night Invader");
+        JFrame cuaSo = new JFrame("Lịch sử sửa chữa - Night Invader");
         cuaSo.setSize(1340, 840);
         cuaSo.setLocationRelativeTo(null);
         cuaSo.setResizable(true);
@@ -699,8 +449,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(245, 247, 250));
-        menuBar.setBorder(
-                BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        menuBar.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
         Font menuFont = new Font("Arial", Font.BOLD, 16);
 
@@ -717,39 +466,15 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         };
 
         String[][] cacItem = {
-            {
-                "Tài khoản cá nhân", "Đổi mật khẩu",
-                "-", "Đăng xuất"
-            },
-            {
-                "Quản lý khách hàng"
-            },
-            {
-                "Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"
-            },
-            {
-                "Quản lý dịch vụ", "Thêm dịch vụ",
-                "Sửa dịch vụ", "Xóa dịch vụ", "-",
-                "Lập phiếu tiếp nhận xe",
-                "Lập phiếu sửa chữa / Báo giá",
-                "Cập nhật tình trạng sửa xe"
-            },
-            {
-                "Quản lý phụ tùng"
-            },
-            {
-                "Lập phiếu nhập kho", "Lập phiếu xuất kho"
-            },
-            {
-                "Lập hóa đơn", "Tra cứu hóa đơn"
-            },
-            {
-                "Thống kê doanh thu", "Thống kê tồn kho",
-                "Phụ tùng bán chạy", "Phụ tùng bán chậm"
-            },
-            {
-                "Quản lý nhân sự", "Phân công kỹ thuật viên"
-            }
+            {"Tài khoản cá nhân", "Đổi mật khẩu", "-", "Đăng xuất"},
+            {"Quản lý khách hàng"},
+            {"Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"},
+            {"Quản lý dịch vụ", "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ", "-", "Lập phiếu tiếp nhận xe", "Lập phiếu sửa chữa / Báo giá", "Cập nhật tình trạng sửa xe"},
+            {"Quản lý phụ tùng"},
+            {"Lập phiếu nhập kho", "Lập phiếu xuất kho"},
+            {"Lập hóa đơn", "Tra cứu hóa đơn"},
+            {"Thống kê doanh thu", "Thống kê tồn kho", "Phụ tùng bán chạy", "Phụ tùng bán chậm"},
+            {"Quản lý nhân sự", "Phân công kỹ thuật viên"}
         };
 
         for (int i = 0; i < tenMenu.length; i++) {
@@ -774,13 +499,12 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         toolbar.setBackground(Color.WHITE);
-        toolbar.setBorder(BorderFactory.createMatteBorder(
-                0, 0, 1, 0, new Color(220, 224, 230)));
+        toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 224, 230)));
 
-        toolbar.add(taoNutNhanh("Tiếp nhận xe", "F2",loadIcon("/img/icon_xe.png", 22, 22)));
-        toolbar.add(taoNutNhanh( "Tình trạng sửa xe", "F5",loadIcon("/img/icon-vector.png", 22, 22)));
-        toolbar.add(taoNutNhanh("Lập hóa đơn", "F3",loadIcon("/img/icon_hoadon.png", 22, 22)));
-        toolbar.add(taoNutNhanh( "Nhập kho", "F4",loadIcon("/img/icon_nhapkho.jpg", 22, 22)));
+        toolbar.add(taoNutNhanh("Tiếp nhận xe", "F2", loadIcon("/img/icon_xe.png", 22, 22)));
+        toolbar.add(taoNutNhanh("Tình trạng sửa xe", "F5", loadIcon("/img/icon-vector.png", 22, 22)));
+        toolbar.add(taoNutNhanh("Lập hóa đơn", "F3", loadIcon("/img/icon_hoadon.png", 22, 22)));
+        toolbar.add(taoNutNhanh("Nhập kho", "F4", loadIcon("/img/icon_nhapkho.jpg", 22, 22)));
 
         JPanel thongTin = new JPanel(new GridLayout(2, 1));
         thongTin.setBackground(Color.WHITE);
@@ -788,7 +512,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         JLabel ngay = new JLabel(LocalDate.now().format(DINH_DANG), JLabel.RIGHT);
         ngay.setFont(new Font("Arial", Font.PLAIN, 12));
 
-        JLabel chiNhanh = new JLabel( "Chi nhánh: Gara chính", JLabel.RIGHT);
+        JLabel chiNhanh = new JLabel("Chi nhánh: Gara chính", JLabel.RIGHT);
         chiNhanh.setFont(new Font("Arial", Font.PLAIN, 11));
         chiNhanh.setForeground(Color.GRAY);
 
@@ -804,7 +528,7 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         footer.setBackground(new Color(245, 247, 250));
         footer.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
-        JLabel trangThai = new JLabel( "Đang hoạt động | Vai trò: Chủ Gara | Chi nhánh: Gara chính");
+        JLabel trangThai = new JLabel("Đang hoạt động | Vai trò: Chủ Gara | Chi nhánh: Gara chính");
         trangThai.setFont(new Font("Arial", Font.PLAIN, 12));
         trangThai.setForeground(Color.DARK_GRAY);
 
@@ -824,11 +548,9 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
     private ImageIcon loadIcon(String path, int width, int height) {
         java.net.URL url = getClass().getResource(path);
-
         if (url == null) {
             return null;
         }
-
         ImageIcon icon = new ImageIcon(url);
         Image anh = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(anh);
@@ -836,18 +558,15 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
 
     private JMenu taoMenuDropdown(String tenMenu, String[] cacItem) {
         JMenu menu = new JMenu(tenMenu);
-
         for (String ten : cacItem) {
             if ("-".equals(ten)) {
                 menu.addSeparator();
             } else {
                 JMenuItem item = new JMenuItem(ten);
-                item.addActionListener(e ->JOptionPane.showMessageDialog(
-                                this, "Đang mở chức năng: " + ten));
+                item.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đang mở chức năng: " + ten));
                 menu.add(item);
             }
         }
-
         return menu;
     }
 
@@ -876,21 +595,29 @@ public class LichSuSuaChuaFrame extends JPanel implements ActionListener {
         btn.setBackground(Color.WHITE);
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(200, 205, 210)),BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 205, 210)),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
 
-        btn.addActionListener(e ->JOptionPane.showMessageDialog(this,"Đang mở nhanh chức năng: "+ tieuDe + " (" + phimTat + ")"));
+        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đang mở nhanh chức năng: " + tieuDe + " (" + phimTat + ")"));
 
         return btn;
     }
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(
-                    UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        SwingUtilities.invokeLater(() ->new LichSuSuaChuaFrame().taoCuaSo().setVisible(true));
+        // Kích hoạt kết nối trước khi mở giao diện
+        try {
+            connectDB.ConnectDB.getInstance().connect();
+        } catch (Exception e) {
+            System.err.println("Lỗi kết nối CSDL: " + e.getMessage());
+        }
+
+        SwingUtilities.invokeLater(() -> new LichSuSuaChuaFrame().taoCuaSo().setVisible(true));
     }
 }
