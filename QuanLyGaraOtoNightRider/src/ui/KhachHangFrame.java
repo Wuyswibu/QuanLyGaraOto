@@ -3,12 +3,19 @@ package ui;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import connectDB.ConnectDB;
+import dao.KhachHangDao;
+import entity.KhachHang;
 
 public final class KhachHangFrame extends JFrame {
 
@@ -42,59 +49,31 @@ public final class KhachHangFrame extends JFrame {
     private final JButton editButton = new JButton("Sửa thông tin");
     private final JButton vehiclesButton = new JButton("Xem xe của khách");
 
-    // Dữ liệu mẫu, chỉ dùng hiển thị giao diện.
-    private final Object[][] sampleCustomers = {
-        {
-            "KH001", "Nguyễn Minh An", "0902 345 678",
-            2, "05/10/2026", "Đang hoạt động",
-            "minhan@example.com", "Quận 7, TP. Hồ Chí Minh", "Cá nhân"
-        },
-        {
-            "KH002", "Lê Hoàng Nam", "0903 456 789",
-            1, "05/10/2026", "Đang hoạt động",
-            "", "TP. Hồ Chí Minh", "Cá nhân"
-        },
-        {
-            "KH003", "Võ Thu Hà", "0904 567 890",
-            1, "04/10/2026", "Đang hoạt động",
-            "", "TP. Hồ Chí Minh", "Cá nhân"
-        },
-        {
-            "KH004", "Nguyễn Minh An", "0902 345 678",
-            2, "05/10/2026", "Đang hoạt động",
-            "minhan@example.com", "Quận 7, TP. Hồ Chí Minh", "Cá nhân"
-        },
-        {
-            "KH005", "Lê Hoàng Nam", "0903 456 789",
-            1, "05/10/2026", "Đang hoạt động",
-            "", "TP. Hồ Chí Minh", "Cá nhân"
-        },
-        {
-            "KH006", "Võ Thu Hà", "0904 567 890",
-            1, "04/10/2026", "Đang hoạt động",
-            "", "TP. Hồ Chí Minh", "Cá nhân"
-        }
-    };
+    private final KhachHangDao khachHangDao = new KhachHangDao();
+
+    private ArrayList<KhachHang> danhSachKhachHang = new ArrayList<>();
+
+    private final JLabel lblSoLuong = new JLabel("Đang tải dữ liệu...");
 
     private final DefaultTableModel tableModel = new DefaultTableModel(
-        new String[]{
-            "Mã KH", "Khách hàng", "Điện thoại",
-            "Số xe", "Lần đến gần nhất", "Trạng thái"
-        },
-        0
-    ) {
-        private static final long serialVersionUID = 1L;
+    	    new String[] {
+    	        "Mã KH", "Khách hàng", "Điện thoại",
+    	        "Email", "Địa chỉ", "Trạng thái"
+    	    },
+    	    0
+    	) {
+    	    private static final long serialVersionUID = 1L;
 
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
+    	    @Override
+    	    public boolean isCellEditable(int row, int column) {
+    	        return false;
+    	    }
 
-        @Override
-        public Class<?> getColumnClass(int column) {
-            return column == 3 ? Integer.class : String.class;
-        }
-    };
+    	    @Override
+    	    public Class<?> getColumnClass(int column) {
+    	        return String.class;
+    	    }
+    	};
 
     private final JTable customerTable = new JTable(tableModel);
 
@@ -104,7 +83,6 @@ public final class KhachHangFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
 
-        loadSampleRows();
         buildInterface();
         bindEvents();
 
@@ -124,16 +102,87 @@ public final class KhachHangFrame extends JFrame {
         );
 
         setLocationRelativeTo(null);
-        customerTable.setRowSelectionInterval(0, 0);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+     // SQL chưa có trường nhóm khách hàng.
+        groupCombo.setSelectedIndex(-1);
+        groupCombo.setEnabled(false);
+
+        loadKhachHangFromSQL();
     }
 
-    private void loadSampleRows() {
-        for (Object[] customer : sampleCustomers) {
-            tableModel.addRow(new Object[]{
-                customer[0], customer[1], customer[2],
-                customer[3], customer[4], customer[5]
-            });
-        }
+    private void loadKhachHangFromSQL() {
+        lblSoLuong.setText("Đang tải khách hàng...");
+
+        new SwingWorker<ArrayList<KhachHang>, Void>() {
+            @Override
+            protected ArrayList<KhachHang> doInBackground() throws Exception {
+                Connection conn = ConnectDB.getConnection();
+
+                if (conn == null || conn.isClosed()) {
+                    ConnectDB.getInstance().connect();
+                    System.out.println("Kết nối database thành công!");
+                }
+
+                return khachHangDao.layDanhSachKhachHang();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    ArrayList<KhachHang> ketQua = get();
+
+                    customerTable.clearSelection();
+                    tableModel.setRowCount(0);
+
+                    danhSachKhachHang = ketQua;
+                    clearForm();
+
+                    for (KhachHang kh : danhSachKhachHang) {
+                        tableModel.addRow(new Object[] {
+                            kh.getMaKhachHang(),
+                            kh.getHoTen(),
+                            kh.getSoDienThoai(),
+                            kh.getEmail(),
+                            kh.getDiaChi(),
+                            kh.isTrangThai()
+                                ? "Đang hoạt động"
+                                : "Ngừng hoạt động"
+                        });
+                    }
+
+                    lblSoLuong.setText(
+                        "Danh sách " + danhSachKhachHang.size()
+                        + " khách hàng • Dữ liệu SQL"
+                    );
+
+                    if (customerTable.getRowCount() > 0) {
+                        customerTable.setRowSelectionInterval(0, 0);
+                    }
+
+                    System.out.println(
+                        "Đã tải " + danhSachKhachHang.size()
+                        + " khách hàng từ SQL."
+                    );
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    lblSoLuong.setText("Đã ngắt tải dữ liệu");
+
+                } catch (ExecutionException e) {
+                    Throwable loi = e.getCause();
+                    loi.printStackTrace();
+
+                    lblSoLuong.setText("Không tải được dữ liệu");
+
+                    JOptionPane.showMessageDialog(
+                        KhachHangFrame.this,
+                        "Không tải được khách hàng:\n" + loi.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        }.execute();
     }
 
     private void buildInterface() {
@@ -283,10 +332,125 @@ public final class KhachHangFrame extends JFrame {
             );
 
             item.addActionListener(event -> {
-                if ("Quản lý khách hàng".equals(itemName)) {
-                    nameField.requestFocusInWindow();
-                } else {
-                    showPreviewMessage(itemName);
+                switch (itemName) {
+
+                    // ================= HỆ THỐNG =================
+                    case "Tài khoản cá nhân":
+                        new GaraTaiKhoanCaNhan().setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Đổi mật khẩu":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    case "Đăng xuất":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    // ================= KHÁCH HÀNG =================
+                    case "Quản lý khách hàng":
+                        nameField.requestFocusInWindow();
+                        break;
+
+                    // ================= XE =================
+                    case "Quản lý xe":
+                        new QuanLyXeFrame().setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Tra cứu xe": {
+                        QuanLyXeFrame manHinhXe = new QuanLyXeFrame();
+                        manHinhXe.setVisible(true);
+                        manHinhXe.chuyenDenTraCuu();
+                        dispose();
+                        break;
+                    }
+
+                    case "Lịch sử sửa chữa":
+                        new LichSuSuaChuaFrame().setVisible(true);
+                        dispose();
+                        break;
+
+                    // ================= DỊCH VỤ =================
+                    case "Quản lý dịch vụ":
+                    	new QuanLyDichVuFrame().setVisible(true);
+                        dispose();
+                        break;
+                    case "Lập phiếu tiếp nhận xe":
+                        new TiepNhanXeFrame().setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Lập phiếu sửa chữa / Báo giá":
+                        new LapPhieuSuaChuaFrame().setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Cập nhật tình trạng sửa xe":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    // ================= PHỤ TÙNG =================
+                    case "Quản lý phụ tùng":
+                        new QuanLyPhuTungFrame().setVisible(true);
+                        dispose();
+                        break;
+
+                    // ================= KHO HÀNG =================
+                    case "Lập phiếu nhập kho":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    case "Lập phiếu xuất kho":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    // ================= HÓA ĐƠN =================
+                    case "Lập hóa đơn":
+                        showPreviewMessage(itemName);
+                        break;
+
+                    case "Tra cứu hóa đơn":
+                        new GaraTraCuuHoaDon().setVisible(true);
+                        dispose();
+                        break;
+
+                    // ================= THỐNG KÊ =================
+                    case "Thống kê doanh thu":
+                        new GaraThongKe(0).setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Thống kê tồn kho":
+                        new GaraThongKe(1).setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Phụ tùng bán chạy":
+                        new GaraThongKe(2).setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Phụ tùng bán chậm":
+                        new GaraThongKe(3).setVisible(true);
+                        dispose();
+                        break;
+
+                    // ================= NHÂN VIÊN =================
+                    case "Quản lý nhân sự":
+                        new GaraQuanLyNhanSu().setVisible(true);
+                        dispose();
+                        break;
+
+                    case "Phân công kỹ thuật viên":
+                        new GaraPhanCongKTV().setVisible(true);
+                        dispose();
+                        break;
+
+                    default:
+                        showPreviewMessage(itemName);
+                        break;
                 }
             });
 
@@ -566,13 +730,8 @@ public final class KhachHangFrame extends JFrame {
 
         section.add(scrollPane, BorderLayout.CENTER);
 
-        JLabel count = new JLabel(
-            "Danh sách " + tableModel.getRowCount()
-            + " khách hàng • Dữ liệu mẫu"
-        );
-        count.setForeground(Color.GRAY);
-
-        section.add(count, BorderLayout.SOUTH);
+        lblSoLuong.setForeground(Color.GRAY);
+        section.add(lblSoLuong, BorderLayout.SOUTH);
 
         return section;
     }
@@ -580,30 +739,45 @@ public final class KhachHangFrame extends JFrame {
     // ==================== NÚT VÀ FOOTER ====================
 
     private JPanel createButtonSection() {
+    	JButton homeButton = new JButton("Về màn hình chính");
+    	homeButton.addActionListener(e -> {
+    	    new GaraManHinhChinh().setVisible(true);
+    	    dispose();
+    	});
         JPanel panel = new JPanel(
             new FlowLayout(FlowLayout.RIGHT, 6, 0)
         );
         panel.setOpaque(false);
 
-        JButton[] buttons = {
-            newButton, addButton, editButton, vehiclesButton
-        };
+     // Nút về màn hình chính: nền đỏ, chữ trắng.
+        homeButton.setContentAreaFilled(false);
+        homeButton.setOpaque(true);
+        homeButton.setBackground(RED);
+        homeButton.setForeground(Color.WHITE);
+        homeButton.setFocusPainted(false);
+        homeButton.setBorderPainted(false);
+        homeButton.setPreferredSize(new Dimension(165, 30));
 
-        for (JButton button : buttons) {
-            button.setFont(new Font("Arial", Font.BOLD, 12));
-            button.setFocusPainted(false);
-            button.setPreferredSize(new Dimension(145, 28));
-            button.setCursor(
-                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            );
-
-            panel.add(button);
-        }
-
-        vehiclesButton.setBackground(RED);
-        vehiclesButton.setForeground(Color.WHITE);
+        // Nút xem xe: nền đỏ, chữ trắng.
+        vehiclesButton.setContentAreaFilled(false);
         vehiclesButton.setOpaque(true);
+        vehiclesButton.setBackground(Color.BLUE);
+        vehiclesButton.setForeground(Color.WHITE);
+        vehiclesButton.setFocusPainted(false);
+        vehiclesButton.setBorderPainted(false);
+        vehiclesButton.setPreferredSize(new Dimension(165, 30));
 
+        // Kích thước các nút còn lại.
+        newButton.setPreferredSize(new Dimension(165, 30));
+        addButton.setPreferredSize(new Dimension(165, 30));
+        editButton.setPreferredSize(new Dimension(165, 30));
+
+        // Thêm từng nút vào thanh nút.
+        panel.add(homeButton);
+        panel.add(newButton);
+        panel.add(addButton);
+        panel.add(editButton);
+        panel.add(vehiclesButton);
         return panel;
     }
 
@@ -645,7 +819,7 @@ public final class KhachHangFrame extends JFrame {
                     int modelRow = customerTable.convertRowIndexToModel(
                         selectedRow
                     );
-                    showSampleCustomer(modelRow);
+                    showCustomer(modelRow);
                 }
             }
         );
@@ -660,23 +834,40 @@ public final class KhachHangFrame extends JFrame {
             event -> showPreviewMessage("Sửa thông tin")
         );
 
-        vehiclesButton.addActionListener(
-            event -> showPreviewMessage("Xem xe của khách")
+        vehiclesButton.addActionListener(event -> {
+            QuanLyXeFrame manHinhXe = new QuanLyXeFrame();
+            manHinhXe.setVisible(true);
+            dispose();
+        });
+    }
+
+    private void showCustomer(int row) {
+        if (row < 0 || row >= danhSachKhachHang.size()) {
+            return;
+        }
+
+        KhachHang kh = danhSachKhachHang.get(row);
+
+        customerIdField.setText(kh.getMaKhachHang());
+        nameField.setText(kh.getHoTen());
+        phoneField.setText(kh.getSoDienThoai());
+
+        emailField.setText(
+            kh.getEmail() == null ? "" : kh.getEmail()
         );
+
+        addressField.setText(
+            kh.getDiaChi() == null ? "" : kh.getDiaChi()
+        );
+
+        statusCombo.setSelectedItem(
+            kh.isTrangThai()
+                ? "Đang hoạt động"
+                : "Ngừng hoạt động"
+        );
+
+        groupCombo.setSelectedIndex(-1);
     }
-
-    private void showSampleCustomer(int row) {
-        Object[] customer = sampleCustomers[row];
-
-        customerIdField.setText(customer[0].toString());
-        nameField.setText(customer[1].toString());
-        phoneField.setText(customer[2].toString());
-        statusCombo.setSelectedItem(customer[5].toString());
-        emailField.setText(customer[6].toString());
-        addressField.setText(customer[7].toString());
-        groupCombo.setSelectedItem(customer[8].toString());
-    }
-
     private void clearForm() {
         customerTable.clearSelection();
 
@@ -689,7 +880,7 @@ public final class KhachHangFrame extends JFrame {
             field.setText("");
         }
 
-        groupCombo.setSelectedIndex(0);
+        groupCombo.setSelectedIndex(-1);
         statusCombo.setSelectedIndex(0);
         nameField.requestFocusInWindow();
     }
