@@ -432,13 +432,19 @@ public class GaraThongKe extends JFrame {
                         JOptionPane.showMessageDialog(this,
                                 "Đang mở chức năng: " + itemName,
                                 "Thông báo hệ thống", JOptionPane.INFORMATION_MESSAGE);
+
+
                     }
-                });
-                menu.add(item);
-            }
-        }
-        return menu;
-    }
+                    });
+				menu.add(item);
+			}
+		}
+		return menu;
+	}
+
+    
+
+
 
     private JButton taoNutNhanh(String tieuDe, String phimTat, ImageIcon icon) {
         JButton btn = new JButton();
