@@ -4,22 +4,22 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.text.Normalizer;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 
-import dao.DichVuDao;
 import entity.DichVu;
 
-public class QuanLyDichVuFrame extends JFrame implements ActionListener {
+public class QuanLyDichVuFrame extends JPanel
+        implements ActionListener {
+
     private static final long serialVersionUID = 1L;
 
     private static final Color CHU = new Color(35, 41, 51);
@@ -27,35 +27,31 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
     private static final Color VIEN = new Color(216, 222, 230);
     private static final Color DO = new Color(188, 25, 58);
 
-    // ==================== DAO VÀ DỮ LIỆU ====================
-
-    private final DichVuDao dichVuDao = new DichVuDao();
-    private final ArrayList<DichVu> danhSachDichVu = new ArrayList<>();
-
-    // ==================== CÁC THÀNH PHẦN GIAO DIỆN ====================
-
     private final JTextField txtMaDichVu = new JTextField();
     private final JTextField txtTenDichVu = new JTextField();
     private final JTextField txtDonGia = new JTextField();
+    private final JTextArea txtMoTa = new JTextArea(3, 20);
 
     private final JComboBox<String> cboTrangThai = new JComboBox<>(
-            new String[]{"Hoạt động", "Ngừng hoạt động"});
+            new String[]{"Đang áp dụng", "Ngừng áp dụng"});
 
-    private final JTextArea txtMoTa = new JTextArea(4, 20);
-    private final JTextField txtTimKiem = new JTextField(25);
+    private final JTextField txtTimKiem = new JTextField();
+    private final JComboBox<String> cboLocTrangThai = new JComboBox<>(
+            new String[]{"Tất cả", "Đang áp dụng", "Ngừng áp dụng"});
 
-    private final JButton btnTimKiem = taoNut("Tìm kiếm", true);
-    private final JButton btnThem = taoNut("Thêm", true);
-    private final JButton btnSua = taoNut("Sửa", false);
-    private final JButton btnNgungHoatDong = taoNut("Ngừng hoạt động", false);
+    private final JButton btnThem = taoNut("Thêm dịch vụ", false);
+    private final JButton btnSua = taoNut("Sửa dịch vụ", false);
+    private final JButton btnNgung = taoNut("Ngừng áp dụng", true);
     private final JButton btnLamMoi = taoNut("Làm mới", false);
+    private final JButton btnTim = taoNut("Tìm kiếm", false);
 
-    private final JLabel lblSoDichVu = new JLabel("Số dịch vụ: 0");
+    private final JLabel lblSoLuong = new JLabel();
 
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[]{"Mã dịch vụ", "Tên dịch vụ", "Mô tả", "Đơn giá", "Trạng thái"}, 0) {
-        private static final long serialVersionUID = 1L;
-
+            new String[]{
+                "Mã dịch vụ", "Tên dịch vụ", "Mô tả",
+                "Đơn giá", "Trạng thái"
+            }, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
             return false;
@@ -68,313 +64,285 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
     };
 
     private final JTable table = new JTable(model);
-    private final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+    private final TableRowSorter<DefaultTableModel> boLoc =
+            new TableRowSorter<>(model);
 
-    // ==================== CONSTRUCTOR ====================
+    private final ArrayList<DichVu> danhSach = new ArrayList<>();
+    private int soThuTu = 5;
 
     public QuanLyDichVuFrame() {
-        setTitle("Quản lý dịch vụ - Night Invader");
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setLocationRelativeTo(null);
-        setResizable(true);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        khoiTaoGiaoDien();
-
-        try {
-            taiDuLieuTuDatabase();
-        } catch (SQLException | IllegalArgumentException ex) {
-            baoLoi("Không tải được danh sách dịch vụ.", ex);
-        }
-    }
-
-    // ==================== KHỞI TẠO GIAO DIỆN ====================
-
-    private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
-
-        // 1. MENU BAR
-
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.setBackground(new Color(245, 247, 250));
-        menuBar.setBorder(new EmptyBorder(10, 15, 10, 15));
-
-        Font menuFont = new Font("Arial", Font.BOLD, 16);
-
-        JMenu logo = new JMenu("NIGHT INVADER");
-        logo.setFont(new Font("Arial", Font.BOLD, 15));
-        logo.setForeground(new Color(210, 30, 30));
-        logo.setMargin(new Insets(5, 10, 5, 10));
-        menuBar.add(logo);
-
-        String[] tenMenu = {
-            "Hệ thống", "Khách hàng ", "Xe ", "Dịch vụ ",
-            "Phụ tùng", "Kho hàng ", "Hóa đơn ", "Thống kê ", "Nhân viên "
-        };
-
-        String[][] cacItem = {
-            {"Tài khoản cá nhân", "Đổi mật khẩu", "-", "Đăng xuất"},
-            {"Quản lý khách hàng"},
-            {"Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"},
-            {
-                "Quản lý dịch vụ", "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ",
-                "-", "Lập phiếu tiếp nhận xe", "Lập phiếu sửa chữa / Báo giá",
-                "Cập nhật tình trạng sửa xe"
-            },
-            {"Quản lý phụ tùng"},
-            {"Lập phiếu nhập kho", "Lập phiếu xuất kho"},
-            {"Lập hóa đơn", "Tra cứu hóa đơn"},
-            {
-                "Thống kê doanh thu", "Thống kê tồn kho",
-                "Phụ tùng bán chạy", "Phụ tùng bán chậm"
-            },
-            {"Quản lý nhân sự", "Phân công kỹ thuật viên"}
-        };
-
-        for (int i = 0; i < tenMenu.length; i++) {
-            JMenu menu = taoMenuDropdown(tenMenu[i], cacItem[i]);
-            menu.setFont(menuFont);
-            menu.setMargin(new Insets(5, 10, 5, 10));
-
-            if (i == 3) {
-                menu.setForeground(DO);
-                menu.setBorder(BorderFactory.createMatteBorder(0, 0, 3, 0, DO));
-            }
-
-            menuBar.add(menu);
-        }
-
-        JMenu taiKhoan = new JMenu("Xin chào, Chủ Gara");
-        taiKhoan.setFont(menuFont);
-        taiKhoan.setMargin(new Insets(5, 10, 5, 10));
-        taiKhoan.setIcon(loadIcon("/img/icon_nguoi.jpg", 20, 20));
-
-        menuBar.add(Box.createHorizontalGlue());
-        menuBar.add(taiKhoan);
-        setJMenuBar(menuBar);
-
-        // 2. THANH CÔNG CỤ NHANH
-
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        toolbar.setBackground(Color.WHITE);
-        toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 224, 230)));
-
-        toolbar.add(taoNutNhanh("Tiếp nhận xe", "F2", loadIcon("/img/icon_xe.png", 22, 22)));
-        toolbar.add(taoNutNhanh("Tình trạng sửa xe", "F5", loadIcon("/img/icon-vector.png", 22, 22)));
-        toolbar.add(taoNutNhanh("Lập hóa đơn", "F3", loadIcon("/img/icon_hoadon.png", 22, 22)));
-        toolbar.add(taoNutNhanh("Nhập kho", "F4", loadIcon("/img/icon_nhapkho.jpg", 22, 22)));
-
-        JPanel thongTinPhu = new JPanel(new GridLayout(2, 1));
-        thongTinPhu.setBackground(Color.WHITE);
-
-        DateTimeFormatter dinhDangNgay = DateTimeFormatter.ofPattern(
-                "EEEE, dd/MM/uuuu", Locale.forLanguageTag("vi-VN"));
-
-        JLabel ngay = new JLabel(LocalDate.now().format(dinhDangNgay), JLabel.RIGHT);
-        ngay.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        JLabel chiNhanh = new JLabel("Chi nhánh: Gara chính", JLabel.RIGHT);
-        chiNhanh.setFont(new Font("Arial", Font.PLAIN, 11));
-        chiNhanh.setForeground(Color.GRAY);
-
-        thongTinPhu.add(ngay);
-        thongTinPhu.add(chiNhanh);
-
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
-        header.setBorder(new EmptyBorder(0, 10, 0, 15));
-        header.add(toolbar, BorderLayout.CENTER);
-        header.add(thongTinPhu, BorderLayout.EAST);
-
-        // 3. NỘI DUNG QUẢN LÝ DỊCH VỤ
-
-        JPanel panelCenter = new JPanel(new BorderLayout());
-        panelCenter.setBackground(new Color(216, 220, 228));
-        panelCenter.setBorder(new EmptyBorder(20, 55, 15, 55));
+        setBackground(new Color(216, 220, 228));
+        setBorder(new EmptyBorder(20, 65, 15, 65));
 
         JPanel khung = new JPanel(new BorderLayout());
         khung.setBackground(Color.WHITE);
         khung.setBorder(BorderFactory.createLineBorder(VIEN));
 
         JLabel tieuDe = new JLabel("QUẢN LÝ DỊCH VỤ");
+        tieuDe.setFont(new Font("Arial", Font.BOLD, 16));
+        tieuDe.setForeground(CHU);
         tieuDe.setOpaque(true);
         tieuDe.setBackground(new Color(246, 247, 250));
-        tieuDe.setForeground(CHU);
-        tieuDe.setFont(new Font("Arial", Font.BOLD, 16));
         tieuDe.setBorder(new EmptyBorder(10, 16, 10, 16));
         khung.add(tieuDe, BorderLayout.NORTH);
 
-        JPanel noiDung = new JPanel(new BorderLayout(0, 16));
+        JPanel noiDung = new JPanel(new BorderLayout(0, 20));
         noiDung.setBackground(Color.WHITE);
-        noiDung.setBorder(new EmptyBorder(16, 18, 16, 18));
+        noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
-        // FORM THÔNG TIN
+        // ==================== FORM ====================
 
         JPanel phanTren = new JPanel(new BorderLayout(0, 12));
         phanTren.setOpaque(false);
 
+        JLabel moTa = new JLabel(
+                "Quản lý danh mục dịch vụ và đơn giá áp dụng.");
+        moTa.setFont(new Font("Arial", Font.PLAIN, 13));
+        moTa.setForeground(CHU_PHU);
+        phanTren.add(moTa, BorderLayout.NORTH);
+
         JPanel form = new JPanel(new GridLayout(2, 2, 24, 12));
         form.setOpaque(false);
 
+        txtMaDichVu.setEditable(false);
+
         themO(form, "Mã dịch vụ", txtMaDichVu);
         themO(form, "Tên dịch vụ", txtTenDichVu);
-        themO(form, "Đơn giá (VNĐ)", txtDonGia);
+        themO(form, "Đơn giá dịch vụ (VNĐ)", txtDonGia);
         themO(form, "Trạng thái", cboTrangThai);
-
-        txtMaDichVu.setEditable(false);
 
         phanTren.add(form, BorderLayout.CENTER);
 
-        JPanel panelMoTa = new JPanel(new BorderLayout(0, 4));
-        panelMoTa.setOpaque(false);
+        txtMoTa.setLineWrap(true);
+        txtMoTa.setWrapStyleWord(true);
+        txtMoTa.setFont(new Font("Arial", Font.PLAIN, 13));
+        txtMoTa.setBorder(new EmptyBorder(6, 8, 6, 8));
+
+        JPanel vungMoTa = new JPanel(new BorderLayout(0, 5));
+        vungMoTa.setOpaque(false);
 
         JLabel lblMoTa = new JLabel("Mô tả");
         lblMoTa.setFont(new Font("Arial", Font.BOLD, 12));
         lblMoTa.setForeground(new Color(87, 100, 117));
 
-        txtMoTa.setLineWrap(true);
-        txtMoTa.setWrapStyleWord(true);
-        txtMoTa.setFont(new Font("Arial", Font.PLAIN, 13));
-        txtMoTa.setForeground(CHU);
-        txtMoTa.setBackground(Color.WHITE);
-        txtMoTa.setBorder(new EmptyBorder(5, 7, 5, 7));
-
         JScrollPane cuonMoTa = new JScrollPane(txtMoTa);
-        cuonMoTa.setPreferredSize(new Dimension(200, 90));
         cuonMoTa.setBorder(BorderFactory.createLineBorder(VIEN));
 
-        panelMoTa.add(lblMoTa, BorderLayout.NORTH);
-        panelMoTa.add(cuonMoTa, BorderLayout.CENTER);
+        vungMoTa.add(lblMoTa, BorderLayout.NORTH);
+        vungMoTa.add(cuonMoTa, BorderLayout.CENTER);
+        phanTren.add(vungMoTa, BorderLayout.SOUTH);
 
-        phanTren.add(panelMoTa, BorderLayout.SOUTH);
         noiDung.add(phanTren, BorderLayout.NORTH);
 
-        // DANH SÁCH DỊCH VỤ
+        // ==================== DANH SÁCH ====================
 
-        JPanel panelDanhSach = new JPanel(new BorderLayout(0, 10));
-        panelDanhSach.setBackground(Color.WHITE);
+        JPanel phanBang = new JPanel(new BorderLayout(0, 10));
+        phanBang.setOpaque(false);
 
-        JPanel thanhDanhSach = new JPanel(new BorderLayout(10, 0));
-        thanhDanhSach.setBackground(new Color(237, 241, 245));
-        thanhDanhSach.setBorder(new EmptyBorder(6, 10, 6, 10));
+        JPanel thanhTim = new JPanel(new BorderLayout(16, 0));
+        thanhTim.setBackground(new Color(237, 241, 245));
+        thanhTim.setBorder(new EmptyBorder(6, 10, 6, 10));
 
-        JLabel lblDanhSach = new JLabel("DANH SÁCH DỊCH VỤ");
-        lblDanhSach.setFont(new Font("Arial", Font.BOLD, 12));
-        lblDanhSach.setForeground(CHU);
+        JPanel tim = new JPanel(new BorderLayout(8, 0));
+        tim.setOpaque(false);
+        tim.add(new JLabel("Tìm theo mã hoặc tên dịch vụ:"),
+                BorderLayout.WEST);
+        tim.add(txtTimKiem, BorderLayout.CENTER);
+        tim.add(btnTim, BorderLayout.EAST);
 
-        JPanel panelTimKiem = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        panelTimKiem.setOpaque(false);
+        JPanel loc = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        loc.setOpaque(false);
+        loc.add(new JLabel("Trạng thái:"));
+        loc.add(cboLocTrangThai);
 
-        txtTimKiem.setFont(new Font("Arial", Font.PLAIN, 13));
-        txtTimKiem.setPreferredSize(new Dimension(250, 30));
-        txtTimKiem.setToolTipText("Nhập mã hoặc tên dịch vụ");
+        thanhTim.add(tim, BorderLayout.CENTER);
+        thanhTim.add(loc, BorderLayout.EAST);
+        phanBang.add(thanhTim, BorderLayout.NORTH);
 
-        panelTimKiem.add(txtTimKiem);
-        panelTimKiem.add(btnTimKiem);
-
-        thanhDanhSach.add(lblDanhSach, BorderLayout.WEST);
-        thanhDanhSach.add(panelTimKiem, BorderLayout.EAST);
-
-        table.setRowSorter(sorter);
-        table.setRowHeight(34);
         table.setFont(new Font("Arial", Font.PLAIN, 13));
+        table.setRowHeight(36);
+        table.setRowSorter(boLoc);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setSelectionBackground(new Color(53, 105, 139));
         table.setSelectionForeground(Color.WHITE);
-        table.setGridColor(VIEN);
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+
+        table.getTableHeader().setFont(
+                new Font("Arial", Font.BOLD, 12));
+        table.getTableHeader().setBackground(
+                new Color(237, 241, 245));
         table.getTableHeader().setReorderingAllowed(false);
 
-        int[] rong = {120, 250, 380, 150, 160};
+        DefaultTableCellRenderer hienThi =
+                new DefaultTableCellRenderer() {
+            private final NumberFormat tien =
+                    NumberFormat.getNumberInstance(
+                            Locale.forLanguageTag("vi-VN"));
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable bang, Object value, boolean selected,
+                    boolean focus, int row, int column) {
+                super.getTableCellRendererComponent(
+                        bang, value, selected, focus, row, column);
+
+                setBorder(new EmptyBorder(0, 8, 0, 8));
+                setHorizontalAlignment(SwingConstants.LEFT);
+
+                if (value instanceof BigDecimal) {
+                    tien.setMinimumFractionDigits(0);
+                    tien.setMaximumFractionDigits(2);
+                    setText(tien.format(value) + " đ");
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+                }
+
+                if (!selected) {
+                    setBackground(row % 2 == 0
+                            ? Color.WHITE
+                            : new Color(247, 248, 250));
+                    setForeground(CHU);
+                }
+
+                return this;
+            }
+        };
+
+        table.setDefaultRenderer(String.class, hienThi);
+        table.setDefaultRenderer(BigDecimal.class, hienThi);
+
+        int[] rong = {120, 230, 350, 140, 160};
         for (int i = 0; i < rong.length; i++) {
-            table.getColumnModel().getColumn(i).setPreferredWidth(rong[i]);
+            table.getColumnModel().getColumn(i)
+                    .setPreferredWidth(rong[i]);
         }
 
         JScrollPane cuonBang = new JScrollPane(table);
         cuonBang.setBorder(BorderFactory.createLineBorder(VIEN));
         cuonBang.getViewport().setBackground(Color.WHITE);
 
-        lblSoDichVu.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblSoDichVu.setForeground(CHU_PHU);
+        phanBang.add(cuonBang, BorderLayout.CENTER);
+        lblSoLuong.setForeground(CHU_PHU);
+        phanBang.add(lblSoLuong, BorderLayout.SOUTH);
+        noiDung.add(phanBang, BorderLayout.CENTER);
 
-        panelDanhSach.add(thanhDanhSach, BorderLayout.NORTH);
-        panelDanhSach.add(cuonBang, BorderLayout.CENTER);
-        panelDanhSach.add(lblSoDichVu, BorderLayout.SOUTH);
+        // ==================== NÚT ====================
 
-        noiDung.add(panelDanhSach, BorderLayout.CENTER);
-
-        // CÁC NÚT CHỨC NĂNG
-
-        JPanel thaoTac = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel thaoTac = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT, 8, 0));
         thaoTac.setOpaque(false);
         thaoTac.add(btnThem);
         thaoTac.add(btnSua);
-        thaoTac.add(btnNgungHoatDong);
+        thaoTac.add(btnNgung);
         thaoTac.add(btnLamMoi);
 
         noiDung.add(thaoTac, BorderLayout.SOUTH);
+
         khung.add(noiDung, BorderLayout.CENTER);
-        panelCenter.add(khung, BorderLayout.CENTER);
-
-        // 4. FOOTER
-
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setBackground(new Color(245, 247, 250));
-        footer.setBorder(new EmptyBorder(8, 15, 8, 15));
-
-        JLabel trangThai = new JLabel("Đang hoạt động | Vai trò: Chủ Gara | Chi nhánh: Gara chính");
-        trangThai.setFont(new Font("Arial", Font.PLAIN, 12));
-        trangThai.setForeground(Color.DARK_GRAY);
-
-        JLabel banQuyen = new JLabel("NIGHT INVADER • Gara ô tô");
-        banQuyen.setFont(new Font("Arial", Font.PLAIN, 12));
-        banQuyen.setForeground(Color.GRAY);
-
-        footer.add(trangThai, BorderLayout.WEST);
-        footer.add(banQuyen, BorderLayout.EAST);
-
-        // GẮN VÀO FRAME
-
-        add(header, BorderLayout.NORTH);
-        add(panelCenter, BorderLayout.CENTER);
-        add(footer, BorderLayout.SOUTH);
-
-        // ĐĂNG KÝ SỰ KIỆN
+        add(khung, BorderLayout.CENTER);
 
         btnThem.addActionListener(this);
         btnSua.addActionListener(this);
-        btnNgungHoatDong.addActionListener(this);
+        btnNgung.addActionListener(this);
         btnLamMoi.addActionListener(this);
-        btnTimKiem.addActionListener(this);
+        btnTim.addActionListener(this);
         txtTimKiem.addActionListener(this);
+        cboLocTrangThai.addActionListener(this);
 
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                hienThiDichVuDangChon();
+            if (e.getValueIsAdjusting()) {
+                return;
             }
+
+            int dong = table.getSelectedRow();
+            btnSua.setEnabled(dong >= 0);
+            btnNgung.setEnabled(false);
+
+            if (dong < 0) {
+                return;
+            }
+
+            DichVu dv = danhSach.get(
+                    table.convertRowIndexToModel(dong));
+
+            txtMaDichVu.setText(dv.getMaDichVu());
+            txtTenDichVu.setText(dv.getTenDichVu());
+            txtMoTa.setText(dv.getMoTa());
+            txtDonGia.setText(dv.getDonGia().toPlainString());
+            cboTrangThai.setSelectedIndex(
+                    dv.isTrangThai() ? 0 : 1);
+
+            btnNgung.setEnabled(dv.isTrangThai());
         });
 
-        xoaThongTin();
-        capNhatTrangThaiForm();
-    }
+        danhSach.add(new DichVu(
+                "DV001", "Thay dầu động cơ",
+                "Thay dầu và kiểm tra mức dầu động cơ.",
+                new BigDecimal("150000"), true));
 
-    // ==================== XỬ LÝ SỰ KIỆN ====================
+        danhSach.add(new DichVu(
+                "DV002", "Thay má phanh trước",
+                "Kiểm tra và thay má phanh trước.",
+                new BigDecimal("300000"), true));
+
+        danhSach.add(new DichVu(
+                "DV003", "Kiểm tra điều hòa",
+                "Kiểm tra khả năng làm lạnh và hệ thống điều hòa.",
+                new BigDecimal("200000"), true));
+
+        danhSach.add(new DichVu(
+                "DV004", "Cân bằng động bánh xe",
+                "Kiểm tra và cân bằng động bánh xe.",
+                new BigDecimal("250000"), false));
+
+        danhSach.add(new DichVu(
+                "DV005", "Vệ sinh lọc gió",
+                "Vệ sinh lọc gió động cơ.",
+                new BigDecimal("80000"), true));
+
+        btnLamMoi.doClick();
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         Object nguon = e.getSource();
 
-        if (nguon == btnThem || nguon == btnSua) {
-            boolean them = nguon == btnThem;
-            DichVu dichVuDangChon = layDichVuDangChon();
-
-            if (them && dichVuDangChon != null) {
-                JOptionPane.showMessageDialog(this, "Bấm Làm mới trước khi nhập dịch vụ mới.");
+        if (nguon == btnThem) {
+            if (!validData()) {
                 return;
             }
 
-            if (!them && dichVuDangChon == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn dịch vụ cần sửa.");
+            try {
+                String ma = String.format(
+                        Locale.ROOT, "DV%03d", soThuTu + 1);
+
+                DichVu dv = new DichVu(
+                        ma,
+                        txtTenDichVu.getText().trim(),
+                        txtMoTa.getText().trim(),
+                        new BigDecimal(txtDonGia.getText().trim()),
+                        cboTrangThai.getSelectedIndex() == 0);
+
+                danhSach.add(dv);
+                soThuTu++;
+
+                JOptionPane.showMessageDialog(
+                        this, "Đã thêm dịch vụ mẫu: " + ma);
+                btnLamMoi.doClick();
+
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(
+                        this, ex.getMessage());
+            }
+
+        } else if (nguon == btnSua) {
+            int dong = table.getSelectedRow();
+
+            if (dong < 0) {
+                JOptionPane.showMessageDialog(
+                        this, "Chọn dịch vụ cần sửa.");
                 return;
             }
 
@@ -382,303 +350,187 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
                 return;
             }
 
-            String maDaLuu;
-
             try {
-                String ma = them
-                        ? dichVuDao.taoMaDichVu()
-                        : dichVuDangChon.getMaDichVu();
+                int dongModel = table.convertRowIndexToModel(dong);
+                DichVu cu = danhSach.get(dongModel);
 
-                DichVu dichVu = new DichVu();
-                dichVu.setMaDichVu(ma);
-                dichVu.setTenDichVu(txtTenDichVu.getText().trim());
-                dichVu.setMoTa(txtMoTa.getText().trim().isEmpty() ? null : txtMoTa.getText().trim());
-                dichVu.setDonGia(new BigDecimal(txtDonGia.getText().trim()));
-                dichVu.setTrangThai(cboTrangThai.getSelectedIndex() == 0);
+                DichVu moi = new DichVu(
+                        cu.getMaDichVu(),
+                        txtTenDichVu.getText().trim(),
+                        txtMoTa.getText().trim(),
+                        new BigDecimal(txtDonGia.getText().trim()),
+                        cboTrangThai.getSelectedIndex() == 0);
 
-                boolean thanhCong;
+                danhSach.set(dongModel, moi);
 
-                if (them) {
-                    thanhCong = dichVuDao.themDichVu(dichVu);
-                } else {
-                    thanhCong = dichVuDao.suaDichVu(dichVu);
-                }
+                JOptionPane.showMessageDialog(
+                        this, "Đã cập nhật dịch vụ mẫu.");
+                btnLamMoi.doClick();
 
-                if (!thanhCong) {
-                    JOptionPane.showMessageDialog(this, "Không lưu được dịch vụ.");
-                    return;
-                }
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(
+                        this, ex.getMessage());
+            }
 
-                maDaLuu = ma;
+        } else if (nguon == btnNgung) {
+            int dong = table.getSelectedRow();
 
-            } catch (SQLException | IllegalArgumentException ex) {
-                baoLoi("Không lưu được dịch vụ.", ex);
+            if (dong < 0) {
+                JOptionPane.showMessageDialog(
+                        this, "Chọn dịch vụ cần ngừng áp dụng.");
                 return;
             }
 
-            JOptionPane.showMessageDialog(
-                    this, them ? "Thêm dịch vụ thành công." : "Cập nhật dịch vụ thành công.");
-
-            try {
-                txtTimKiem.setText("");
-                sorter.setRowFilter(null);
-                taiDuLieuTuDatabase();
-                chonDichVuTheoMa(maDaLuu);
-            } catch (SQLException | IllegalArgumentException ex) {
-                baoLoi("Đã lưu dịch vụ nhưng chưa tải lại được danh sách. Bấm Làm mới để thử lại.", ex);
-            }
-
-        } else if (nguon == btnNgungHoatDong) {
-            DichVu dichVu = layDichVuDangChon();
-
-            if (dichVu == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn dịch vụ.");
-                return;
-            }
-
-            if (!dichVu.isTrangThai()) {
-                JOptionPane.showMessageDialog(this, "Dịch vụ này đã ngừng hoạt động.");
-                return;
-            }
+            int dongModel = table.convertRowIndexToModel(dong);
+            DichVu dv = danhSach.get(dongModel);
 
             int chon = JOptionPane.showConfirmDialog(
                     this,
-                    "Ngừng hoạt động dịch vụ \"" + dichVu.getTenDichVu() + "\"?",
+                    "Ngừng áp dụng dịch vụ: "
+                            + dv.getTenDichVu() + "?",
                     "Xác nhận",
                     JOptionPane.YES_NO_OPTION);
 
-            if (chon != JOptionPane.YES_OPTION) {
-                return;
-            }
-
-            String ma = dichVu.getMaDichVu();
-
-            try {
-                if (!dichVuDao.capNhatTrangThai(ma, false)) {
-                    JOptionPane.showMessageDialog(this, "Không cập nhật được trạng thái dịch vụ.");
-                    return;
-                }
-            } catch (SQLException ex) {
-                baoLoi("Không cập nhật được trạng thái dịch vụ.", ex);
-                return;
-            }
-
-            JOptionPane.showMessageDialog(this, "Đã ngừng hoạt động dịch vụ.");
-
-            try {
-                taiDuLieuTuDatabase();
-                chonDichVuTheoMa(ma);
-            } catch (SQLException | IllegalArgumentException ex) {
-                baoLoi("Đã cập nhật trạng thái nhưng chưa tải lại được danh sách.", ex);
+            if (chon == JOptionPane.YES_OPTION) {
+                dv.setTrangThai(false);
+                JOptionPane.showMessageDialog(
+                        this, "Đã ngừng áp dụng dịch vụ mẫu.");
+                btnLamMoi.doClick();
             }
 
         } else if (nguon == btnLamMoi) {
-            try {
-                taiDuLieuTuDatabase();
-                txtTimKiem.setText("");
-                sorter.setRowFilter(null);
-                table.clearSelection();
-                xoaThongTin();
-                capNhatTrangThaiForm();
-                capNhatSoLuong();
-                txtTenDichVu.requestFocusInWindow();
-            } catch (SQLException | IllegalArgumentException ex) {
-                baoLoi("Không tải lại được danh sách dịch vụ.", ex);
+            table.clearSelection();
+            boLoc.setRowFilter(null);
+            model.setRowCount(0);
+
+            for (DichVu dv : danhSach) {
+                model.addRow(new Object[]{
+                    dv.getMaDichVu(),
+                    dv.getTenDichVu(),
+                    dv.getMoTa(),
+                    dv.getDonGia(),
+                    dv.isTrangThai()
+                            ? "Đang áp dụng" : "Ngừng áp dụng"
+                });
             }
 
-        } else if (nguon == btnTimKiem || nguon == txtTimKiem) {
-            String tuKhoa = txtTimKiem.getText().trim();
+            txtMaDichVu.setText("");
+            txtTenDichVu.setText("");
+            txtMoTa.setText("");
+            txtDonGia.setText("");
+            cboTrangThai.setSelectedIndex(0);
 
+            txtTimKiem.setText("");
+            cboLocTrangThai.setSelectedIndex(0);
             table.clearSelection();
 
-            if (tuKhoa.isEmpty()) {
-                sorter.setRowFilter(null);
-            } else {
-                sorter.setRowFilter(RowFilter.regexFilter(
-                        "(?iu)" + Pattern.quote(tuKhoa), 0, 1));
-            }
+            btnSua.setEnabled(false);
+            btnNgung.setEnabled(false);
 
-            xoaThongTin();
-            capNhatTrangThaiForm();
-            capNhatSoLuong();
+            lblSoLuong.setText(
+                    "Hiển thị: " + table.getRowCount()
+                            + " / " + model.getRowCount()
+                            + " dịch vụ");
+
+            txtTenDichVu.requestFocusInWindow();
+
+        } else if (nguon == btnTim
+                || nguon == txtTimKiem
+                || nguon == cboLocTrangThai) {
+            String tuKhoa = chuanHoa(
+                    txtTimKiem.getText().trim());
+
+            String trangThai =
+                    (String) cboLocTrangThai.getSelectedItem();
+
+            boLoc.setRowFilter(
+                    new RowFilter<DefaultTableModel, Integer>() {
+                @Override
+                public boolean include(
+                        Entry<? extends DefaultTableModel,
+                                ? extends Integer> entry) {
+                    String noiDung = entry.getStringValue(0)
+                            + " " + entry.getStringValue(1);
+
+                    boolean dungTrangThai =
+                            "Tất cả".equals(trangThai)
+                            || entry.getStringValue(4)
+                                    .equals(trangThai);
+
+                    return dungTrangThai
+                            && chuanHoa(noiDung).contains(tuKhoa);
+                }
+            });
+
+            lblSoLuong.setText(
+                    "Hiển thị: " + table.getRowCount()
+                            + " / " + model.getRowCount()
+                            + " dịch vụ");
         }
     }
-
-    // ==================== KIỂM TRA DỮ LIỆU ====================
 
     private boolean validData() {
         String ten = txtTenDichVu.getText().trim();
         String moTa = txtMoTa.getText().trim();
-        String donGia = txtDonGia.getText().trim();
+        String gia = txtDonGia.getText().trim();
 
-        if (ten.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tên dịch vụ không được để trống.");
-            txtTenDichVu.requestFocusInWindow();
-            return false;
-        }
-
-        if (ten.length() > 150) {
-            JOptionPane.showMessageDialog(this, "Tên dịch vụ tối đa 150 ký tự.");
+        if (ten.isEmpty() || ten.length() > 150) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Tên dịch vụ không được rỗng,"
+                            + " tối đa 150 ký tự.");
             txtTenDichVu.requestFocusInWindow();
             return false;
         }
 
         if (moTa.length() > 1000) {
-            JOptionPane.showMessageDialog(this, "Mô tả tối đa 1000 ký tự.");
+            JOptionPane.showMessageDialog(
+                    this, "Mô tả tối đa 1000 ký tự.");
             txtMoTa.requestFocusInWindow();
             return false;
         }
 
-        if (donGia.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Đơn giá không được để trống.");
-            txtDonGia.requestFocusInWindow();
-            return false;
-        }
-
-        if (!donGia.matches("[0-9]+(\\.[0-9]{1,2})?")) {
+        // Nhập giá dạng 150000 hoặc 150000.50.
+        if (!gia.matches("[0-9]+(\\.[0-9]{1,2})?")) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Đơn giá phải là số không âm, tối đa 2 chữ số thập phân.\n"
-                            + "Ví dụ: 150000 hoặc 150000.50, không nhập dấu phân cách hàng nghìn.");
+                    "Đơn giá phải là số không âm,"
+                            + " tối đa 2 chữ số thập phân."
+                            + "\nVí dụ: 150000 hoặc 150000.50"
+                            + "\nKhông nhập dấu phân cách hàng nghìn.");
             txtDonGia.requestFocusInWindow();
             return false;
         }
 
-        BigDecimal gia = new BigDecimal(donGia);
+        try {
+            BigDecimal donGia = new BigDecimal(gia);
 
-        if (gia.compareTo(new BigDecimal("9999999999999999.99")) > 0) {
-            JOptionPane.showMessageDialog(this, "Đơn giá vượt giới hạn DECIMAL(18,2).");
+            if (donGia.compareTo(
+                    new BigDecimal("9999999999999999.99")) > 0) {
+                JOptionPane.showMessageDialog(
+                        this, "Đơn giá vượt giới hạn DECIMAL(18,2).");
+                txtDonGia.requestFocusInWindow();
+                return false;
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(
+                    this, "Đơn giá không hợp lệ.");
             txtDonGia.requestFocusInWindow();
             return false;
         }
 
         if (cboTrangThai.getSelectedIndex() < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn trạng thái.");
-            cboTrangThai.requestFocusInWindow();
+            JOptionPane.showMessageDialog(
+                    this, "Vui lòng chọn trạng thái.");
             return false;
         }
 
         return true;
     }
 
-    // ==================== TẢI DỮ LIỆU TỪ SQL ====================
-
-    private void taiDuLieuTuDatabase() throws SQLException {
-        ArrayList<DichVu> duLieu = dichVuDao.layDanhSachDichVu();
-
-        table.clearSelection();
-        model.setRowCount(0);
-
-        danhSachDichVu.clear();
-        danhSachDichVu.addAll(duLieu);
-
-        for (DichVu dichVu : danhSachDichVu) {
-            model.addRow(new Object[]{
-                dichVu.getMaDichVu(),
-                dichVu.getTenDichVu(),
-                dichVu.getMoTa(),
-                dichVu.getDonGia(),
-                dichVu.isTrangThai() ? "Hoạt động" : "Ngừng hoạt động"
-            });
-        }
-
-        xoaThongTin();
-        capNhatSoLuong();
-        capNhatTrangThaiForm();
-    }
-
-    // ==================== HIỂN THỊ DỮ LIỆU LÊN FORM ====================
-
-    private DichVu layDichVuDangChon() {
-        int dong = table.getSelectedRow();
-
-        if (dong < 0) {
-            return null;
-        }
-
-        int dongModel = table.convertRowIndexToModel(dong);
-
-        if (dongModel >= danhSachDichVu.size()) {
-            return null;
-        }
-
-        return danhSachDichVu.get(dongModel);
-    }
-
-    private void hienThiDichVuDangChon() {
-        DichVu dichVu = layDichVuDangChon();
-
-        if (dichVu == null) {
-            xoaThongTin();
-            capNhatTrangThaiForm();
-            return;
-        }
-
-        txtMaDichVu.setText(dichVu.getMaDichVu());
-        txtTenDichVu.setText(dichVu.getTenDichVu());
-        txtDonGia.setText(dichVu.getDonGia() == null ? "" : dichVu.getDonGia().toPlainString());
-        txtMoTa.setText(dichVu.getMoTa());
-        cboTrangThai.setSelectedIndex(dichVu.isTrangThai() ? 0 : 1);
-        txtMoTa.setCaretPosition(0);
-
-        capNhatTrangThaiForm();
-    }
-
-    private void chonDichVuTheoMa(String ma) {
-        for (int i = 0; i < danhSachDichVu.size(); i++) {
-            if (danhSachDichVu.get(i).getMaDichVu().equals(ma)) {
-                int dongHienThi = table.convertRowIndexToView(i);
-
-                if (dongHienThi >= 0) {
-                    table.setRowSelectionInterval(dongHienThi, dongHienThi);
-                    table.scrollRectToVisible(table.getCellRect(dongHienThi, 0, true));
-                }
-
-                return;
-            }
-        }
-    }
-
-    // ==================== CÁC HÀM HỖ TRỢ ====================
-
-    private void xoaThongTin() {
-        txtMaDichVu.setText("");
-        txtTenDichVu.setText("");
-        txtDonGia.setText("");
-        txtMoTa.setText("");
-        cboTrangThai.setSelectedIndex(0);
-    }
-
-    private void capNhatTrangThaiForm() {
-        DichVu dichVu = layDichVuDangChon();
-
-        txtMaDichVu.setEditable(false);
-        txtTenDichVu.setEditable(true);
-        txtDonGia.setEditable(true);
-        txtMoTa.setEditable(true);
-        cboTrangThai.setEnabled(true);
-
-        btnThem.setEnabled(dichVu == null);
-        btnSua.setEnabled(dichVu != null);
-        btnNgungHoatDong.setEnabled(dichVu != null && dichVu.isTrangThai());
-    }
-
-    private void capNhatSoLuong() {
-        lblSoDichVu.setText(
-                "Hiển thị: " + table.getRowCount() + " / " + danhSachDichVu.size() + " dịch vụ");
-    }
-
-    private void baoLoi(String noiDung, Exception ex) {
-        ex.printStackTrace();
-        JOptionPane.showMessageDialog(
-                this,
-                noiDung + "\n" + ex.getMessage(),
-                "Thông báo",
-                JOptionPane.ERROR_MESSAGE);
-    }
-
-    private void themO(JPanel form, String ten, JComponent field) {
-        JPanel o = new JPanel(new BorderLayout(0, 4));
+    private void themO(
+            JPanel form, String ten, JComponent field) {
+        JPanel o = new JPanel(new BorderLayout(0, 5));
         o.setOpaque(false);
 
         JLabel nhan = new JLabel(ten);
@@ -689,12 +541,6 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
         field.setBackground(Color.WHITE);
         field.setForeground(CHU);
         field.setPreferredSize(new Dimension(200, 34));
-
-        if (field instanceof JTextField) {
-            field.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(VIEN),
-                    new EmptyBorder(5, 7, 5, 7)));
-        }
 
         o.add(nhan, BorderLayout.NORTH);
         o.add(field, BorderLayout.CENTER);
@@ -709,16 +555,176 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
         nut.setContentAreaFilled(false);
         nut.setOpaque(true);
         nut.setFocusPainted(false);
-        nut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        nut.setCursor(
+                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         nut.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(chinh ? DO : VIEN),
                 new EmptyBorder(8, 14, 8, 14)));
         return nut;
     }
 
-    // ==================== MENU VÀ THANH CÔNG CỤ ====================
+    private static String chuanHoa(String s) {
+        return Normalizer.normalize(s, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .toLowerCase(Locale.ROOT);
+    }
 
-    private ImageIcon loadIcon(String path, int width, int height) {
+    // ==================== MENU, HEADER, FOOTER ====================
+
+    public JFrame taoCuaSo() {
+        JFrame cuaSo = new JFrame(
+                "Quản lý dịch vụ - Night Invader");
+        cuaSo.setSize(1340, 840);
+        cuaSo.setLocationRelativeTo(null);
+        cuaSo.setResizable(true);
+        cuaSo.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        cuaSo.setLayout(new BorderLayout());
+
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setBackground(new Color(245, 247, 250));
+        menuBar.setBorder(
+                BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        Font menuFont = new Font("Arial", Font.BOLD, 16);
+
+        JMenu logo = new JMenu("NIGHT INVADER");
+        logo.setFont(new Font("Arial", Font.BOLD, 15));
+        logo.setForeground(new Color(210, 30, 30));
+        logo.setMargin(new Insets(5, 10, 5, 10));
+        menuBar.add(logo);
+
+        String[] tenMenu = {
+            "Hệ thống", "Khách hàng ", "Xe ", "Dịch vụ ",
+            "Phụ tùng", "Kho hàng ", "Hóa đơn ",
+            "Thống kê ", "Nhân viên "
+        };
+
+        String[][] cacItem = {
+            {
+                "Tài khoản cá nhân", "Đổi mật khẩu",
+                "-", "Đăng xuất"
+            },
+            {
+                "Quản lý khách hàng"
+            },
+            {
+                "Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"
+            },
+            {
+                "Quản lý dịch vụ", "Thêm dịch vụ",
+                "Sửa dịch vụ", "Xóa dịch vụ", "-",
+                "Lập phiếu tiếp nhận xe",
+                "Lập phiếu sửa chữa / Báo giá",
+                "Cập nhật tình trạng sửa xe"
+            },
+            {
+                "Quản lý phụ tùng"
+            },
+            {
+                "Lập phiếu nhập kho", "Lập phiếu xuất kho"
+            },
+            {
+                "Lập hóa đơn", "Tra cứu hóa đơn"
+            },
+            {
+                "Thống kê doanh thu", "Thống kê tồn kho",
+                "Phụ tùng bán chạy", "Phụ tùng bán chậm"
+            },
+            {
+                "Quản lý nhân sự", "Phân công kỹ thuật viên"
+            }
+        };
+
+        for (int i = 0; i < tenMenu.length; i++) {
+            JMenu menu = taoMenuDropdown(tenMenu[i], cacItem[i]);
+            menu.setFont(menuFont);
+            menu.setMargin(new Insets(5, 10, 5, 10));
+            menuBar.add(menu);
+        }
+
+        JMenu taiKhoan = new JMenu("Xin chào, Chủ Gara");
+        taiKhoan.setFont(menuFont);
+        taiKhoan.setMargin(new Insets(5, 10, 5, 10));
+
+        ImageIcon iconUser =
+                loadIcon("/img/icon_nguoi.jpg", 20, 20);
+        if (iconUser != null) {
+            taiKhoan.setIcon(iconUser);
+        }
+
+        menuBar.add(Box.createHorizontalGlue());
+        menuBar.add(taiKhoan);
+        cuaSo.setJMenuBar(menuBar);
+
+        JPanel toolbar = new JPanel(
+                new FlowLayout(FlowLayout.LEFT, 15, 10));
+        toolbar.setBackground(Color.WHITE);
+        toolbar.setBorder(BorderFactory.createMatteBorder(
+                0, 0, 1, 0, new Color(220, 224, 230)));
+
+        toolbar.add(taoNutNhanh(
+                "Tiếp nhận xe", "F2",
+                loadIcon("/img/icon_xe.png", 22, 22)));
+        toolbar.add(taoNutNhanh(
+                "Tình trạng sửa xe", "F5",
+                loadIcon("/img/icon-vector.png", 22, 22)));
+        toolbar.add(taoNutNhanh(
+                "Lập hóa đơn", "F3",
+                loadIcon("/img/icon_hoadon.png", 22, 22)));
+        toolbar.add(taoNutNhanh(
+                "Nhập kho", "F4",
+                loadIcon("/img/icon_nhapkho.jpg", 22, 22)));
+
+        JPanel thongTin = new JPanel(new GridLayout(2, 1));
+        thongTin.setBackground(Color.WHITE);
+
+        JLabel ngay = new JLabel(
+                "Thứ Ba, 06/10/2026", JLabel.RIGHT);
+        ngay.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        JLabel chiNhanh = new JLabel(
+                "Chi nhánh: Gara chính", JLabel.RIGHT);
+        chiNhanh.setFont(new Font("Arial", Font.PLAIN, 11));
+        chiNhanh.setForeground(Color.GRAY);
+
+        thongTin.add(ngay);
+        thongTin.add(chiNhanh);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.add(toolbar, BorderLayout.CENTER);
+        header.add(thongTin, BorderLayout.EAST);
+        header.setBorder(
+                BorderFactory.createEmptyBorder(0, 10, 0, 15));
+
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(new Color(245, 247, 250));
+        footer.setBorder(
+                BorderFactory.createEmptyBorder(8, 15, 8, 15));
+
+        JLabel trangThai = new JLabel(
+                "Đang hoạt động | Vai trò: Chủ Gara"
+                        + " | Chi nhánh: Gara chính");
+        trangThai.setFont(new Font("Arial", Font.PLAIN, 12));
+        trangThai.setForeground(Color.DARK_GRAY);
+
+        JLabel banQuyen = new JLabel("NIGHT INVADER • Gara ô tô");
+        banQuyen.setFont(new Font("Arial", Font.PLAIN, 12));
+        banQuyen.setForeground(Color.GRAY);
+
+        footer.add(trangThai, BorderLayout.WEST);
+        footer.add(banQuyen, BorderLayout.EAST);
+
+        cuaSo.add(header, BorderLayout.NORTH);
+        cuaSo.add(this, BorderLayout.CENTER);
+        cuaSo.add(footer, BorderLayout.SOUTH);
+
+        return cuaSo;
+    }
+
+    private ImageIcon loadIcon(
+            String path, int width, int height) {
         java.net.URL url = getClass().getResource(path);
 
         if (url == null) {
@@ -726,25 +732,32 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
         }
 
         ImageIcon icon = new ImageIcon(url);
-        Image anh = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        Image anh = icon.getImage().getScaledInstance(
+                width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(anh);
     }
 
-    private JMenu taoMenuDropdown(String tenMenu, String[] cacItem) {
+    private JMenu taoMenuDropdown(
+            String tenMenu, String[] cacItem) {
         JMenu menu = new JMenu(tenMenu);
 
         for (String ten : cacItem) {
             if ("-".equals(ten)) {
                 menu.addSeparator();
             } else {
-                menu.add(new JMenuItem(ten));
+                JMenuItem item = new JMenuItem(ten);
+                item.addActionListener(e ->
+                        JOptionPane.showMessageDialog(
+                                this, "Đang mở chức năng: " + ten));
+                menu.add(item);
             }
         }
 
         return menu;
     }
 
-    private JButton taoNutNhanh(String tieuDe, String phimTat, ImageIcon icon) {
+    private JButton taoNutNhanh(
+            String tieuDe, String phimTat, ImageIcon icon) {
         JButton btn = new JButton();
         btn.setLayout(new BorderLayout(10, 0));
 
@@ -768,11 +781,30 @@ public class QuanLyDichVuFrame extends JFrame implements ActionListener {
 
         btn.setBackground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 205, 210)),
-                new EmptyBorder(6, 10, 6, 10)));
+                BorderFactory.createLineBorder(
+                        new Color(200, 205, 210)),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+
+        btn.addActionListener(e ->
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Đang mở nhanh chức năng: "
+                                + tieuDe + " (" + phimTat + ")"));
 
         return btn;
+    }
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(
+                    UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        SwingUtilities.invokeLater(() ->
+                new QuanLyDichVuFrame().taoCuaSo().setVisible(true));
     }
 }
