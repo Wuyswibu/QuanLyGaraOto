@@ -148,11 +148,11 @@ public class GaraManHinhChinh extends JFrame {
                 "Quản lý khách hàng"
             },
             {
-                "Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"
+                "Quản lý xe", "Lịch sử sửa chữa"
             },
             {
                 "Quản lý dịch vụ",
-                "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ",
+                
                 "-",
                 "Lập phiếu tiếp nhận xe",
                 "Lập phiếu sửa chữa / Báo giá",
