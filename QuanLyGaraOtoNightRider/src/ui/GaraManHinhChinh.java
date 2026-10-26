@@ -78,6 +78,11 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("NHAN_SU", new GaraNhanVien(0));
          
+         themManHinh("THONG_KE_DOANH_THU", new GaraThongKe());
+         themManHinh("THONG_KE_TON_KHO", new GaraThongKeTonKho());
+         themManHinh("PHU_TUNG_BAN_CHAY", new GaraPhuTungBanChay());
+         themManHinh("PHU_TUNG_BAN_CHAM", new GaraPhuTungBanCham());
+         
         add(taoThanhCongCu(), BorderLayout.NORTH);
         add(panelNoiDung, BorderLayout.CENTER);
         add(taoFooter(), BorderLayout.SOUTH);
