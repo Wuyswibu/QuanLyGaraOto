@@ -5,6 +5,7 @@ import java.time.LocalDate;
 public class NhanVien {
     private String maNhanVien;
     private String maPhanQuyen;
+    private String tenChuc;
     private String hoTen;
     private String soDienThoai;
     private String email;
@@ -16,10 +17,11 @@ public class NhanVien {
     }
 
 
-    public NhanVien(String maNhanVien, String maPhanQuyen, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
+    public NhanVien(String maNhanVien, String maPhanQuyen, String tenChuc, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
 
 		this.maNhanVien = maNhanVien;
 		this.maPhanQuyen = maPhanQuyen;
+        this.tenChuc = tenChuc;
 		this.hoTen = hoTen;
 		this.soDienThoai = soDienThoai;
 		this.email = email;
@@ -50,7 +52,12 @@ public class NhanVien {
         }
         this.maPhanQuyen = maPhanQuyen.trim();
     }
-
+    public String getTenChuc() {
+        return tenChuc;
+    }
+    public void setTenChuc(String tenChuc) {
+        this.tenChuc = tenChuc;
+    }
     public String getHoTen() {
         return hoTen;
     }

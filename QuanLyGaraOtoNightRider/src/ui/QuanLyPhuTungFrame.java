@@ -1,18 +1,23 @@
 package ui;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.net.URL;
+import java.math.BigDecimal;
+import java.sql.Connection;
 import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 
-public final class QuanLyPhuTungFrame extends JFrame {
+import connectDB.ConnectDB;
+import dao.PhuTungDao;
+import entity.PhuTung;
+
+public final class QuanLyPhuTungFrame extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,156 +25,114 @@ public final class QuanLyPhuTungFrame extends JFrame {
     private static final Color BACKGROUND = new Color(240, 243, 246);
     private static final Color BORDER = new Color(220, 224, 230);
 
+    // ==================== DAO VÀ DỮ LIỆU ====================
+
+    private final PhuTungDao phuTungDao = new PhuTungDao();
+
+    private ArrayList<PhuTung> danhSachPhuTung = new ArrayList<>();
+
+    private boolean dangTaiDuLieu;
+
+    private final NumberFormat moneyFormat =
+        NumberFormat.getNumberInstance(
+            Locale.forLanguageTag("vi-VN")
+        );
+
+    // ==================== FORM ====================
+
     private final JTextField codeField = new JTextField();
     private final JTextField nameField = new JTextField();
     private final JTextField unitField = new JTextField();
-    private final JTextField purchasePriceField = new JTextField();
+    private final JTextField descriptionField = new JTextField();
     private final JTextField salePriceField = new JTextField();
+    private final JTextField stockField = new JTextField();
     private final JTextField minimumStockField = new JTextField();
-    private final JTextField locationField = new JTextField();
+    private final JTextField statusField = new JTextField();
+
     private final JTextField searchField = new JTextField();
 
-    private final JComboBox<String> statusCombo = new JComboBox<>(
-        new String[]{"Đang kinh doanh", "Ngừng kinh doanh"}
-    );
+    private final JComboBox<String> filterCombo =
+        new JComboBox<>(new String[]{"Tất cả"});
 
-    private final JComboBox<String> filterCombo = new JComboBox<>(
-        new String[]{"Tất cả", "Đang kinh doanh", "Ngừng kinh doanh"}
-    );
+    private final JLabel lblSoLuong =
+        new JLabel("Đang tải dữ liệu...");
 
-    private final JButton addButton = new JButton("Thêm phụ tùng");
-    private final JButton editButton = new JButton("Sửa phụ tùng");
-    private final JButton stopButton = new JButton("Ngừng kinh doanh");
-    private final JButton searchButton = new JButton("Tìm kiếm");
+    // ==================== NÚT ====================
 
-    private final NumberFormat moneyFormat =
-        NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi-VN"));
+    private final JButton homeButton =
+        new JButton("Về màn hình chính");
 
-    /*
-     * Các cột dữ liệu:
-     * mã, tên, đơn vị, giá nhập, giá bán,
-     * tồn kho, tồn tối thiểu, vị trí, trạng thái.
-     */
-    private final Object[][] sampleParts = {
-        {
-            "PT001", "Dầu động cơ 5W-30", "Lít",
-            130000L, 180000L, 38, 10, "Kệ A1", "Đang kinh doanh"
-        },
-        {
-            "PT002", "Lọc dầu Toyota", "Cái",
-            120000L, 180000L, 12, 5, "Kệ A2", "Đang kinh doanh"
-        },
-        {
-            "PT003", "Má phanh trước", "Bộ",
-            700000L, 950000L, 3, 5, "Kệ B1", "Đang kinh doanh"
-        },
-        {
-            "PT004", "Lọc gió động cơ", "Cái",
-            150000L, 220000L, 20, 5, "Kệ A3", "Đang kinh doanh"
-        },
-        {
-            "PT005", "Bugi NGK", "Cái",
-            80000L, 120000L, 40, 10, "Kệ B2", "Đang kinh doanh"
-        },
-        {
-            "PT006", "Ắc quy 12V 60Ah", "Bình",
-            1200000L, 1550000L, 8, 3, "Kệ C1", "Đang kinh doanh"
-        },
-        {
-            "PT007", "Nước làm mát", "Chai",
-            70000L, 110000L, 25, 8, "Kệ A4", "Đang kinh doanh"
-        },
-        {
-            "PT008", "Dây curoa", "Cái",
-            250000L, 350000L, 15, 5, "Kệ B3", "Đang kinh doanh"
-        },
-        {
-            "PT009", "Gạt mưa trước", "Bộ",
-            180000L, 280000L, 18, 5, "Kệ C2", "Đang kinh doanh"
-        },
-        {
-            "PT010", "Lọc gió điều hòa", "Cái",
-            110000L, 170000L, 6, 4, "Kệ A5", "Ngừng kinh doanh"
-        }
-    };
+    private final JButton reloadButton =
+        new JButton("Tải lại");
 
-    private final DefaultTableModel tableModel = new DefaultTableModel(
-        new String[]{
-            "Mã PT", "Tên phụ tùng", "ĐVT", "Giá bán",
-            "Tồn kho", "Tồn tối thiểu"
-        },
-        0
-    ) {
-        private static final long serialVersionUID = 1L;
+    private final JButton addButton =
+        new JButton("Thêm phụ tùng");
 
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
+    private final JButton editButton =
+        new JButton("Sửa phụ tùng");
 
-        @Override
-        public Class<?> getColumnClass(int column) {
-            if (column == 3) {
-                return Long.class;
+    private final JButton stopButton =
+        new JButton("Ngừng kinh doanh");
+
+    private final JButton searchButton =
+        new JButton("Tìm kiếm");
+
+    // ==================== BẢNG ====================
+
+    private final DefaultTableModel tableModel =
+        new DefaultTableModel(
+            new String[]{
+                "Mã PT",
+                "Tên phụ tùng",
+                "ĐVT",
+                "Giá bán",
+                "Tồn kho",
+                "Tồn tối thiểu",
+                "Trạng thái"
+            },
+            0
+        ) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
             }
-            if (column == 4 || column == 5) {
-                return Integer.class;
+
+            @Override
+            public Class<?> getColumnClass(int column) {
+                if (column == 3) {
+                    return BigDecimal.class;
+                }
+
+                if (column == 4 || column == 5) {
+                    return Integer.class;
+                }
+
+                return String.class;
             }
-            return String.class;
-        }
-    };
+        };
 
     private final JTable partsTable = new JTable(tableModel);
 
+    private final TableRowSorter<DefaultTableModel> boLoc =
+        new TableRowSorter<>(tableModel);
+
     public QuanLyPhuTungFrame() {
-        super("Hệ thống Quản lý Gara Ô Tô - Quản lý phụ tùng");
+        moneyFormat.setMaximumFractionDigits(2);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(true);
-
-        loadSampleRows();
         buildInterface();
         bindEvents();
 
-        // pack() tính đủ chiều cao cho form và ít nhất 8 dòng bảng.
-        pack();
-
-        Dimension preferred = getSize();
-
-        setMinimumSize(new Dimension(
-            Math.max(1280, preferred.width),
-            preferred.height
-        ));
-
-        setSize(
-            Math.max(1340, preferred.width),
-            Math.max(760, preferred.height)
-        );
-
-        setLocationRelativeTo(null);
-        partsTable.setRowSelectionInterval(0, 0);
+        loadPhuTungFromSQL();
     }
 
-    private void loadSampleRows() {
-        for (Object[] part : sampleParts) {
-            tableModel.addRow(new Object[]{
-                part[0], part[1], part[2],
-                part[4], part[5], part[6]
-            });
-        }
-    }
+    // ==================== GIAO DIỆN ====================
 
     private void buildInterface() {
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(BACKGROUND);
-        setContentPane(root);
-
-        setJMenuBar(createMenuBar());
-        root.add(createQuickToolbar(), BorderLayout.NORTH);
-
-        JPanel outer = new JPanel(new BorderLayout());
-        outer.setBackground(BACKGROUND);
-        outer.setBorder(
+        setLayout(new BorderLayout());
+        setBackground(BACKGROUND);
+        setBorder(
             BorderFactory.createEmptyBorder(10, 14, 10, 14)
         );
 
@@ -186,267 +149,11 @@ public final class QuanLyPhuTungFrame extends JFrame {
         content.add(createTableSection(), BorderLayout.CENTER);
         content.add(createButtonSection(), BorderLayout.SOUTH);
 
-        outer.add(content, BorderLayout.CENTER);
-        root.add(outer, BorderLayout.CENTER);
-        root.add(createFooter(), BorderLayout.SOUTH);
+        add(content, BorderLayout.CENTER);
     }
-
-    // ==================== MENU CHÍNH ====================
-
-    private JMenuBar createMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.setBackground(new Color(245, 247, 250));
-        menuBar.setBorder(
-            BorderFactory.createEmptyBorder(10, 15, 10, 15)
-        );
-
-        JLabel logo = new JLabel("NIGHT INVADER");
-        logo.setFont(new Font("Arial", Font.BOLD, 15));
-        logo.setForeground(new Color(210, 30, 30));
-        logo.setBorder(
-            BorderFactory.createEmptyBorder(5, 10, 5, 20)
-        );
-        menuBar.add(logo);
-
-        String[] menuNames = {
-            "Hệ thống", "Khách hàng", "Xe", "Dịch vụ",
-            "Phụ tùng", "Kho hàng", "Hóa đơn",
-            "Thống kê", "Nhân viên"
-        };
-
-        String[][] menuItems = {
-            {
-                "Tài khoản cá nhân", "Đổi mật khẩu",
-                "-", "Đăng xuất"
-            },
-            {
-                "Quản lý khách hàng"
-            },
-            {
-                "Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"
-            },
-            {
-                "Quản lý dịch vụ", "Thêm dịch vụ",
-                "Sửa dịch vụ", "Xóa dịch vụ", "-",
-                "Lập phiếu tiếp nhận xe",
-                "Lập phiếu sửa chữa / Báo giá",
-                "Cập nhật tình trạng sửa xe"
-            },
-            {
-                "Quản lý phụ tùng"
-            },
-            {
-                "Lập phiếu nhập kho", "Lập phiếu xuất kho"
-            },
-            {
-                "Lập hóa đơn", "Tra cứu hóa đơn"
-            },
-            {
-                "Thống kê doanh thu", "Thống kê tồn kho",
-                "Phụ tùng bán chạy", "Phụ tùng bán chậm"
-            },
-            {
-                "Quản lý nhân sự", "Phân công kỹ thuật viên"
-            }
-        };
-
-        for (int i = 0; i < menuNames.length; i++) {
-            JMenu menu = createDropdownMenu(
-                menuNames[i], menuItems[i]
-            );
-
-            if ("Phụ tùng".equals(menuNames[i])) {
-                menu.setForeground(RED);
-            }
-
-            menuBar.add(menu);
-        }
-
-        menuBar.add(Box.createHorizontalGlue());
-
-        JMenu accountMenu = createDropdownMenu(
-            "Xin chào, Chủ Gara",
-            new String[]{
-                "Tài khoản cá nhân", "Đổi mật khẩu",
-                "-", "Đăng xuất"
-            }
-        );
-
-        ImageIcon icon = loadIcon("/img/icon_nguoi.jpg", 20, 20);
-        if (icon != null) {
-            accountMenu.setIcon(icon);
-        }
-
-        menuBar.add(accountMenu);
-        return menuBar;
-    }
-
-    private JMenu createDropdownMenu(
-            String title, String[] itemNames) {
-
-        JMenu menu = new JMenu(title);
-        menu.setFont(new Font("Arial", Font.BOLD, 16));
-        menu.setMargin(new Insets(5, 10, 5, 10));
-
-        for (String itemName : itemNames) {
-            if ("-".equals(itemName)) {
-                menu.addSeparator();
-                continue;
-            }
-
-            JMenuItem item = new JMenuItem(itemName);
-            item.setFont(new Font("Arial", Font.PLAIN, 14));
-            item.setBorder(
-                BorderFactory.createEmptyBorder(8, 12, 8, 18)
-            );
-
-            item.addActionListener(event -> {
-                if ("Quản lý phụ tùng".equals(itemName)) {
-                    nameField.requestFocusInWindow();
-                } else {
-                    showPreviewMessage(itemName);
-                }
-            });
-
-            menu.add(item);
-        }
-
-        return menu;
-    }
-
-    // ==================== THANH NÚT NHANH ====================
-
-    private JPanel createQuickToolbar() {
-        JPanel buttons = new JPanel(
-            new FlowLayout(FlowLayout.LEFT, 10, 6)
-        );
-        buttons.setBackground(Color.WHITE);
-
-        buttons.add(createQuickButton(
-            "Tiếp nhận xe", "F2", "/img/icon_xe.png"
-        ));
-        buttons.add(createQuickButton(
-            "Tình trạng sửa xe", "F5", "/img/icon-vector.png"
-        ));
-        buttons.add(createQuickButton(
-            "Lập hóa đơn", "F3", "/img/icon_hoadon.png"
-        ));
-        buttons.add(createQuickButton(
-            "Nhập kho", "F4", "/img/icon_nhapkho.jpg"
-        ));
-
-        JLabel currentPage = new JLabel("Phụ tùng");
-        currentPage.setFont(new Font("Arial", Font.BOLD, 13));
-        currentPage.setForeground(RED);
-        currentPage.setBorder(
-            BorderFactory.createEmptyBorder(0, 10, 0, 0)
-        );
-        buttons.add(currentPage);
-
-        JPanel information = new JPanel(
-            new GridLayout(2, 1, 0, 4)
-        );
-        information.setBackground(Color.WHITE);
-        information.setBorder(
-            BorderFactory.createEmptyBorder(6, 10, 6, 15)
-        );
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
-            "EEEE, dd/MM/yyyy",
-            Locale.forLanguageTag("vi-VN")
-        );
-
-        JLabel dateLabel = new JLabel(
-            LocalDate.now().format(formatter),
-            SwingConstants.RIGHT
-        );
-        dateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        JLabel branchLabel = new JLabel(
-            "Chi nhánh: Gara chính",
-            SwingConstants.RIGHT
-        );
-        branchLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-        branchLabel.setForeground(Color.GRAY);
-
-        information.add(dateLabel);
-        information.add(branchLabel);
-
-        JPanel toolbar = new JPanel(new BorderLayout());
-        toolbar.setBackground(Color.WHITE);
-        toolbar.setBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER)
-        );
-        toolbar.add(buttons, BorderLayout.CENTER);
-        toolbar.add(information, BorderLayout.EAST);
-
-        return toolbar;
-    }
-
-    private JButton createQuickButton(
-            String title, String shortcut, String iconPath) {
-
-        JButton button = new JButton();
-        button.setLayout(new BorderLayout(10, 0));
-        button.setBackground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setCursor(
-            Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        );
-        button.setBorder(
-            BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(
-                    new Color(200, 205, 210)
-                ),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)
-            )
-        );
-
-        ImageIcon icon = loadIcon(iconPath, 22, 22);
-        if (icon != null) {
-            button.add(new JLabel(icon), BorderLayout.WEST);
-        }
-
-        JPanel textPanel = new JPanel(
-            new GridLayout(2, 1, 0, 3)
-        );
-        textPanel.setOpaque(false);
-
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
-
-        JLabel shortcutLabel = new JLabel(shortcut);
-        shortcutLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-        shortcutLabel.setForeground(Color.GRAY);
-
-        textPanel.add(titleLabel);
-        textPanel.add(shortcutLabel);
-        button.add(textPanel, BorderLayout.CENTER);
-
-        Action action = new AbstractAction() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                showPreviewMessage(title);
-            }
-        };
-
-        button.addActionListener(action);
-
-        String actionKey = "quick-" + shortcut;
-        getRootPane()
-            .getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-            .put(KeyStroke.getKeyStroke(shortcut), actionKey);
-        getRootPane().getActionMap().put(actionKey, action);
-
-        return button;
-    }
-
-    // ==================== FORM PHỤ TÙNG ====================
 
     private JPanel createFormSection() {
-        JPanel section = new JPanel(new BorderLayout(0, 8));
+        JPanel section = new JPanel(new BorderLayout(0, 10));
         section.setOpaque(false);
 
         JPanel titlePanel = new JPanel(
@@ -459,32 +166,36 @@ public final class QuanLyPhuTungFrame extends JFrame {
         title.setForeground(new Color(30, 35, 45));
 
         JLabel description = new JLabel(
-            "Danh mục phụ tùng riêng; tồn kho cập nhật qua phiếu nhập và xuất."
+            "Danh mục phụ tùng; tồn kho cập nhật qua phiếu nhập và xuất."
         );
         description.setFont(new Font("Arial", Font.PLAIN, 13));
         description.setForeground(Color.GRAY);
 
         titlePanel.add(title);
         titlePanel.add(description);
-        section.add(titlePanel, BorderLayout.NORTH);
 
-        // 2 hàng giúp bảng danh sách có nhiều chiều cao hơn.
-        JPanel form = new JPanel(new GridLayout(2, 4, 12, 6));
+        JPanel form = new JPanel(
+            new GridLayout(2, 4, 12, 6)
+        );
         form.setOpaque(false);
 
         codeField.setEditable(false);
+        stockField.setEditable(false);
+        statusField.setEditable(false);
 
         form.add(createField("Mã phụ tùng", codeField));
         form.add(createField("Tên phụ tùng", nameField));
         form.add(createField("Đơn vị tính", unitField));
-        form.add(createField("Giá nhập (đ)", purchasePriceField));
+        form.add(createField("Mô tả", descriptionField));
 
         form.add(createField("Giá bán (đ)", salePriceField));
+        form.add(createField("Số lượng tồn", stockField));
         form.add(createField("Tồn tối thiểu", minimumStockField));
-        form.add(createField("Vị trí", locationField));
-        form.add(createField("Trạng thái", statusCombo));
+        form.add(createField("Trạng thái", statusField));
 
+        section.add(titlePanel, BorderLayout.NORTH);
         section.add(form, BorderLayout.CENTER);
+
         return section;
     }
 
@@ -494,16 +205,15 @@ public final class QuanLyPhuTungFrame extends JFrame {
 
         JLabel fieldLabel = new JLabel(label);
         fieldLabel.setFont(new Font("Arial", Font.PLAIN, 13));
-        panel.add(fieldLabel, BorderLayout.NORTH);
 
         input.setFont(new Font("Arial", Font.PLAIN, 12));
-        input.setPreferredSize(new Dimension(200, 26));
+        input.setPreferredSize(new Dimension(180, 26));
+
+        panel.add(fieldLabel, BorderLayout.NORTH);
         panel.add(input, BorderLayout.CENTER);
 
         return panel;
     }
-
-    // ==================== DANH SÁCH PHỤ TÙNG ====================
 
     private JPanel createTableSection() {
         JPanel section = new JPanel(new BorderLayout(0, 6));
@@ -515,44 +225,53 @@ public final class QuanLyPhuTungFrame extends JFrame {
             BorderFactory.createEmptyBorder(5, 8, 5, 8)
         );
 
-        JPanel searchPanel = new JPanel(new BorderLayout(8, 0));
+        JPanel searchPanel = new JPanel(
+            new BorderLayout(8, 0)
+        );
         searchPanel.setOpaque(false);
-        searchPanel.add(new JLabel("Tìm kiếm:"), BorderLayout.WEST);
+
+        searchPanel.add(
+            new JLabel("Tìm kiếm:"),
+            BorderLayout.WEST
+        );
 
         searchField.setPreferredSize(new Dimension(300, 26));
-        searchField.setToolTipText("Tìm theo mã hoặc tên phụ tùng");
-        searchPanel.add(searchField, BorderLayout.CENTER);
+        searchField.setToolTipText(
+            "Tìm theo mã hoặc tên phụ tùng"
+        );
+
         searchButton.setFont(new Font("Arial", Font.BOLD, 12));
         searchButton.setPreferredSize(new Dimension(100, 26));
         searchButton.setFocusPainted(false);
-        searchButton.setCursor(
-            Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        );
 
+        searchPanel.add(searchField, BorderLayout.CENTER);
         searchPanel.add(searchButton, BorderLayout.EAST);
 
-        JPanel filterPanel = new JPanel(new BorderLayout(8, 0));
+        JPanel filterPanel = new JPanel(
+            new BorderLayout(8, 0)
+        );
         filterPanel.setOpaque(false);
-        filterPanel.add(new JLabel("Trạng thái:"), BorderLayout.WEST);
+
+        filterPanel.add(
+            new JLabel("Trạng thái:"),
+            BorderLayout.WEST
+        );
         filterPanel.add(filterCombo, BorderLayout.CENTER);
 
         toolbar.add(searchPanel, BorderLayout.CENTER);
         toolbar.add(filterPanel, BorderLayout.EAST);
-        section.add(toolbar, BorderLayout.NORTH);
 
         partsTable.setFont(new Font("Arial", Font.PLAIN, 13));
         partsTable.setRowHeight(28);
-
-        // Chiều cao vùng dữ liệu đủ ít nhất 8 dòng.
         partsTable.setPreferredScrollableViewportSize(
             new Dimension(1100, 8 * 28)
         );
         partsTable.setFillsViewportHeight(true);
-
         partsTable.setSelectionMode(
             ListSelectionModel.SINGLE_SELECTION
         );
-        partsTable.setAutoCreateRowSorter(true);
+
+        partsTable.setRowSorter(boLoc);
         partsTable.setSelectionBackground(new Color(49, 106, 140));
         partsTable.setSelectionForeground(Color.WHITE);
         partsTable.setShowVerticalLines(false);
@@ -566,14 +285,21 @@ public final class QuanLyPhuTungFrame extends JFrame {
             new Dimension(0, 28)
         );
 
-        partsTable.getColumnModel().getColumn(0).setPreferredWidth(100);
-        partsTable.getColumnModel().getColumn(1).setPreferredWidth(350);
-        partsTable.getColumnModel().getColumn(2).setPreferredWidth(80);
-        partsTable.getColumnModel().getColumn(3).setPreferredWidth(180);
-        partsTable.getColumnModel().getColumn(4).setPreferredWidth(120);
-        partsTable.getColumnModel().getColumn(5).setPreferredWidth(140);
+        partsTable.getColumnModel()
+            .getColumn(0).setPreferredWidth(90);
 
-        // Hiển thị giá bán có phân cách hàng nghìn.
+        partsTable.getColumnModel()
+            .getColumn(1).setPreferredWidth(300);
+
+        partsTable.getColumnModel()
+            .getColumn(2).setPreferredWidth(70);
+
+        partsTable.getColumnModel()
+            .getColumn(3).setPreferredWidth(150);
+
+        partsTable.getColumnModel()
+            .getColumn(6).setPreferredWidth(160);
+
         DefaultTableCellRenderer moneyRenderer =
             new DefaultTableCellRenderer() {
                 private static final long serialVersionUID = 1L;
@@ -589,6 +315,7 @@ public final class QuanLyPhuTungFrame extends JFrame {
             };
 
         moneyRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+
         partsTable.getColumnModel()
             .getColumn(3).setCellRenderer(moneyRenderer);
 
@@ -599,8 +326,10 @@ public final class QuanLyPhuTungFrame extends JFrame {
 
         partsTable.getColumnModel()
             .getColumn(2).setCellRenderer(centerRenderer);
+
         partsTable.getColumnModel()
             .getColumn(4).setCellRenderer(centerRenderer);
+
         partsTable.getColumnModel()
             .getColumn(5).setCellRenderer(centerRenderer);
 
@@ -609,19 +338,15 @@ public final class QuanLyPhuTungFrame extends JFrame {
         scrollPane.setBorder(
             BorderFactory.createLineBorder(BORDER)
         );
-        section.add(scrollPane, BorderLayout.CENTER);
 
-        JLabel count = new JLabel(
-            "Danh sách " + tableModel.getRowCount()
-            + " phụ tùng • Dữ liệu mẫu"
-        );
-        count.setForeground(Color.GRAY);
-        section.add(count, BorderLayout.SOUTH);
+        lblSoLuong.setForeground(Color.GRAY);
+
+        section.add(toolbar, BorderLayout.NORTH);
+        section.add(scrollPane, BorderLayout.CENTER);
+        section.add(lblSoLuong, BorderLayout.SOUTH);
 
         return section;
     }
-
-    // ==================== NÚT VÀ FOOTER ====================
 
     private JPanel createButtonSection() {
         JPanel panel = new JPanel(
@@ -629,69 +354,200 @@ public final class QuanLyPhuTungFrame extends JFrame {
         );
         panel.setOpaque(false);
 
-        JButton[] buttons = {
-            addButton, editButton, stopButton
-        };
+        homeButton.setPreferredSize(new Dimension(165, 30));
+        reloadButton.setPreferredSize(new Dimension(100, 30));
+        addButton.setPreferredSize(new Dimension(145, 30));
+        editButton.setPreferredSize(new Dimension(145, 30));
+        stopButton.setPreferredSize(new Dimension(165, 30));
 
-        for (JButton button : buttons) {
-            button.setFont(new Font("Arial", Font.BOLD, 12));
-            button.setPreferredSize(new Dimension(145, 28));
-            button.setFocusPainted(false);
-            button.setCursor(
-                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            );
-            panel.add(button);
-        }
+        homeButton.setContentAreaFilled(false);
+        homeButton.setOpaque(true);
+        homeButton.setBackground(RED);
+        homeButton.setForeground(Color.WHITE);
+        homeButton.setFocusPainted(false);
+        homeButton.setBorderPainted(false);
 
+        stopButton.setContentAreaFilled(false);
+        stopButton.setOpaque(true);
         stopButton.setBackground(RED);
         stopButton.setForeground(Color.WHITE);
-        stopButton.setOpaque(true);
+        stopButton.setFocusPainted(false);
+        stopButton.setBorderPainted(false);
+
+        panel.add(homeButton);
+        panel.add(reloadButton);
+        panel.add(addButton);
+        panel.add(editButton);
+        panel.add(stopButton);
 
         return panel;
     }
 
-    private JPanel createFooter() {
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setBackground(new Color(245, 247, 250));
-        footer.setBorder(
-            BorderFactory.createEmptyBorder(5, 15, 5, 15)
-        );
+    // ==================== ĐỌC SQL ====================
 
-        JLabel stateLabel = new JLabel(
-            "Đang hoạt động | Kho chính | Vai trò: Chủ Gara"
-        );
-        stateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        stateLabel.setForeground(Color.DARK_GRAY);
+    public void loadPhuTungFromSQL() {
+        if (dangTaiDuLieu) {
+            return;
+        }
 
-        JLabel brandLabel = new JLabel("NIGHT INVADER • Gara ô tô");
-        brandLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        brandLabel.setForeground(Color.GRAY);
+        dangTaiDuLieu = true;
+        reloadButton.setEnabled(false);
+        lblSoLuong.setText("Đang tải phụ tùng từ SQL...");
 
-        footer.add(stateLabel, BorderLayout.WEST);
-        footer.add(brandLabel, BorderLayout.EAST);
+        new SwingWorker<ArrayList<PhuTung>, Void>() {
+            @Override
+            protected ArrayList<PhuTung> doInBackground()
+                    throws Exception {
 
-        return footer;
+                Connection conn = ConnectDB.getConnection();
+
+                if (conn == null || conn.isClosed()) {
+                    ConnectDB.getInstance().connect();
+                    System.out.println(
+                        "Kết nối database thành công!"
+                    );
+                }
+
+                return phuTungDao.layDanhSachPhuTung();
+            }
+
+            @Override
+            protected void done() {
+                boolean thanhCong = false;
+
+                try {
+                    ArrayList<PhuTung> ketQua = get();
+
+                    partsTable.clearSelection();
+                    boLoc.setRowFilter(null);
+                    tableModel.setRowCount(0);
+
+                    danhSachPhuTung = ketQua;
+                    clearForm();
+
+                    filterCombo.removeAllItems();
+                    filterCombo.addItem("Tất cả");
+
+                    for (PhuTung pt : danhSachPhuTung) {
+                        tableModel.addRow(new Object[]{
+                            pt.getMaPhuTung(),
+                            pt.getTenPhuTung(),
+                            pt.getDonViTinh(),
+                            pt.getDonGia(),
+                            pt.getSoLuongTon(),
+                            pt.getMucTonToiThieu(),
+                            pt.getTrangThai()
+                        });
+
+                        String trangThai = pt.getTrangThai();
+
+                        DefaultComboBoxModel<String> modelTrangThai =
+                            (DefaultComboBoxModel<String>)
+                                filterCombo.getModel();
+
+                        if (trangThai != null
+                                && modelTrangThai.getIndexOf(
+                                    trangThai
+                                ) < 0) {
+                            filterCombo.addItem(trangThai);
+                        }
+                    }
+
+                    searchField.setText("");
+                    filterCombo.setSelectedIndex(0);
+                    thanhCong = true;
+
+                    System.out.println(
+                        "Đã tải " + danhSachPhuTung.size()
+                        + " phụ tùng từ SQL."
+                    );
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    lblSoLuong.setText("Đã ngắt tải dữ liệu");
+
+                } catch (ExecutionException e) {
+                    Throwable loi = e.getCause();
+                    loi.printStackTrace();
+
+                    lblSoLuong.setText(
+                        "Không tải được dữ liệu SQL"
+                    );
+
+                    JOptionPane.showMessageDialog(
+                        QuanLyPhuTungFrame.this,
+                        "Không tải được phụ tùng:\n"
+                            + loi.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+
+                } finally {
+                    dangTaiDuLieu = false;
+                    reloadButton.setEnabled(true);
+                }
+
+                if (thanhCong) {
+                    locDuLieu();
+
+                    if (partsTable.getRowCount() > 0) {
+                        partsTable.setRowSelectionInterval(0, 0);
+                    }
+                }
+            }
+        }.execute();
     }
 
-    // ==================== SỰ KIỆN XEM TRƯỚC UI ====================
+    // ==================== SỰ KIỆN ====================
 
     private void bindEvents() {
-        partsTable.getSelectionModel().addListSelectionListener(
-            event -> {
-                if (event.getValueIsAdjusting()) {
+        partsTable.getSelectionModel()
+            .addListSelectionListener(event -> {
+                if (event.getValueIsAdjusting()
+                        || dangTaiDuLieu) {
                     return;
                 }
 
                 int selectedRow = partsTable.getSelectedRow();
 
                 if (selectedRow >= 0) {
-                    int modelRow = partsTable.convertRowIndexToModel(
-                        selectedRow
-                    );
-                    showSamplePart(modelRow);
+                    int modelRow =
+                        partsTable.convertRowIndexToModel(
+                            selectedRow
+                        );
+
+                    showPart(modelRow);
+                } else {
+                    clearForm();
                 }
+            });
+
+        homeButton.addActionListener(event -> {
+            Window cuaSo = SwingUtilities.getWindowAncestor(this);
+
+            if (cuaSo instanceof GaraManHinhChinh) {
+                ((GaraManHinhChinh) cuaSo).hienThiTrangChu();
+            } else {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Hãy mở giao diện từ GaraManHinhChinh.",
+                    "Thông báo",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
             }
+        });
+
+        reloadButton.addActionListener(
+            event -> loadPhuTungFromSQL()
         );
+
+        searchButton.addActionListener(event -> locDuLieu());
+
+        searchField.addActionListener(
+            event -> searchButton.doClick()
+        );
+
+        filterCombo.addActionListener(event -> locDuLieu());
 
         addButton.addActionListener(
             event -> showPreviewMessage("Thêm phụ tùng")
@@ -704,53 +560,115 @@ public final class QuanLyPhuTungFrame extends JFrame {
         stopButton.addActionListener(
             event -> showPreviewMessage("Ngừng kinh doanh")
         );
-        searchButton.addActionListener(
-        	    event -> showPreviewMessage("Tìm kiếm phụ tùng")
-        	);
-
-        	// Nhấn Enter trong ô tìm kiếm cũng kích hoạt nút.
-        	searchField.addActionListener(
-        	    event -> searchButton.doClick()
-        	);
     }
 
-    private void showSamplePart(int row) {
-        Object[] part = sampleParts[row];
+    // Tìm và lọc trên danh sách đã tải từ SQL.
+    private void locDuLieu() {
+        if (dangTaiDuLieu) {
+            return;
+        }
 
-        codeField.setText(part[0].toString());
-        nameField.setText(part[1].toString());
-        unitField.setText(part[2].toString());
-        purchasePriceField.setText(moneyFormat.format(part[3]));
-        salePriceField.setText(moneyFormat.format(part[4]));
-        minimumStockField.setText(part[6].toString());
-        locationField.setText(part[7].toString());
-        statusCombo.setSelectedItem(part[8].toString());
+        final String tuKhoa = searchField.getText()
+            .trim().toLowerCase(Locale.ROOT);
+
+        final String trangThai =
+            (String) filterCombo.getSelectedItem();
+
+        boLoc.setRowFilter(
+            new RowFilter<DefaultTableModel, Integer>() {
+                @Override
+                public boolean include(
+                        Entry<? extends DefaultTableModel,
+                              ? extends Integer> entry) {
+
+                    String ma = entry.getStringValue(0)
+                        .toLowerCase(Locale.ROOT);
+
+                    String ten = entry.getStringValue(1)
+                        .toLowerCase(Locale.ROOT);
+
+                    boolean dungTuKhoa =
+                        ma.contains(tuKhoa)
+                        || ten.contains(tuKhoa);
+
+                    boolean dungTrangThai =
+                        trangThai == null
+                        || "Tất cả".equals(trangThai)
+                        || trangThai.equals(
+                            entry.getStringValue(6)
+                        );
+
+                    return dungTuKhoa && dungTrangThai;
+                }
+            }
+        );
+
+        lblSoLuong.setText(
+            "Hiển thị: " + partsTable.getRowCount()
+            + " / " + tableModel.getRowCount()
+            + " phụ tùng • Dữ liệu SQL"
+        );
+
+        if (partsTable.getSelectedRow() < 0) {
+            clearForm();
+        }
+    }
+
+    // ==================== HIỂN THỊ LÊN FORM ====================
+
+    private void showPart(int row) {
+        if (row < 0 || row >= danhSachPhuTung.size()) {
+            return;
+        }
+
+        PhuTung pt = danhSachPhuTung.get(row);
+
+        codeField.setText(pt.getMaPhuTung());
+        nameField.setText(pt.getTenPhuTung());
+        unitField.setText(pt.getDonViTinh());
+
+        descriptionField.setText(
+            pt.getMoTa() == null ? "" : pt.getMoTa()
+        );
+
+        salePriceField.setText(
+            pt.getDonGia() == null
+                ? ""
+                : moneyFormat.format(pt.getDonGia())
+        );
+
+        stockField.setText(
+            String.valueOf(pt.getSoLuongTon())
+        );
+
+        minimumStockField.setText(
+            String.valueOf(pt.getMucTonToiThieu())
+        );
+
+        statusField.setText(pt.getTrangThai());
+    }
+
+    private void clearForm() {
+        codeField.setText("");
+        nameField.setText("");
+        unitField.setText("");
+        descriptionField.setText("");
+        salePriceField.setText("");
+        stockField.setText("");
+        minimumStockField.setText("");
+        statusField.setText("");
     }
 
     private void showPreviewMessage(String action) {
         JOptionPane.showMessageDialog(
             this,
-            action + ": chưa gắn xử lý nghiệp vụ.",
+            action + ": chưa gắn xử lý ghi dữ liệu SQL.",
             "Bản giao diện",
             JOptionPane.INFORMATION_MESSAGE
         );
     }
 
-    private ImageIcon loadIcon(String path, int width, int height) {
-        URL resource = getClass().getResource(path);
-
-        // Thiếu icon vẫn chạy bình thường.
-        if (resource == null) {
-            return null;
-        }
-
-        ImageIcon original = new ImageIcon(resource);
-        Image scaled = original.getImage().getScaledInstance(
-            width, height, Image.SCALE_SMOOTH
-        );
-
-        return new ImageIcon(scaled);
-    }
+    // ==================== CHẠY RIÊNG ĐỂ KIỂM TRA ====================
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -758,11 +676,16 @@ public final class QuanLyPhuTungFrame extends JFrame {
                 UIManager.setLookAndFeel(
                     UIManager.getSystemLookAndFeelClassName()
                 );
-            } catch (Exception exception) {
-                exception.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
-            new QuanLyPhuTungFrame().setVisible(true);
+            JFrame frame = new JFrame("Kiểm tra Phụ tùng");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setContentPane(new QuanLyPhuTungFrame());
+            frame.setSize(1340, 840);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         });
     }
 }
