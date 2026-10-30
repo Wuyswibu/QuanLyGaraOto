@@ -20,7 +20,7 @@ public class GaraManHinhChinh extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
-    private QuanLyXeFrame pnlQuanLyXe;
+    private XeUI pnlQuanLyXe;
 
     public GaraManHinhChinh() {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
@@ -61,13 +61,14 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("TRA_CUU_HOA_DON", new GaraTraCuuHoaDon());
          
-         themManHinh("TIEP_NHAN", new TiepNhanXeFrame());
-         pnlQuanLyXe = new QuanLyXeFrame(this::hienThiTrangChu);
+         themManHinh("TIEP_NHAN", new LapPhieuTiepNhanUI());
+         pnlQuanLyXe = new XeUI(this::hienThiTrangChu);
          themManHinh("XE", pnlQuanLyXe);
          themManHinh("DICH_VU", new QuanLyDichVuFrame());
          themManHinh("LICH_SU", new LichSuSuaChuaFrame());
          themManHinh("SUA_CHUA", new LapPhieuSuaChuaFrame());
          themManHinh("TINH_TRANG_SUA_XE", new CapNhatTTSuaXeUI());
+         themManHinh("DS_PHIEU_TIEP_NHAN", new PhieuTiepNhanUI());
          
          themManHinh("THONG_KE_DOANH_THU", new GaraThongKe(0));
          themManHinh("THONG_KE_TON_KHO", new GaraThongKe(1));
@@ -163,6 +164,7 @@ public class GaraManHinhChinh extends JFrame {
                 
                 "-",
                 "Lập phiếu tiếp nhận xe",
+                "Danh sách phiếu tiếp nhận",
                 "Lập phiếu sửa chữa / Báo giá",
                 "Cập nhật tình trạng sửa xe"
             },
@@ -278,7 +280,9 @@ public class GaraManHinhChinh extends JFrame {
             case "Lập phiếu tiếp nhận xe":
                 chuyenManHinh("TIEP_NHAN");
                 break;
-
+            case "Danh sách phiếu tiếp nhận":
+                chuyenManHinh("DS_PHIEU_TIEP_NHAN");
+                break;
             case "Lập phiếu sửa chữa / Báo giá":
                 chuyenManHinh("SUA_CHUA");
                 break;

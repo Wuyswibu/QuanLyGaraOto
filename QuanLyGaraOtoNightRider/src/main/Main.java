@@ -9,8 +9,8 @@ import javax.swing.UIManager;
 
 import connectDB.ConnectDB;
 import ui.GaraManHinhChinh;
-import ui.QuanLyXeFrame;
-import ui.TiepNhanXeFrame;
+import ui.XeUI;
+import ui.LapPhieuTiepNhanUI;
 
 public class Main {
     public static void main(String[] args) {

@@ -11,7 +11,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import service.XeService;
 import entity.Xe;
-public class QuanLyXeFrame extends JPanel implements ActionListener {
+public class XeUI extends JPanel implements ActionListener {
     private static final long serialVersionUID = 1L;
     private static final Color CHU = new Color(35, 41, 51);
     private static final Color CHU_PHU = new Color(112, 124, 139);
@@ -46,13 +46,13 @@ public class QuanLyXeFrame extends JPanel implements ActionListener {
     };
     private final JTable tblXe = new JTable(mdlXe);
     private final TableRowSorter<DefaultTableModel> boLoc = new TableRowSorter<>(mdlXe);
-    public QuanLyXeFrame() {
+    public XeUI() {
         this(null);
     }
-    public QuanLyXeFrame(Runnable veManHinhChinh) {
+    public XeUI(Runnable veManHinhChinh) {
         this(veManHinhChinh, new XeService());
     }
-    public QuanLyXeFrame(Runnable veManHinhChinh, XeService xeService) {
+    public XeUI(Runnable veManHinhChinh, XeService xeService) {
         this.xeService = java.util.Objects.requireNonNull(xeService);
         setLayout(new BorderLayout());
         setBackground(new Color(216, 220, 228));
@@ -263,7 +263,7 @@ public class QuanLyXeFrame extends JPanel implements ActionListener {
                     if (thanhCong != null) thanhCong.run();
                 } catch (Exception ex) {
                     Throwable loi = ex instanceof java.util.concurrent.ExecutionException ? ex.getCause() : ex;
-                    JOptionPane.showMessageDialog(QuanLyXeFrame.this, loi.getMessage(),
+                    JOptionPane.showMessageDialog(XeUI.this, loi.getMessage(),
                             "Không thực hiện được", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -403,6 +403,6 @@ public class QuanLyXeFrame extends JPanel implements ActionListener {
             return;
         }
         SwingUtilities.invokeLater(() ->
-                new QuanLyXeFrame().taoCuaSo().setVisible(true));
+                new XeUI().taoCuaSo().setVisible(true));
     }
 }
