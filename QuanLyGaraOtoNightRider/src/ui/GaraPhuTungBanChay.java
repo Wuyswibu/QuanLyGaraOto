@@ -1,6 +1,8 @@
 package ui;
 
 import connectDB.ConnectDB;
+import service.ThongKeService;
+import service.ThongKeService.KetQuaBanChay;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -9,10 +11,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class GaraPhuTungBanChay extends JPanel {
@@ -35,22 +33,13 @@ public class GaraPhuTungBanChay extends JPanel {
     private JTable tableBanChay;
     private DefaultTableModel tableModel;
 
+    private final ThongKeService thongKeService;
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm phụ tùng bán chạy theo mã hoặc tên phụ tùng (Nhấn Enter)...";
 
     public GaraPhuTungBanChay() {
-        damBaoKetNoiCSDL();
+        thongKeService = new ThongKeService();
         khoiTaoGiaoDien();
         taiDanhSachBanChayLenBang("Tất cả", "");
-    }
-
-    private void damBaoKetNoiCSDL() {
-        try {
-            Connection conn = ConnectDB.getConnection();
-            if (conn == null || conn.isClosed()) {
-                ConnectDB.getInstance().connect();
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -223,8 +212,7 @@ public class GaraPhuTungBanChay extends JPanel {
         panelBottomButtons.setBackground(Color.WHITE);
 
         JButton btnLamMoi = taoNutTrang("Làm mới dữ liệu");
-        JButton btnXuatExcel = taoNutTrang("Xuất Excel");
-        JButton btnCapNhat = taoNutDo("Cập nhật bảng xếp hạng");
+        JButton btnXuatExcel = taoNutDo("Xuất Excel");
 
         btnLamMoi.addActionListener(e -> {
             txtTimKiemBang.setText(PLACEHOLDER_TIM_KIEM);
@@ -233,15 +221,13 @@ public class GaraPhuTungBanChay extends JPanel {
             taiDanhSachBanChayLenBang("Tất cả", "");
         });
 
-        btnCapNhat.addActionListener(e -> {
-            String tuKhoa = txtTimKiemBang.getText().trim();
-            if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
-            taiDanhSachBanChayLenBang(cboLocTop.getSelectedItem().toString(), tuKhoa);
-        });
+        btnXuatExcel.addActionListener(e ->
+        thongKeService.xuatBangRaExcel(this, tableBanChay, "THỐNG KÊ PHỤ TÙNG BÁN CHẠY", "ThongKePhuTungBanChay")
+        );
 
         panelBottomButtons.add(btnLamMoi);
         panelBottomButtons.add(btnXuatExcel);
-        panelBottomButtons.add(btnCapNhat);
+
 
         // --- Gắn vào Card Chính ---
         panelCardChinh.add(panelCardTop, BorderLayout.NORTH);
@@ -257,87 +243,24 @@ public class GaraPhuTungBanChay extends JPanel {
         add(panelCenter, BorderLayout.CENTER);
     }
 
-    // ==================== XỬ LÝ LOAD DỮ LIỆU DATABASE ====================
+    // ==================== XỬ LÝ LOAD DỮ LIỆU QUA SERVICE ====================
 
     private void taiDanhSachBanChayLenBang(String boLocTop, String tuKhoa) {
-        tableModel.setRowCount(0);
-        Connection conn = ConnectDB.getConnection();
-        if (conn == null) return;
+        try {
+            tableModel.setRowCount(0);
+            KetQuaBanChay kq = thongKeService.thongKePhuTungBanChay(boLocTop, tuKhoa);
 
-        String sql = "SELECT pt.maPhuTung, pt.tenPhuTung, pt.donViTinh, pt.donGia, pt.soLuongTon, "
-                + "COUNT(DISTINCT h.maHoaDon) AS soHoaDonXuat, "
-                + "ISNULL(SUM(CASE WHEN h.maHoaDon IS NOT NULL THEN ct.soLuong ELSE 0 END), 0) AS tongSLBan, "
-                + "ISNULL(SUM(CASE WHEN h.maHoaDon IS NOT NULL "
-                + "     THEN (ct.soLuong * ct.donGia - ISNULL(ct.giamGia, 0)) ELSE 0 END), 0) AS doanhThu "
-                + "FROM dbo.PhuTung pt "
-                + "LEFT JOIN dbo.CTHoaDon ct ON pt.maPhuTung = ct.maPhuTung "
-                + "LEFT JOIN dbo.HoaDon h ON ct.maHoaDon = h.maHoaDon AND h.trangThai <> N'Đã hủy' "
-                + "WHERE (? = '' OR pt.maPhuTung LIKE ? OR pt.tenPhuTung LIKE ?) "
-                + "GROUP BY pt.maPhuTung, pt.tenPhuTung, pt.donViTinh, pt.donGia, pt.soLuongTon "
-                + "ORDER BY tongSLBan DESC, doanhThu DESC, pt.maPhuTung ASC";
+            for (Object[] row : kq.dsDongBang) {
+                tableModel.addRow(row);
+            }
 
-        String kw = tuKhoa != null ? tuKhoa.trim() : "";
-        String likeKw = "%" + kw + "%";
+            txtTop1BanChay.setText(kq.textTop1BanChay);
+            txtTongSLDaBanAll.setText(kq.textTongSLDaBanAll);
+            txtTongDoanhThuPhuTung.setText(kq.textTongDoanhThuPhuTung);
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, kw);
-            ps.setString(2, likeKw);
-            ps.setNString(3, likeKw);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                String top1Str = "Chưa có dữ liệu";
-                long tongSLAll = 0;
-                BigDecimal tongDoanhThuAll = BigDecimal.ZERO;
-
-                int hang = 1;
-                while (rs.next()) {
-                    String maPT = rs.getString("maPhuTung");
-                    String tenPT = rs.getString("tenPhuTung");
-                    String dvt = rs.getString("donViTinh");
-                    BigDecimal donGia = rs.getBigDecimal("donGia") != null ? rs.getBigDecimal("donGia") : BigDecimal.ZERO;
-                    int slTon = rs.getInt("soLuongTon");
-                    int soHDXuat = rs.getInt("soHoaDonXuat");
-                    long tongSLBan = rs.getLong("tongSLBan");
-                    BigDecimal doanhThu = rs.getBigDecimal("doanhThu") != null ? rs.getBigDecimal("doanhThu") : BigDecimal.ZERO;
-
-                    if ("Đã phát sinh bán (> 0)".equals(boLocTop) && tongSLBan <= 0) {
-                        continue;
-                    }
-                    if ("Top 5 bán chạy".equals(boLocTop) && hang > 5) {
-                        break;
-                    }
-                    if ("Top 10 bán chạy".equals(boLocTop) && hang > 10) {
-                        break;
-                    }
-
-                    if (hang == 1 && tongSLBan > 0) {
-                        top1Str = maPT + " - " + tenPT + " (" + tongSLBan + " " + dvt + ")";
-                    }
-
-                    tongSLAll += tongSLBan;
-                    tongDoanhThuAll = tongDoanhThuAll.add(doanhThu);
-
-                    tableModel.addRow(new Object[]{
-                            "Top " + hang++,
-                            maPT,
-                            tenPT,
-                            dvt,
-                            soHDXuat,
-                            tongSLBan,
-                            String.format("%,.0f đ", donGia),
-                            String.format("%,.0f đ", doanhThu),
-                            slTon
-                    });
-                }
-
-                txtTop1BanChay.setText(top1Str);
-                txtTongSLDaBanAll.setText(String.format("%,d sản phẩm", tongSLAll));
-                txtTongDoanhThuPhuTung.setText(String.format("%,.0f đ", tongDoanhThuAll));
-
-                if (tableModel.getRowCount() > 0) {
-                    tableBanChay.setRowSelectionInterval(0, 0);
-                    hienThiDongBanChayLenForm(0);
-                }
+            if (tableModel.getRowCount() > 0) {
+                tableBanChay.setRowSelectionInterval(0, 0);
+                hienThiDongBanChayLenForm(0);
             }
         } catch (SQLException e) {
             e.printStackTrace();
