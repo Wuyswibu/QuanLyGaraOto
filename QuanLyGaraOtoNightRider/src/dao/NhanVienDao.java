@@ -80,9 +80,12 @@ public class NhanVienDao {
     }
 
     public NhanVien timTheoMa(String maNhanVien) throws SQLException {
-        String sql = "SELECT maNhanVien, maPhanQuyen, hoTen, "
-                + "soDienThoai, email, ngaySinh, ngayVaoLam, trangThai "
-                + "FROM dbo.NhanVien WHERE maNhanVien = ?";
+    	String sql =
+    	        "SELECT nv.*, pq.tenChuc AS tenChuc "
+    	        + "FROM dbo.NhanVien nv "
+    	        + "LEFT JOIN dbo.PhanQuyen pq "
+    	        + "ON nv.maPhanQuyen = pq.maPhanQuyen "
+    	        + "WHERE nv.maNhanVien = ?";
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, maNhanVien);
