@@ -137,7 +137,7 @@ public class LapPhieuSuaChuaFrame extends JPanel {
 
         khung.add(tieuDe, BorderLayout.NORTH);
 
-        JPanel noiDung = new JPanel(new BorderLayout(0, 16));
+        NoiDungCuon noiDung = new NoiDungCuon();
         noiDung.setBackground(Color.WHITE);
         noiDung.setBorder(new EmptyBorder(12, 18, 16, 18));
 
@@ -213,7 +213,8 @@ public class LapPhieuSuaChuaFrame extends JPanel {
         for (int i = 0; i < rong.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(rong[i]);
         }
-
+        
+        table.setPreferredScrollableViewportSize(new Dimension(1000, 280));
         JScrollPane cuonBang = new JScrollPane(table);
         cuonBang.setBorder(BorderFactory.createLineBorder(VIEN));
         cuonBang.getViewport().setBackground(Color.WHITE);
@@ -235,9 +236,15 @@ public class LapPhieuSuaChuaFrame extends JPanel {
         thaoTac.add(btnLamMoi);
         thaoTac.add(btnLuu);
 
-        noiDung.add(thaoTac, BorderLayout.SOUTH);
-        khung.add(noiDung, BorderLayout.CENTER);
+        JScrollPane cuonNoiDung = new JScrollPane(noiDung, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        cuonNoiDung.setBorder(BorderFactory.createEmptyBorder());
+        cuonNoiDung.getViewport().setBackground(Color.WHITE);
+        cuonNoiDung.getVerticalScrollBar().setUnitIncrement(20);
+        thaoTac.setBorder(new EmptyBorder(10, 18, 16, 18));
+        khung.add(cuonNoiDung, BorderLayout.CENTER);
+        khung.add(thaoTac, BorderLayout.SOUTH);
         add(khung, BorderLayout.CENTER);
+        
     }
 
 //  ĐĂNG KÝ SỰ KIỆN
@@ -881,5 +888,41 @@ public class LapPhieuSuaChuaFrame extends JPanel {
 
         SwingUtilities.invokeLater(() ->
                 new LapPhieuSuaChuaFrame().taoCuaSo().setVisible(true));
+    }
+    
+    private static class NoiDungCuon extends JPanel implements Scrollable {
+        public NoiDungCuon() {
+            super(new BorderLayout(0, 16));
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(
+                Rectangle visibleRect, int orientation, int direction) {
+            return 20;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(
+                Rectangle visibleRect, int orientation, int direction) {
+            return orientation == SwingConstants.VERTICAL
+                    ? Math.max(20, visibleRect.height - 20)
+                    : Math.max(20, visibleRect.width - 20);
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return getParent() != null
+                    && getParent().getHeight() > getPreferredSize().height;
+        }
     }
 }
