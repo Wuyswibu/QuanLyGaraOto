@@ -1,9 +1,6 @@
 package ui;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.math.BigDecimal;
-import java.text.Normalizer;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -13,8 +10,11 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import entity.DichVu;
-public class QuanLyDichVuFrame extends JPanel
-        implements ActionListener {
+import java.sql.SQLException;
+import service.DichVuService;
+import service.DichVuService.DuLieuKhongHopLeException;
+
+public class QuanLyDichVuFrame extends JPanel {
     private static final long serialVersionUID = 1L;
     private static final Color CHU = new Color(35, 41, 51);
     private static final Color CHU_PHU = new Color(112, 124, 139);
@@ -31,7 +31,6 @@ public class QuanLyDichVuFrame extends JPanel
             new String[]{"Tất cả", "Đang áp dụng", "Ngừng áp dụng"});
     private final JButton btnThem = taoNut("Thêm dịch vụ", false);
     private final JButton btnSua = taoNut("Sửa dịch vụ", false);
-    private final JButton btnNgung = taoNut("Ngừng áp dụng", true);
     private final JButton btnLamMoi = taoNut("Làm mới", false);
     private final JButton btnTim = taoNut("Tìm kiếm", false);
     private final JLabel lblSoLuong = new JLabel();
@@ -53,7 +52,7 @@ public class QuanLyDichVuFrame extends JPanel
     private final TableRowSorter<DefaultTableModel> boLoc =
             new TableRowSorter<>(model);
     private final ArrayList<DichVu> danhSach = new ArrayList<>();
-    private int soThuTu = 5;
+    private final DichVuService dichVuService = new DichVuService();
     public QuanLyDichVuFrame() {
         setLayout(new BorderLayout());
         setBackground(new Color(216, 220, 228));
@@ -183,25 +182,18 @@ public class QuanLyDichVuFrame extends JPanel
         thaoTac.setOpaque(false);
         thaoTac.add(btnThem);
         thaoTac.add(btnSua);
-        thaoTac.add(btnNgung);
         thaoTac.add(btnLamMoi);
         noiDung.add(thaoTac, BorderLayout.SOUTH);
         khung.add(noiDung, BorderLayout.CENTER);
         add(khung, BorderLayout.CENTER);
-        btnThem.addActionListener(this);
-        btnSua.addActionListener(this);
-        btnNgung.addActionListener(this);
-        btnLamMoi.addActionListener(this);
-        btnTim.addActionListener(this);
-        txtTimKiem.addActionListener(this);
-        cboLocTrangThai.addActionListener(this);
+        dangKySuKien();
+        
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
                 return;
             }
             int dong = table.getSelectedRow();
             btnSua.setEnabled(dong >= 0);
-            btnNgung.setEnabled(false);
             if (dong < 0) {
                 return;
             }
@@ -213,212 +205,10 @@ public class QuanLyDichVuFrame extends JPanel
             txtDonGia.setText(dv.getDonGia().toPlainString());
             cboTrangThai.setSelectedIndex(
                     dv.isTrangThai() ? 0 : 1);
-            btnNgung.setEnabled(dv.isTrangThai());
         });
-        danhSach.add(new DichVu(
-                "DV001", "Thay dầu động cơ",
-                "Thay dầu và kiểm tra mức dầu động cơ.",
-                new BigDecimal("150000"), true));
-        danhSach.add(new DichVu(
-                "DV002", "Thay má phanh trước",
-                "Kiểm tra và thay má phanh trước.",
-                new BigDecimal("300000"), true));
-        danhSach.add(new DichVu(
-                "DV003", "Kiểm tra điều hòa",
-                "Kiểm tra khả năng làm lạnh và hệ thống điều hòa.",
-                new BigDecimal("200000"), true));
-        danhSach.add(new DichVu(
-                "DV004", "Cân bằng động bánh xe",
-                "Kiểm tra và cân bằng động bánh xe.",
-                new BigDecimal("250000"), false));
-        danhSach.add(new DichVu(
-                "DV005", "Vệ sinh lọc gió",
-                "Vệ sinh lọc gió động cơ.",
-                new BigDecimal("80000"), true));
         btnLamMoi.doClick();
     }
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        Object nguon = e.getSource();
-        if (nguon == btnThem) {
-            if (!validData()) {
-                return;
-            }
-            try {
-                String ma = String.format(
-                        Locale.ROOT, "DV%03d", soThuTu + 1);
-                DichVu dv = new DichVu(
-                        ma,
-                        txtTenDichVu.getText().trim(),
-                        txtMoTa.getText().trim(),
-                        new BigDecimal(txtDonGia.getText().trim()),
-                        cboTrangThai.getSelectedIndex() == 0);
-                danhSach.add(dv);
-                soThuTu++;
-                JOptionPane.showMessageDialog(
-                        this, "Đã thêm dịch vụ mẫu: " + ma);
-                btnLamMoi.doClick();
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(
-                        this, ex.getMessage());
-            }
-        } else if (nguon == btnSua) {
-            int dong = table.getSelectedRow();
-            if (dong < 0) {
-                JOptionPane.showMessageDialog(
-                        this, "Chọn dịch vụ cần sửa.");
-                return;
-            }
-            if (!validData()) {
-                return;
-            }
-            try {
-                int dongModel = table.convertRowIndexToModel(dong);
-                DichVu cu = danhSach.get(dongModel);
-                DichVu moi = new DichVu(
-                        cu.getMaDichVu(),
-                        txtTenDichVu.getText().trim(),
-                        txtMoTa.getText().trim(),
-                        new BigDecimal(txtDonGia.getText().trim()),
-                        cboTrangThai.getSelectedIndex() == 0);
-                danhSach.set(dongModel, moi);
-                JOptionPane.showMessageDialog(
-                        this, "Đã cập nhật dịch vụ mẫu.");
-                btnLamMoi.doClick();
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(
-                        this, ex.getMessage());
-            }
-        } else if (nguon == btnNgung) {
-            int dong = table.getSelectedRow();
-            if (dong < 0) {
-                JOptionPane.showMessageDialog(
-                        this, "Chọn dịch vụ cần ngừng áp dụng.");
-                return;
-            }
-            int dongModel = table.convertRowIndexToModel(dong);
-            DichVu dv = danhSach.get(dongModel);
-            int chon = JOptionPane.showConfirmDialog(
-                    this,
-                    "Ngừng áp dụng dịch vụ: "
-                            + dv.getTenDichVu() + "?",
-                    "Xác nhận",
-                    JOptionPane.YES_NO_OPTION);
-            if (chon == JOptionPane.YES_OPTION) {
-                dv.setTrangThai(false);
-                JOptionPane.showMessageDialog(
-                        this, "Đã ngừng áp dụng dịch vụ mẫu.");
-                btnLamMoi.doClick();
-            }
-        } else if (nguon == btnLamMoi) {
-            table.clearSelection();
-            boLoc.setRowFilter(null);
-            model.setRowCount(0);
-            for (DichVu dv : danhSach) {
-                model.addRow(new Object[]{
-                    dv.getMaDichVu(),
-                    dv.getTenDichVu(),
-                    dv.getMoTa(),
-                    dv.getDonGia(),
-                    dv.isTrangThai()
-                            ? "Đang áp dụng" : "Ngừng áp dụng"
-                });
-            }
-            txtMaDichVu.setText("");
-            txtTenDichVu.setText("");
-            txtMoTa.setText("");
-            txtDonGia.setText("");
-            cboTrangThai.setSelectedIndex(0);
-            txtTimKiem.setText("");
-            cboLocTrangThai.setSelectedIndex(0);
-            table.clearSelection();
-            btnSua.setEnabled(false);
-            btnNgung.setEnabled(false);
-            lblSoLuong.setText(
-                    "Hiển thị: " + table.getRowCount()
-                            + " / " + model.getRowCount()
-                            + " dịch vụ");
-            txtTenDichVu.requestFocusInWindow();
-        } else if (nguon == btnTim
-                || nguon == txtTimKiem
-                || nguon == cboLocTrangThai) {
-            String tuKhoa = chuanHoa(
-                    txtTimKiem.getText().trim());
-            String trangThai =
-                    (String) cboLocTrangThai.getSelectedItem();
-            boLoc.setRowFilter(
-                    new RowFilter<DefaultTableModel, Integer>() {
-                @Override
-                public boolean include(
-                        Entry<? extends DefaultTableModel,
-                                ? extends Integer> entry) {
-                    String noiDung = entry.getStringValue(0)
-                            + " " + entry.getStringValue(1);
-                    boolean dungTrangThai =
-                            "Tất cả".equals(trangThai)
-                            || entry.getStringValue(4)
-                                    .equals(trangThai);
-                    return dungTrangThai
-                            && chuanHoa(noiDung).contains(tuKhoa);
-                }
-            });
-            lblSoLuong.setText(
-                    "Hiển thị: " + table.getRowCount()
-                            + " / " + model.getRowCount()
-                            + " dịch vụ");
-        }
-    }
-    private boolean validData() {
-        String ten = txtTenDichVu.getText().trim();
-        String moTa = txtMoTa.getText().trim();
-        String gia = txtDonGia.getText().trim();
-        if (ten.isEmpty() || ten.length() > 150) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Tên dịch vụ không được rỗng,"
-                            + " tối đa 150 ký tự.");
-            txtTenDichVu.requestFocusInWindow();
-            return false;
-        }
-        if (moTa.length() > 1000) {
-            JOptionPane.showMessageDialog(
-                    this, "Mô tả tối đa 1000 ký tự.");
-            txtMoTa.requestFocusInWindow();
-            return false;
-        }
-        // Nhập giá dạng 150000 hoặc 150000.50.
-        if (!gia.matches("[0-9]+(\\.[0-9]{1,2})?")) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Đơn giá phải là số không âm,"
-                            + " tối đa 2 chữ số thập phân."
-                            + "\nVí dụ: 150000 hoặc 150000.50"
-                            + "\nKhông nhập dấu phân cách hàng nghìn.");
-            txtDonGia.requestFocusInWindow();
-            return false;
-        }
-        try {
-            BigDecimal donGia = new BigDecimal(gia);
-            if (donGia.compareTo(
-                    new BigDecimal("9999999999999999.99")) > 0) {
-                JOptionPane.showMessageDialog(
-                        this, "Đơn giá vượt giới hạn DECIMAL(18,2).");
-                txtDonGia.requestFocusInWindow();
-                return false;
-            }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(
-                    this, "Đơn giá không hợp lệ.");
-            txtDonGia.requestFocusInWindow();
-            return false;
-        }
-        if (cboTrangThai.getSelectedIndex() < 0) {
-            JOptionPane.showMessageDialog(
-                    this, "Vui lòng chọn trạng thái.");
-            return false;
-        }
-        return true;
-    }
+    
     private void themO(
             JPanel form, String ten, JComponent field) {
         JPanel o = new JPanel(new BorderLayout(0, 5));
@@ -434,6 +224,168 @@ public class QuanLyDichVuFrame extends JPanel
         o.add(field, BorderLayout.CENTER);
         form.add(o);
     }
+    
+// ĐĂNG KÝ SỰ KIỆN
+
+    private void dangKySuKien() {
+        btnThem.addActionListener(e -> themDichVu());
+        btnSua.addActionListener(e -> suaDichVu());
+        btnTim.addActionListener(e -> timKiemDichVu());
+        txtTimKiem.addActionListener(e -> timKiemDichVu());
+        cboLocTrangThai.addActionListener(e -> timKiemDichVu());
+        
+        btnLamMoi.addActionListener(e -> {
+            txtTimKiem.setText("");
+
+            if (cboLocTrangThai.getSelectedIndex() != 0) {
+                cboLocTrangThai.setSelectedIndex(0);
+            } else {
+                timKiemDichVu();
+            }
+        });
+  
+    }
+   
+
+// XÓA NỘI DUNG FORM 
+
+    private void xoaForm() {
+        table.clearSelection();
+
+        txtMaDichVu.setText("");
+        txtTenDichVu.setText("");
+        txtDonGia.setText("");
+        txtMoTa.setText("");
+        cboTrangThai.setSelectedIndex(0);
+        btnSua.setEnabled(false);
+
+        txtTenDichVu.requestFocusInWindow();
+    }
+
+// THAO TÁC GIAO DIỆN
+
+    private void themDichVu() {
+        if (!txtMaDichVu.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this, "Vui lòng làm mới form trước khi thêm dịch vụ mới.");
+            return;
+        }
+
+        try {
+            boolean thanhCong = dichVuService.themDichVu(
+                    txtTenDichVu.getText(),
+                    txtMoTa.getText(),
+                    txtDonGia.getText(),
+                    cboTrangThai.getSelectedIndex() == 0);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    thanhCong ? "Thêm dịch vụ thành công." : "Không thêm được dịch vụ.");
+            
+            if (thanhCong) {
+                btnLamMoi.doClick();
+            }
+
+        } catch (DuLieuKhongHopLeException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    String.join("\n", ex.getLoiTheoTruong().values()));
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không lưu được dữ liệu:\n" + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void suaDichVu() {
+        int dong = table.getSelectedRow();
+
+        if (dong < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn dịch vụ cần sửa.");
+            return;
+        }
+
+        int dongModel = table.convertRowIndexToModel(dong);
+        DichVu dichVu = danhSach.get(dongModel);
+
+        try {
+            boolean thanhCong = dichVuService.suaDichVu(
+                    dichVu.getMaDichVu(),
+                    txtTenDichVu.getText(),
+                    txtMoTa.getText(),
+                    txtDonGia.getText(),
+                    cboTrangThai.getSelectedIndex() == 0);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    thanhCong ? "Sửa dịch vụ thành công." : "Không cập nhật được dịch vụ.");
+
+            if (thanhCong) {
+                btnLamMoi.doClick();
+            }
+
+        } catch (DuLieuKhongHopLeException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    String.join("\n", ex.getLoiTheoTruong().values()));
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không cập nhật được dữ liệu:\n" + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void timKiemDichVu() {
+        Boolean trangThai = null;
+
+        if (cboLocTrangThai.getSelectedIndex() == 1) {
+            trangThai = true;
+        } else if (cboLocTrangThai.getSelectedIndex() == 2) {
+            trangThai = false;
+        }
+
+        try {
+            ArrayList<DichVu> ketQua = dichVuService.timKiem(
+                    txtTimKiem.getText(), trangThai);
+
+            table.clearSelection();
+            boLoc.setRowFilter(null);
+            model.setRowCount(0);
+
+            danhSach.clear();
+            danhSach.addAll(ketQua);
+
+            for (DichVu dichVu : danhSach) {
+                model.addRow(new Object[]{
+                    dichVu.getMaDichVu(),
+                    dichVu.getTenDichVu(),
+                    dichVu.getMoTa(),
+                    dichVu.getDonGia(),
+                    dichVu.isTrangThai() ? "Đang áp dụng" : "Ngừng áp dụng"
+                });
+            }
+
+            xoaForm();
+            lblSoLuong.setText("Số dịch vụ tìm thấy: " + danhSach.size());
+
+        } catch (SQLException | IllegalArgumentException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không tìm kiếm được dịch vụ:\n" + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
     private static JButton taoNut(String ten, boolean chinh) {
         JButton nut = new JButton(ten);
         nut.setFont(new Font("Arial", Font.BOLD, 12));
@@ -449,15 +401,7 @@ public class QuanLyDichVuFrame extends JPanel
                 new EmptyBorder(8, 14, 8, 14)));
         return nut;
     }
-    private static String chuanHoa(String s) {
-        return Normalizer.normalize(s, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replace('đ', 'd')
-                .replace('Đ', 'D')
-                .toLowerCase(Locale.ROOT);
-    }
-    // Cửa sổ để chạy thử riêng; khi gắn vào màn hình chính,
-    // thêm trực tiếp panel, không gọi taoCuaSo().
+
     public JFrame taoCuaSo() {
         JFrame cuaSo = new JFrame("QuanLyDichVuFrame - NIGHT INVADER");
         cuaSo.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
