@@ -1,5 +1,9 @@
 package ui;
 
+import javax.swing.SwingWorker;
+import entity.NhanVien;
+import service.DangNhapService;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -227,23 +231,92 @@ public class GaraDangNhap extends JFrame {
         add(panelPhai, BorderLayout.CENTER);
 
         // Xử lý sự kiện đăng nhập mẫu
-        btnDangNhap.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String tenDangNhap = txtTenDangNhap.getText().trim();
-                String matKhau = new String(txtMatKhau.getPassword());
+        btnDangNhap.addActionListener(e -> {
+            String tenDangNhap = txtTenDangNhap.getText().trim();
+            char[] kyTuMatKhau = txtMatKhau.getPassword();
 
-                if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
-                    JOptionPane.showMessageDialog(GaraDangNhap.this,
-                            "Vui lòng điền đầy đủ tên đăng nhập và mật khẩu!",
-                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(GaraDangNhap.this,
-                            "Đăng nhập thành công vào hệ thống!\nXin chào nhân viên: " + tenDangNhap,
-                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                }
+            if (tenDangNhap.isEmpty() || kyTuMatKhau.length == 0) {
+                java.util.Arrays.fill(kyTuMatKhau, '\0');
+
+                JOptionPane.showMessageDialog(
+                        GaraDangNhap.this,
+                        "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu."
+                );
+                return;
             }
+
+            String matKhau = new String(kyTuMatKhau);
+            java.util.Arrays.fill(kyTuMatKhau, '\0');
+
+            btnDangNhap.setEnabled(false);
+            txtTenDangNhap.setEnabled(false);
+            txtMatKhau.setEnabled(false);
+
+            new SwingWorker<NhanVien, Void>() {
+
+                @Override
+                protected NhanVien doInBackground() throws Exception {
+                    return new DangNhapService().dangNhap(
+                            tenDangNhap, matKhau
+                    );
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        NhanVien nhanVien = get();
+
+                        GaraManHinhChinh manHinhChinh =
+                                new GaraManHinhChinh(nhanVien);
+
+                        manHinhChinh.setVisible(true);
+                        dispose();
+
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+
+                    } catch (java.util.concurrent.ExecutionException ex) {
+                        Throwable loi = ex.getCause();
+
+                        if (loi instanceof IllegalArgumentException) {
+                            JOptionPane.showMessageDialog(
+                                    GaraDangNhap.this,
+                                    loi.getMessage(),
+                                    "Đăng nhập không thành công",
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+                        } else {
+                            loi.printStackTrace();
+
+                            JOptionPane.showMessageDialog(
+                                    GaraDangNhap.this,
+                                    "Không thể đăng nhập. Kiểm tra kết nối "
+                                            + "và dữ liệu SQL.",
+                                    "Lỗi",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        }
+
+                    } catch (RuntimeException ex) {
+                        ex.printStackTrace();
+
+                        JOptionPane.showMessageDialog(
+                                GaraDangNhap.this,
+                                "Không mở được màn hình chính. Xem lỗi trong Console.",
+                                "Lỗi mở giao diện",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+
+                    } finally {
+                        btnDangNhap.setEnabled(true);
+                        txtTenDangNhap.setEnabled(true);
+                        txtMatKhau.setEnabled(true);
+                        txtMatKhau.setText("");
+                    }
+                }
+            }.execute();
         });
+        getRootPane().setDefaultButton(btnDangNhap);
     }
 
     public static void main(String[] args) {

@@ -119,11 +119,5 @@ public class TiepNhanHoSoDao {
                 + "AND trangThai<>N'Đã hủy' ORDER BY ngayGioTiepNhan DESC,maTiepNhan DESC",maXe);
              ResultSet r=p.executeQuery()) { return r.next()?r.getInt(1):null; }
     }
-    public void khoaLapPhieu() throws SQLException {
-        try (PreparedStatement p=ps("DECLARE @r int; EXEC @r=sys.sp_getapplock "
-                + "@Resource=N'NightInvader.LapPhieuTiepNhan', @LockMode='Exclusive', "
-                + "@LockOwner='Transaction', @LockTimeout=10000; SELECT @r;"); ResultSet r=p.executeQuery()) {
-            if (!r.next() || r.getInt(1)<0) throw new SQLException("Đang có máy khác lập phiếu. Vui lòng thử lại.");
-        }
-    }
+    
 }
