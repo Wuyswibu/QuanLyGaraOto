@@ -19,6 +19,8 @@ public class GaraManHinhChinh extends JFrame {
     // Vùng chứa các màn hình, giống pnlContent trong QLCF_N7.
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel panelNoiDung = new JPanel(cardLayout);
+    
+    private QuanLyXeFrame pnlQuanLyXe;
 
     public GaraManHinhChinh() {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
@@ -60,7 +62,8 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("TRA_CUU_HOA_DON", new GaraTraCuuHoaDon());
          
          themManHinh("TIEP_NHAN", new TiepNhanXeFrame());
-         themManHinh("XE", new QuanLyXeFrame(this::hienThiTrangChu));
+         pnlQuanLyXe = new QuanLyXeFrame(this::hienThiTrangChu);
+         themManHinh("XE", pnlQuanLyXe);
          themManHinh("DICH_VU", new QuanLyDichVuFrame());
          themManHinh("LICH_SU", new LichSuSuaChuaFrame());
          themManHinh("SUA_CHUA", new LapPhieuSuaChuaFrame());
@@ -77,6 +80,11 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("LAP_HOA_DON", new GaraLapHoaDon());
          
          themManHinh("NHAN_SU", new GaraNhanVien(0));
+         
+         themManHinh("THONG_KE_DOANH_THU", new GaraThongKe());
+//         themManHinh("THONG_KE_TON_KHO", new GaraThongKeTonKho());
+//         themManHinh("PHU_TUNG_BAN_CHAY", new GaraPhuTungBanChay());
+//         themManHinh("PHU_TUNG_BAN_CHAM", new GaraPhuTungBanCham());
          
         add(taoThanhCongCu(), BorderLayout.NORTH);
         add(panelNoiDung, BorderLayout.CENTER);
@@ -148,11 +156,11 @@ public class GaraManHinhChinh extends JFrame {
                 "Quản lý khách hàng"
             },
             {
-                "Quản lý xe", "Tra cứu xe", "Lịch sử sửa chữa"
+                "Quản lý xe", "Lịch sử sửa chữa"
             },
             {
                 "Quản lý dịch vụ",
-                "Thêm dịch vụ", "Sửa dịch vụ", "Xóa dịch vụ",
+                
                 "-",
                 "Lập phiếu tiếp nhận xe",
                 "Lập phiếu sửa chữa / Báo giá",
@@ -719,6 +727,10 @@ public class GaraManHinhChinh extends JFrame {
         );
 
         return new ImageIcon(image);
+    }
+    public void moXeCuaKhachHang(String maKhachHang) {
+        pnlQuanLyXe.hienThiXeCuaKhachHang(maKhachHang);
+        chuyenManHinh("XE");
     }
 
     // ==================== CHẠY THỬ MÀN HÌNH CHÍNH ====================
