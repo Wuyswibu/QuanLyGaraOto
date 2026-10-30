@@ -210,17 +210,10 @@ public class GaraTraCuuHoaDon extends JPanel {
             taiDanhSachHoaDonLenBang("Tất cả");
         });
         btnTraCuu.addActionListener(e -> thucHienTraCuu());
+      
+        
         btnXemHoaDon.addActionListener(e -> xemChiTietPhuTungHoaDon());
-        btnInHoaDon.addActionListener(e -> {
-            String maHD = txtMaHoaDon.getText().trim();
-            if (maHD.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn trong bảng để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            JOptionPane.showMessageDialog(this,
-                    "Đang chuẩn bị bản in cho hóa đơn: " + maHD + "\nKhách hàng: " + txtKhachHang.getText() + "\nTổng tiền: " + txtTongTien.getText(),
-                    "In hóa đơn", JOptionPane.INFORMATION_MESSAGE);
-        });
+        btnInHoaDon.addActionListener(e -> hoaDonService.xuatHoaDonRaPDF(this, txtMaHoaDon.getText().trim()));
         panelBottomButtons.add(btnLamMoi);
         panelBottomButtons.add(btnTraCuu);
         panelBottomButtons.add(btnXemHoaDon);
@@ -387,6 +380,7 @@ public class GaraTraCuuHoaDon extends JPanel {
      */
     private void xemChiTietPhuTungHoaDon() {
         String maHD = txtMaHoaDon.getText().trim();
+        hoaDonService.hienThiHoaDonGiay(this, maHD);
         if (maHD.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn dưới bảng để xem chi tiết!", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
