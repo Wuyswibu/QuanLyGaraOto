@@ -1,6 +1,8 @@
 package ui;
 
 import connectDB.ConnectDB;
+import service.ThongKeService;
+import service.ThongKeService.KetQuaBanCham;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -9,12 +11,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 
 public class GaraPhuTungBanCham extends JPanel {
@@ -37,23 +34,14 @@ public class GaraPhuTungBanCham extends JPanel {
     private JTable tableBanCham;
     private DefaultTableModel tableModel;
 
+    private final ThongKeService thongKeService;
     private final DateTimeFormatter dtfNgay = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm phụ tùng bán chậm / tồn đọng theo mã hoặc tên phụ tùng (Nhấn Enter)...";
 
     public GaraPhuTungBanCham() {
-        damBaoKetNoiCSDL();
+        thongKeService = new ThongKeService();
         khoiTaoGiaoDien();
         taiDanhSachBanChamLenBang("Tất cả", "");
-    }
-
-    private void damBaoKetNoiCSDL() {
-        try {
-            Connection conn = ConnectDB.getConnection();
-            if (conn == null || conn.isClosed()) {
-                ConnectDB.getInstance().connect();
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -227,8 +215,7 @@ public class GaraPhuTungBanCham extends JPanel {
 
         JButton btnLamMoi = taoNutTrang("Làm mới dữ liệu");
         JButton btnLocChuaBan = taoNutTrang("Lọc mã chưa bán (SL=0)");
-        JButton btnXuatExcel = taoNutTrang("Xuất Excel");
-        JButton btnCapNhat = taoNutDo("Cập nhật danh sách tồn đọng");
+        JButton btnXuatExcel = taoNutDo("Xuất Excel");
 
         btnLamMoi.addActionListener(e -> {
             txtTimKiemBang.setText(PLACEHOLDER_TIM_KIEM);
@@ -239,16 +226,14 @@ public class GaraPhuTungBanCham extends JPanel {
 
         btnLocChuaBan.addActionListener(e -> cboLocTinhTrang.setSelectedItem("Chưa bán được (SL bán = 0)"));
 
-        btnCapNhat.addActionListener(e -> {
-            String tuKhoa = txtTimKiemBang.getText().trim();
-            if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
-            taiDanhSachBanChamLenBang(cboLocTinhTrang.getSelectedItem().toString(), tuKhoa);
-        });
+        
+        btnXuatExcel.addActionListener(e ->
+        thongKeService.xuatBangRaExcel(this, tableBanCham, "THỐNG KÊ PHỤ TÙNG BÁN CHẬM", "ThongKePhuTungBanCham")
+        );
 
         panelBottomButtons.add(btnLamMoi);
         panelBottomButtons.add(btnLocChuaBan);
         panelBottomButtons.add(btnXuatExcel);
-        panelBottomButtons.add(btnCapNhat);
 
         // --- Gắn vào Card Chính ---
         panelCardChinh.add(panelCardTop, BorderLayout.NORTH);
@@ -264,97 +249,24 @@ public class GaraPhuTungBanCham extends JPanel {
         add(panelCenter, BorderLayout.CENTER);
     }
 
-    // ==================== XỬ LÝ LOAD DỮ LIỆU DATABASE ====================
+    // ==================== XỬ LÝ LOAD DỮ LIỆU QUA SERVICE ====================
 
     private void taiDanhSachBanChamLenBang(String tinhTrangLoc, String tuKhoa) {
-        tableModel.setRowCount(0);
-        Connection conn = ConnectDB.getConnection();
-        if (conn == null) return;
+        try {
+            tableModel.setRowCount(0);
+            KetQuaBanCham kq = thongKeService.thongKePhuTungBanCham(tinhTrangLoc, tuKhoa, dtfNgay);
 
-        String sql = "SELECT pt.maPhuTung, pt.tenPhuTung, pt.donViTinh, pt.donGia, pt.soLuongTon, "
-                + "ISNULL(SUM(CASE WHEN h.maHoaDon IS NOT NULL THEN ct.soLuong ELSE 0 END), 0) AS tongSLBan, "
-                + "MAX(CASE WHEN h.maHoaDon IS NOT NULL THEN h.ngayLap ELSE NULL END) AS lanGiaoDichGanNhat "
-                + "FROM dbo.PhuTung pt "
-                + "LEFT JOIN dbo.CTHoaDon ct ON pt.maPhuTung = ct.maPhuTung "
-                + "LEFT JOIN dbo.HoaDon h ON ct.maHoaDon = h.maHoaDon AND h.trangThai <> N'Đã hủy' "
-                + "WHERE (? = '' OR pt.maPhuTung LIKE ? OR pt.tenPhuTung LIKE ?) "
-                + "GROUP BY pt.maPhuTung, pt.tenPhuTung, pt.donViTinh, pt.donGia, pt.soLuongTon "
-                + "ORDER BY tongSLBan ASC, (pt.soLuongTon * pt.donGia) DESC, pt.soLuongTon DESC";
+            for (Object[] row : kq.dsDongBang) {
+                tableModel.addRow(row);
+            }
 
-        String kw = tuKhoa != null ? tuKhoa.trim() : "";
-        String likeKw = "%" + kw + "%";
+            txtSoMaChuaBan.setText(kq.textSoMaChuaBan);
+            txtTongSLTonDong.setText(kq.textTongSLTonDong);
+            txtTongVonTonDong.setText(kq.textTongVonTonDong);
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, kw);
-            ps.setString(2, likeKw);
-            ps.setNString(3, likeKw);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                int soMaChuaBan = 0;
-                long tongSLTonDong = 0;
-                BigDecimal tongVonDong = BigDecimal.ZERO;
-
-                int hang = 1;
-                while (rs.next()) {
-                    String maPT = rs.getString("maPhuTung");
-                    String tenPT = rs.getString("tenPhuTung");
-                    String dvt = rs.getString("donViTinh");
-                    BigDecimal donGia = rs.getBigDecimal("donGia") != null ? rs.getBigDecimal("donGia") : BigDecimal.ZERO;
-                    int slTon = rs.getInt("soLuongTon");
-                    long slDaBan = rs.getLong("tongSLBan");
-                    Timestamp tsGanNhat = rs.getTimestamp("lanGiaoDichGanNhat");
-
-                    if ("Chưa bán được (SL bán = 0)".equals(tinhTrangLoc) && slDaBan > 0) {
-                        continue;
-                    }
-                    if ("Bán chậm (SL bán <= 2)".equals(tinhTrangLoc) && slDaBan > 2) {
-                        continue;
-                    }
-
-                    BigDecimal vonDong = donGia.multiply(BigDecimal.valueOf(slTon));
-                    if (slDaBan == 0) {
-                        soMaChuaBan++;
-                    }
-                    if (slDaBan <= 2) {
-                        tongSLTonDong += slTon;
-                        tongVonDong = tongVonDong.add(vonDong);
-                    }
-
-                    String ngayGanNhat = tsGanNhat != null
-                            ? tsGanNhat.toLocalDateTime().format(dtfNgay)
-                            : "Chưa có giao dịch";
-
-                    String khuyenNghi;
-                    if (slDaBan == 0 && slTon > 0) {
-                        khuyenNghi = "Tồn đọng - Tạm ngừng nhập";
-                    } else if (slDaBan <= 2 && slTon > 5) {
-                        khuyenNghi = "Luân chuyển chậm";
-                    } else {
-                        khuyenNghi = "Bình thường";
-                    }
-
-                    tableModel.addRow(new Object[]{
-                            hang++,
-                            maPT,
-                            tenPT,
-                            dvt,
-                            slDaBan,
-                            slTon,
-                            String.format("%,.0f đ", donGia),
-                            String.format("%,.0f đ", vonDong),
-                            ngayGanNhat,
-                            khuyenNghi
-                    });
-                }
-
-                txtSoMaChuaBan.setText(soMaChuaBan + " mã (SL bán = 0)");
-                txtTongSLTonDong.setText(String.format("%,d sản phẩm", tongSLTonDong));
-                txtTongVonTonDong.setText(String.format("%,.0f đ", tongVonDong));
-
-                if (tableModel.getRowCount() > 0) {
-                    tableBanCham.setRowSelectionInterval(0, 0);
-                    hienThiDongBanChamLenForm(0);
-                }
+            if (tableModel.getRowCount() > 0) {
+                tableBanCham.setRowSelectionInterval(0, 0);
+                hienThiDongBanChamLenForm(0);
             }
         } catch (SQLException e) {
             e.printStackTrace();

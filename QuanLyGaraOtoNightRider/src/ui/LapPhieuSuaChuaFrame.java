@@ -194,18 +194,7 @@ public class LapPhieuSuaChuaFrame extends JPanel
                 btnBoHangMuc.setEnabled(daChon);
             }
         });
-        danhSachTiepNhan.add(new TiepNhanMau(
-                "PTN001", "51H-123.45", "Toyota Vios",
-                "KH001 • Nguyễn Minh An",
-                "Bảo dưỡng và kiểm tra phanh."));
-        danhSachTiepNhan.add(new TiepNhanMau(
-                "PTN002", "51K-678.90", "Honda City",
-                "KH002 • Trần Thị Bình",
-                "Kiểm tra điều hòa làm lạnh yếu."));
-        danhSachTiepNhan.add(new TiepNhanMau(
-                "PTN003", "50H-456.78", "Mazda 3",
-                "KH001 • Nguyễn Minh An",
-                "Kiểm tra đèn cảnh báo động cơ."));
+        
         cboTiepNhan.addItem("-- Chọn phiếu tiếp nhận --");
         for (TiepNhanMau tn : danhSachTiepNhan) {
             cboTiepNhan.addItem(tn.ma + " • " + tn.bienSo);
