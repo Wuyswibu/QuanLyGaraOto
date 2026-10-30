@@ -83,9 +83,7 @@ public class PhieuSuaChuaService {
 
 // KIỂM TRA THÔNG TIN PHIẾU
 
-    public Map<String, String> kiemTraDuLieu(
-            String maTiepNhan, String loaiPhieu,
-            String chanDoan, String ghiChu) {
+    public Map<String, String> kiemTraDuLieu(String maTiepNhan, String loaiPhieu, String chanDoan, String ghiChu) {
         Map<String, String> loi = new LinkedHashMap<>();
 
         String ma = chuanHoaChuoi(maTiepNhan);
@@ -97,9 +95,7 @@ public class PhieuSuaChuaService {
             loi.put(MA_TIEP_NHAN, "Mã tiếp nhận tối đa 30 ký tự.");
         }
 
-        if (!"Sửa chữa".equals(loai)
-                && !"Bảo dưỡng".equals(loai)
-                && !"Bảo hành".equals(loai)) {
+        if (!"Sửa chữa".equals(loai) && !"Bảo dưỡng".equals(loai) && !"Bảo hành".equals(loai)) {
             loi.put(LOAI_PHIEU, "Vui lòng chọn loại phiếu hợp lệ.");
         }
 
@@ -114,9 +110,7 @@ public class PhieuSuaChuaService {
         return loi;
     }
 
-    public Map<String, String> kiemTraHangMuc(
-            String maDichVu, String tenHangMuc,
-            String moTa, String chiPhiDuKien) {
+    public Map<String, String> kiemTraHangMuc(String maDichVu, String tenHangMuc, String moTa, String chiPhiDuKien) {
         Map<String, String> loi = new LinkedHashMap<>();
 
         String ma = chuanHoaChuoi(maDichVu);

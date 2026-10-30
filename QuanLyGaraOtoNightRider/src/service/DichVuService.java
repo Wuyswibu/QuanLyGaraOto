@@ -60,8 +60,7 @@ public class DichVuService {
 
 // KIỂM TRA DỮ LIỆU
     
-    public Map<String, String> kiemTraDuLieu(
-            String tenDichVu, String moTa, String donGia) {
+    public Map<String, String> kiemTraDuLieu(String tenDichVu, String moTa, String donGia) {
         Map<String, String> loi = new LinkedHashMap<>();
 
         String ten = chuanHoaTen(tenDichVu);
@@ -97,8 +96,7 @@ public class DichVuService {
         return loi;
     }
 
-    private DichVu taoDichVuHopLe(
-            String tenDichVu, String moTa, String donGia, boolean trangThai) {
+    private DichVu taoDichVuHopLe(String tenDichVu, String moTa, String donGia, boolean trangThai) {
         Map<String, String> loi = kiemTraDuLieu(
                 tenDichVu, moTa, donGia);
 
@@ -153,7 +151,7 @@ public class DichVuService {
         return dichVuDao.layDanhSachDichVu();
     }
 
-// TÌM THEO MÃ ====================
+// TÌM THEO MÃ 
     
     public DichVu timTheoMa(String maDichVu) throws SQLException {
         String ma = kiemTraMa(maDichVu);
@@ -165,9 +163,7 @@ public class DichVuService {
 
 // XỬ LÝ NGHIỆP VỤ
 
-    public boolean themDichVu(
-            String tenDichVu, String moTa, String donGia, boolean trangThai)
-            throws SQLException {
+    public boolean themDichVu(String tenDichVu, String moTa, String donGia, boolean trangThai) throws SQLException {
         DichVu dichVu = taoDichVuHopLe(
                 tenDichVu, moTa, donGia, trangThai);
 
@@ -178,9 +174,7 @@ public class DichVuService {
         return dichVuDao.themDichVu(dichVu);
     }
 
-    public boolean suaDichVu(
-            String maDichVu, String tenDichVu, String moTa,
-            String donGia, boolean trangThai) throws SQLException {
+    public boolean suaDichVu(String maDichVu, String tenDichVu, String moTa, String donGia, boolean trangThai) throws SQLException {
         String ma = kiemTraMa(maDichVu);
 
         DichVu dichVu = taoDichVuHopLe(
@@ -189,9 +183,7 @@ public class DichVuService {
         damBaoKetNoi();
 
         if (dichVuDao.timTheoMa(ma) == null) {
-            throw taoLoi(
-                    MA_DICH_VU,
-                    "Dịch vụ không còn tồn tại. Hãy tải lại danh sách.");
+            throw taoLoi(MA_DICH_VU, "Dịch vụ không còn tồn tại. Hãy tải lại danh sách.");
         }
 
         dichVu.setMaDichVu(ma);
@@ -203,8 +195,7 @@ public class DichVuService {
         return timKiem(tuKhoa, null);
     }
 
-    public ArrayList<DichVu> timKiem(String tuKhoa, Boolean trangThai)
-            throws SQLException {
+    public ArrayList<DichVu> timKiem(String tuKhoa, Boolean trangThai) throws SQLException {
         String noiDungTim = chuanHoaTimKiem(tuKhoa);
 
         damBaoKetNoi();
