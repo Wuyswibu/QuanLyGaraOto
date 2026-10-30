@@ -242,4 +242,41 @@ public class PhanCongCaDao {
             return ps.executeUpdate() > 0;
         }
     }
+    
+ // Bổ sung hàm lấy danh sách công việc sửa chữa cho màn hình GaraPhanCongKTV
+    public java.util.List<Object[]> layDanhSachPhanCongKTV() throws SQLException {
+        java.util.List<Object[]> danhSach = new java.util.ArrayList<>();
+        
+        String sql = "SELECT psc.maPhieuSuaChua, pt.bienSo, nv.hoTen AS tenKTV, "
+                   + "pq.tenChuc AS chuyenMon, psc.ngayLap, psc.trangThai "
+                   + "FROM dbo.PhieuSuaChua psc "
+                   + "INNER JOIN dbo.PhieuTiepNhan ptn ON psc.maTiepNhan = ptn.maTiepNhan "
+                   + "INNER JOIN dbo.PhuongTien pt ON ptn.maPhuongTien = pt.maPhuongTien "
+                   + "LEFT JOIN dbo.NhanVien nv ON ptn.maNhanVien = nv.maNhanVien "
+                   + "LEFT JOIN dbo.PhanQuyen pq ON nv.maPhanQuyen = pq.maPhanQuyen "
+                   + "ORDER BY psc.ngayLap DESC";
+
+        try (PreparedStatement ps = ketNoi().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            int stt = 1;
+
+            while (rs.next()) {
+                String maPSC = rs.getString("maPhieuSuaChua");
+                String bienSo = rs.getString("bienSo");
+                String tenKTV = rs.getString("tenKTV") != null ? rs.getString("tenKTV") : "Chưa phân công";
+                String chuyenMon = rs.getString("chuyenMon") != null ? rs.getString("chuyenMon") : "Chưa xác định";
+                
+                java.sql.Timestamp ngayLap = rs.getTimestamp("ngayLap");
+                String ngayStr = (ngayLap != null) ? ngayLap.toLocalDateTime().format(dtf) : "";
+                
+                String trangThai = rs.getString("trangThai");
+                String maPhanCong = "PC" + String.format("%03d", stt++);
+
+                danhSach.add(new Object[]{maPhanCong, maPSC, bienSo, tenKTV, chuyenMon, ngayStr, trangThai});
+            }
+        }
+        return danhSach;
+    }
 }
