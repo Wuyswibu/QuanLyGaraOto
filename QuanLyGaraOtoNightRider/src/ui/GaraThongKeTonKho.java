@@ -1,8 +1,8 @@
 package ui;
 
 import connectDB.ConnectDB;
-import dao.PhuTungDao;
-import entity.PhuTung;
+import service.ThongKeService;
+import service.ThongKeService.KetQuaTonKho;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -11,10 +11,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 public class GaraThongKeTonKho extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -36,25 +33,14 @@ public class GaraThongKeTonKho extends JPanel {
     private JTable tableTonKho;
     private DefaultTableModel tableModel;
 
-    private final PhuTungDao phuTungDao;
+    private final ThongKeService thongKeService;
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm theo mã phụ tùng hoặc tên phụ tùng / vật tư (Nhấn Enter)...";
 
     public GaraThongKeTonKho() {
-        damBaoKetNoiCSDL();
-        phuTungDao = new PhuTungDao();
+        thongKeService = new ThongKeService();
 
         khoiTaoGiaoDien();
         taiDanhSachTonKhoLenBang("Tất cả", "");
-    }
-
-    private void damBaoKetNoiCSDL() {
-        try {
-            Connection conn = ConnectDB.getConnection();
-            if (conn == null || conn.isClosed()) {
-                ConnectDB.getInstance().connect();
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -228,8 +214,7 @@ public class GaraThongKeTonKho extends JPanel {
 
         JButton btnLamMoi = taoNutTrang("Làm mới dữ liệu");
         JButton btnCanhBao = taoNutTrang("Xem mã sắp hết hàng");
-        JButton btnXuatExcel = taoNutTrang("Xuất Excel");
-        JButton btnMoNhapKho = taoNutDo("Lập phiếu nhập kho");
+        JButton btnXuatExcel = taoNutDo("Xuất Excel");
 
         btnLamMoi.addActionListener(e -> {
             txtTimKiemBang.setText(PLACEHOLDER_TIM_KIEM);
@@ -237,20 +222,17 @@ public class GaraThongKeTonKho extends JPanel {
             cboLocMucTon.setSelectedIndex(0);
             taiDanhSachTonKhoLenBang("Tất cả", "");
         });
-
+        
+        btnXuatExcel.addActionListener(e ->
+        thongKeService.xuatBangRaExcel(this, tableTonKho, "THỐNG KÊ TỒN KHO PHỤ TÙNG", "ThongKeTonKho")
+        );
+        
         btnCanhBao.addActionListener(e -> cboLocMucTon.setSelectedItem("Sắp hết hàng"));
 
-        btnMoNhapKho.addActionListener(e -> {
-            Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof GaraManHinhChinh) {
-                ((GaraManHinhChinh) w).chuyenManHinh("NHAP_KHO");
-            }
-        });
 
         panelBottomButtons.add(btnLamMoi);
         panelBottomButtons.add(btnCanhBao);
         panelBottomButtons.add(btnXuatExcel);
-        panelBottomButtons.add(btnMoNhapKho);
 
         // --- Gắn vào Card Chính ---
         panelCardChinh.add(panelCardTop, BorderLayout.NORTH);
@@ -266,68 +248,20 @@ public class GaraThongKeTonKho extends JPanel {
         add(panelCenter, BorderLayout.CENTER);
     }
 
-    // ==================== XỬ LÝ LOAD DỮ LIỆU DATABASE ====================
+    // ==================== XỬ LÝ LOAD DỮ LIỆU QUA SERVICE ====================
 
     private void taiDanhSachTonKhoLenBang(String mucTonLoc, String tuKhoa) {
         try {
             tableModel.setRowCount(0);
-            ArrayList<PhuTung> dsPhuTung;
-            if (tuKhoa != null && !tuKhoa.trim().isEmpty()) {
-                dsPhuTung = phuTungDao.timKiem(tuKhoa.trim());
-            } else {
-                dsPhuTung = phuTungDao.layDanhSachPhuTung();
+            KetQuaTonKho kq = thongKeService.thongKeTonKho(mucTonLoc, tuKhoa);
+
+            for (Object[] row : kq.dsDongBang) {
+                tableModel.addRow(row);
             }
 
-            long tongSLTon = 0;
-            BigDecimal tongGiaTriTon = BigDecimal.ZERO;
-            int soMaCanhBao = 0;
-
-            int stt = 1;
-            for (PhuTung pt : dsPhuTung) {
-                int slTon = pt.getSoLuongTon();
-                int tonToiThieu = pt.getMucTonToiThieu();
-                BigDecimal donGia = pt.getDonGia() != null ? pt.getDonGia() : BigDecimal.ZERO;
-                BigDecimal thanhTienTon = donGia.multiply(BigDecimal.valueOf(slTon));
-
-                String mucDoTon;
-                if (slTon <= 0) {
-                    mucDoTon = "Hết hàng";
-                    soMaCanhBao++;
-                } else if (slTon <= tonToiThieu) {
-                    mucDoTon = "Sắp hết hàng";
-                    soMaCanhBao++;
-                } else {
-                    mucDoTon = "Đủ hàng";
-                }
-
-                if (mucTonLoc != null && !"Tất cả".equals(mucTonLoc)) {
-                    if ("Sắp hết hàng".equals(mucTonLoc)) {
-                        if (slTon > tonToiThieu) continue;
-                    } else if (!mucTonLoc.equalsIgnoreCase(mucDoTon)) {
-                        continue;
-                    }
-                }
-
-                tongSLTon += slTon;
-                tongGiaTriTon = tongGiaTriTon.add(thanhTienTon);
-
-                tableModel.addRow(new Object[]{
-                        stt++,
-                        pt.getMaPhuTung(),
-                        pt.getTenPhuTung(),
-                        pt.getDonViTinh(),
-                        slTon,
-                        tonToiThieu,
-                        String.format("%,.0f đ", donGia),
-                        String.format("%,.0f đ", thanhTienTon),
-                        mucDoTon,
-                        pt.getTrangThai()
-                });
-            }
-
-            txtTongDanhMucVaSL.setText((stt - 1) + " mã | Tổng SL: " + String.format("%,d", tongSLTon));
-            txtSoMaSapHetHang.setText(soMaCanhBao + " mã (SL tồn <= Tối thiểu)");
-            txtTongGiaTriTonKho.setText(String.format("%,.0f đ", tongGiaTriTon));
+            txtTongDanhMucVaSL.setText(kq.textTongDanhMucVaSL);
+            txtSoMaSapHetHang.setText(kq.textSoMaSapHetHang);
+            txtTongGiaTriTonKho.setText(kq.textTongGiaTriTonKho);
 
             if (tableModel.getRowCount() > 0) {
                 tableTonKho.setRowSelectionInterval(0, 0);

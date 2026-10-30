@@ -1,4 +1,5 @@
 package ui;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -7,24 +8,19 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import connectDB.ConnectDB;
-import dao.ChiTietHoaDonDao;
-import dao.HoaDonDao;
-import dao.KhachHangDao;
-import dao.NhanVienDao;
-import dao.XeDao;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
 import entity.NhanVien;
 import entity.Xe;
+import service.HoaDonService;
+
 public class GaraTraCuuHoaDon extends JPanel {
     private static final long serialVersionUID = 1L;
     // Các ô hiển thị trên bảng thông tin chi tiết của Hóa đơn đang chọn
@@ -42,30 +38,24 @@ public class GaraTraCuuHoaDon extends JPanel {
     private JComboBox<String> cboLocTrangThai;
     private JTable tableHoaDon;
     private DefaultTableModel tableModel;
-    // Các lớp DAO
-    private HoaDonDao hoaDonDao;
-    private ChiTietHoaDonDao ctHoaDonDao;
-    private KhachHangDao khachHangDao;
-    private NhanVienDao nhanVienDao;
-    private XeDao xeDao;
+    // Lớp Service xử lý nghiệp vụ
+    private HoaDonService hoaDonService;
     // Bộ nhớ đệm hỗ trợ hiển thị nhanh thông tin liên kết
     private Map<String, KhachHang> mapKhachHang = new HashMap<>();
     private Map<String, Xe> mapXe = new HashMap<>();
     private Map<String, NhanVien> mapNhanVien = new HashMap<>();
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm theo mã HĐ, mã phiếu, tên khách, SĐT hoặc biển số...";
+
     public GaraTraCuuHoaDon() {
-        // Dùng kết nối database đã mở trong Main.
-        hoaDonDao = new HoaDonDao();
-        ctHoaDonDao = new ChiTietHoaDonDao();
-        khachHangDao = new KhachHangDao();
-        nhanVienDao = new NhanVienDao();
-        xeDao = new XeDao();
+        // Khởi tạo tầng Service
+        hoaDonService = new HoaDonService();
         khoiTaoGiaoDien();
         // Nạp dữ liệu danh mục và tải toàn bộ hóa đơn lên JTable
         napDuLieuDanhMuc();
         taiDanhSachHoaDonLenBang("Tất cả");
     }
+
     private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
         // ==================== 3. NỘI DUNG CHÍNH: TRA CỨU HÓA ĐƠN ====================
@@ -247,81 +237,61 @@ public class GaraTraCuuHoaDon extends JPanel {
         // Menu, toolbar và footer dùng chung của GaraManHinhChinh.
         add(panelCenter, BorderLayout.CENTER);
     }
-    // ==================== CÁC HÀM XỬ LÝ DỮ LIỆU TỪ DATABASE ====================
+
+    // ==================== CÁC HÀM GỌI SERVICE & XỬ LÝ DỮ LIỆU ====================
     private void napDuLieuDanhMuc() {
-        if (hoaDonDao == null) return;
+        if (hoaDonService == null) return;
         try {
             mapKhachHang.clear();
             mapXe.clear();
             mapNhanVien.clear();
-            for (KhachHang kh : khachHangDao.layDanhSachKhachHang()) {
+            for (KhachHang kh : hoaDonService.layDanhSachKhachHang()) {
                 mapKhachHang.put(kh.getMaKhachHang(), kh);
             }
-            for (Xe xe : xeDao.layDanhSachXe()) {
+            for (Xe xe : hoaDonService.layDanhSachXe()) {
                 mapXe.put(xe.getMaPhuongTien(), xe);
             }
-            for (NhanVien nv : nhanVienDao.layDanhSachNhanVien()) {
+            for (NhanVien nv : hoaDonService.layDanhSachNhanVien()) {
                 mapNhanVien.put(nv.getMaNhanVien(), nv);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
     /**
      * Tải toàn bộ danh sách Hóa đơn đã lập từ CSDL lên JTable
      */
     private void taiDanhSachHoaDonLenBang(String trangThaiLoc) {
-        if (hoaDonDao == null) return;
+        if (hoaDonService == null) return;
         try {
-            ArrayList<HoaDon> dsHoaDon;
-            if (trangThaiLoc == null || trangThaiLoc.equals("Tất cả")) {
-                dsHoaDon = hoaDonDao.layDanhSachHoaDon();
-            } else {
-                dsHoaDon = hoaDonDao.timTheoTrangThai(trangThaiLoc);
-            }
+            ArrayList<HoaDon> dsHoaDon = hoaDonService.layDanhSachHoaDonTheoLoc(trangThaiLoc);
             doDuLieuHoaDonVaoBang(dsHoaDon);
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi tải danh sách hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     /**
      * Thực hiện tra cứu theo từ khóa và trạng thái lọc
      */
     private void thucHienTraCuu() {
-        if (hoaDonDao == null) return;
+        if (hoaDonService == null) return;
         String tuKhoa = txtTimKiemBang.getText().trim();
         String trangThaiChon = cboLocTrangThai.getSelectedItem().toString();
         try {
-            ArrayList<HoaDon> dsKetQua;
-            if (tuKhoa.isEmpty() || tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) {
-                if (trangThaiChon.equals("Tất cả")) {
-                    dsKetQua = hoaDonDao.layDanhSachHoaDon();
-                } else {
-                    dsKetQua = hoaDonDao.timTheoTrangThai(trangThaiChon);
-                }
-            } else {
-                ArrayList<HoaDon> dsTim = hoaDonDao.timKiem(tuKhoa);
-                if (trangThaiChon.equals("Tất cả")) {
-                    dsKetQua = dsTim;
-                } else {
-                    dsKetQua = new ArrayList<>();
-                    for (HoaDon hd : dsTim) {
-                        if (trangThaiChon.equals(hd.getTrangThai())) {
-                            dsKetQua.add(hd);
-                        }
-                    }
-                }
-            }
+            ArrayList<HoaDon> dsKetQua = hoaDonService.traCuuHoaDonKetHop(tuKhoa, trangThaiChon, PLACEHOLDER_TIM_KIEM);
             doDuLieuHoaDonVaoBang(dsKetQua);
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi tra cứu hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     private void doDuLieuHoaDonVaoBang(ArrayList<HoaDon> dsHoaDon) {
         tableModel.setRowCount(0);
-        Map<String, BigDecimal> mapVat = layTatCaVatTuDB();
+        Map<String, BigDecimal> mapVat = hoaDonService.layTatCaVatTuDB();
         for (HoaDon hd : dsHoaDon) {
             KhachHang kh = mapKhachHang.get(hd.getMaKhachHang());
             Xe xe = mapXe.get(hd.getMaPhuongTien());
@@ -332,7 +302,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             String tenNV = nv != null ? nv.getHoTen() : hd.getMaNhanVien();
             String ngayLapStr = hd.getNgayLap() != null ? hd.getNgayLap().format(dtf) : "";
             BigDecimal vat = hd.getVat() != null ? hd.getVat() : mapVat.getOrDefault(hd.getMaHoaDon(), BigDecimal.ZERO);
-            BigDecimal tongTien = tinhTongTienHoaDon(hd.getMaHoaDon(), hd.getMaPhieuSuaChua(), vat);
+            BigDecimal tongTien = hoaDonService.tinhTongTienHoaDon(hd.getMaHoaDon(), hd.getMaPhieuSuaChua(), vat);
             tableModel.addRow(new Object[]{
                     hd.getMaHoaDon(),
                     hd.getMaPhieuSuaChua(),
@@ -353,6 +323,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             xoaTrangThongTin();
         }
     }
+
     /**
      * Khi click chọn 1 dòng trên JTable -> Hiển thị chi tiết hóa đơn đó lên bảng thông tin phía trên
      */
@@ -362,9 +333,10 @@ public class GaraTraCuuHoaDon extends JPanel {
         String maHD = tableModel.getValueAt(row, 0).toString();
         hienThiChiTietHoaDonLenBangThongTin(maHD);
     }
+
     private void hienThiChiTietHoaDonLenBangThongTin(String maHoaDon) {
         try {
-            HoaDon hd = hoaDonDao.timTheoMa(maHoaDon);
+            HoaDon hd = hoaDonService.timHoaDonTheoMa(maHoaDon);
             if (hd == null) return;
             txtMaHoaDon.setText(hd.getMaHoaDon());
             txtMaPhieuSC.setText(hd.getMaPhieuSuaChua());
@@ -373,7 +345,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             // Hiển thị thông tin Khách hàng
             KhachHang kh = mapKhachHang.get(hd.getMaKhachHang());
             if (kh == null) {
-                kh = khachHangDao.timTheoMa(hd.getMaKhachHang());
+                kh = hoaDonService.timKhachHangTheoMa(hd.getMaKhachHang());
             }
             if (kh != null) {
                 txtKhachHang.setText(kh.getMaKhachHang() + " - " + kh.getHoTen() + " (" + kh.getSoDienThoai() + ")");
@@ -390,7 +362,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             // Hiển thị thông tin Nhân viên
             NhanVien nv = mapNhanVien.get(hd.getMaNhanVien());
             if (nv == null) {
-                nv = nhanVienDao.timTheoMa(hd.getMaNhanVien());
+                nv = hoaDonService.timNhanVienTheoMa(hd.getMaNhanVien());
             }
             if (nv != null) {
                 txtNhanVien.setText(nv.getMaNhanVien() + " - " + nv.getHoTen());
@@ -400,15 +372,16 @@ public class GaraTraCuuHoaDon extends JPanel {
             // Hiển thị VAT và Tổng tiền
             BigDecimal vat = hd.getVat();
             if (vat == null) {
-                vat = layTatCaVatTuDB().getOrDefault(maHoaDon, BigDecimal.ZERO);
+                vat = hoaDonService.layTatCaVatTuDB().getOrDefault(maHoaDon, BigDecimal.ZERO);
             }
             txtVAT.setText(vat.stripTrailingZeros().toPlainString() + "%");
-            BigDecimal tongTien = tinhTongTienHoaDon(hd.getMaHoaDon(), hd.getMaPhieuSuaChua(), vat);
+            BigDecimal tongTien = hoaDonService.tinhTongTienHoaDon(hd.getMaHoaDon(), hd.getMaPhieuSuaChua(), vat);
             txtTongTien.setText(String.format("%,.0f đ", tongTien));
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
     /**
      * Mở hộp thoại xem chi tiết các phụ tùng trong Hóa đơn đang chọn (Nút "Xem hóa đơn")
      */
@@ -419,7 +392,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             return;
         }
         try {
-            ArrayList<ChiTietHoaDon> dsChiTiet = ctHoaDonDao.timTheoMaHoaDon(maHD);
+            ArrayList<ChiTietHoaDon> dsChiTiet = hoaDonService.layChiTietHoaDon(maHD);
             String[] cols = {"Mã Phụ Tùng", "Tên Phụ Tùng", "Số Lượng", "Đơn Giá", "Giảm Giá", "Thành Tiền"};
             DefaultTableModel modelCT = new DefaultTableModel(null, cols) {
                 @Override
@@ -428,7 +401,7 @@ public class GaraTraCuuHoaDon extends JPanel {
                 }
             };
             for (ChiTietHoaDon ct : dsChiTiet) {
-                String tenPT = layTenPhuTungTuDB(ct.getMaPhuTung());
+                String tenPT = hoaDonService.layTenPhuTungTuDB(ct.getMaPhuTung());
                 BigDecimal sl = new BigDecimal(ct.getSoLuong());
                 BigDecimal dg = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
                 BigDecimal gg = ct.getGiamGia() != null ? ct.getGiamGia() : BigDecimal.ZERO;
@@ -459,6 +432,7 @@ public class GaraTraCuuHoaDon extends JPanel {
             JOptionPane.showMessageDialog(this, "Lỗi tải chi tiết hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     private void xoaTrangThongTin() {
         txtMaHoaDon.setText("");
         txtMaPhieuSC.setText("");
@@ -470,65 +444,7 @@ public class GaraTraCuuHoaDon extends JPanel {
         txtTrangThai.setText("");
         txtTongTien.setText("0 đ");
     }
-    // ==================== CÁC HÀM TÍNH TIỀN & HỖ TRỢ ====================
-    private BigDecimal tinhTamTinh(String maHoaDon, String maPSC) {
-        BigDecimal tamTinh = BigDecimal.ZERO;
-        try {
-            ArrayList<ChiTietHoaDon> dsCT = ctHoaDonDao.timTheoMaHoaDon(maHoaDon);
-            for (ChiTietHoaDon ct : dsCT) {
-                BigDecimal sl = new BigDecimal(ct.getSoLuong());
-                BigDecimal dg = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
-                BigDecimal gg = ct.getGiamGia() != null ? ct.getGiamGia() : BigDecimal.ZERO;
-                tamTinh = tamTinh.add(dg.multiply(sl).subtract(gg));
-            }
-            if (tamTinh.compareTo(BigDecimal.ZERO) == 0 && maPSC != null && !maPSC.isEmpty()) {
-                String sql = "SELECT ISNULL(SUM(donGia), 0) AS tongPT FROM dbo.PhuTung WHERE maPhieuSuaChua = ?";
-                try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-                    ps.setString(1, maPSC);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next() && rs.getBigDecimal("tongPT") != null) {
-                            tamTinh = tamTinh.add(rs.getBigDecimal("tongPT"));
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return tamTinh;
-    }
-    private BigDecimal tinhTongTienHoaDon(String maHoaDon, String maPSC, BigDecimal vat) {
-        BigDecimal tamTinh = tinhTamTinh(maHoaDon, maPSC);
-        BigDecimal tienVat = tamTinh.multiply(vat).divide(new BigDecimal("100"));
-        return tamTinh.add(tienVat);
-    }
-    private Map<String, BigDecimal> layTatCaVatTuDB() {
-        Map<String, BigDecimal> map = new HashMap<>();
-        String sql = "SELECT maHoaDon, vat FROM dbo.HoaDon";
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                map.put(rs.getString("maHoaDon"), rs.getBigDecimal("vat") != null ? rs.getBigDecimal("vat") : BigDecimal.ZERO);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return map;
-    }
-    private String layTenPhuTungTuDB(String maPhuTung) {
-        String sql = "SELECT tenPhuTung FROM dbo.PhuTung WHERE maPhuTung = ?";
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-            ps.setString(1, maPhuTung);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("tenPhuTung");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return maPhuTung;
-    }
+
     // ==================== CÁC HÀM TIỆN ÍCH GIAO DIỆN ====================
     private JTextField taoTextFieldChiDoc() {
         JTextField tf = new JTextField();
@@ -537,6 +453,7 @@ public class GaraTraCuuHoaDon extends JPanel {
         tf.setForeground(new Color(30, 35, 45));
         return tf;
     }
+
     private JPanel taoOnhapLieu(String labelText, JTextField textField) {
         JPanel panel = new JPanel(new BorderLayout(0, 5));
         panel.setBackground(Color.WHITE);
@@ -553,6 +470,7 @@ public class GaraTraCuuHoaDon extends JPanel {
         panel.add(textField, BorderLayout.CENTER);
         return panel;
     }
+
     private JButton taoNutTrang(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Arial", Font.BOLD, 12));
@@ -568,6 +486,7 @@ public class GaraTraCuuHoaDon extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
+
     private JButton taoNutDo(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Arial", Font.BOLD, 12));
@@ -581,6 +500,7 @@ public class GaraTraCuuHoaDon extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
+
     // Chạy thử riêng. Ứng dụng chính chạy từ Main đã kết nối SQL.
     public static void main(String[] args) {
         try {

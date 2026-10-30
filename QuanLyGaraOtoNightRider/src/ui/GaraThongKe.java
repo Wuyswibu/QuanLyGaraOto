@@ -1,10 +1,9 @@
 package ui;
 
 import connectDB.ConnectDB;
-import dao.ChiTietHoaDonDao;
-import dao.HoaDonDao;
-import entity.ChiTietHoaDon;
 import entity.HoaDon;
+import service.ThongKeService;
+import service.ThongKeService.KetQuaDoanhThu;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,14 +12,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,9 +38,8 @@ public class GaraThongKe extends JPanel {
     private JTable tableDoanhThu;
     private DefaultTableModel tableModel;
 
-    // Các lớp DAO
-    private final HoaDonDao hoaDonDao;
-    private final ChiTietHoaDonDao ctHoaDonDao;
+    // Lớp Service xử lý nghiệp vụ thống kê
+    private final ThongKeService thongKeService;
 
     // Bộ nhớ đệm hiển thị tên Khách hàng và Biển số xe
     private final Map<String, String> mapTenKhachHang = new HashMap<>();
@@ -58,9 +51,7 @@ public class GaraThongKe extends JPanel {
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm theo mã HĐ, mã phiếu SC, tên khách hoặc biển số xe (Nhấn Enter)...";
 
     public GaraThongKe() {
-        damBaoKetNoiCSDL();
-        hoaDonDao = new HoaDonDao();
-        ctHoaDonDao = new ChiTietHoaDonDao();
+        thongKeService = new ThongKeService();
 
         khoiTaoGiaoDien();
         napBoNhoDemKhachHangVaXe();
@@ -70,16 +61,6 @@ public class GaraThongKe extends JPanel {
     // Giữ lại constructor có tham số để tránh lỗi biên dịch nếu GaraManHinhChinh chưa kịp sửa
     public GaraThongKe(int tabMacDinh) {
         this();
-    }
-
-    private void damBaoKetNoiCSDL() {
-        try {
-            Connection conn = ConnectDB.getConnection();
-            if (conn == null || conn.isClosed()) {
-                ConnectDB.getInstance().connect();
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     private void khoiTaoGiaoDien() {
@@ -139,16 +120,10 @@ public class GaraThongKe extends JPanel {
         cboKyThongKe.addActionListener(e -> {
             if (dangCapNhatCombo) return;
             String ky = cboKyThongKe.getSelectedItem().toString();
-            LocalDate homNay = LocalDate.now();
-            if ("Hôm nay".equals(ky)) {
-                txtTuNgay.setText(homNay.format(dtfNgay));
-                txtDenNgay.setText(homNay.format(dtfNgay));
-            } else if ("Tháng này".equals(ky)) {
-                txtTuNgay.setText(homNay.withDayOfMonth(1).format(dtfNgay));
-                txtDenNgay.setText(homNay.format(dtfNgay));
-            } else if ("Năm nay".equals(ky)) {
-                txtTuNgay.setText(homNay.withDayOfYear(1).format(dtfNgay));
-                txtDenNgay.setText(homNay.format(dtfNgay));
+            String[] khoangNgay = thongKeService.tinhKhoangNgayTheoKy(ky, dtfNgay);
+            if (khoangNgay != null) {
+                txtTuNgay.setText(khoangNgay[0]);
+                txtDenNgay.setText(khoangNgay[1]);
             }
         });
 
@@ -277,9 +252,8 @@ public class GaraThongKe extends JPanel {
         panelBottomButtons.setBackground(Color.WHITE);
 
         JButton btnLamMoi = taoNutTrang("Làm mới dữ liệu");
-        JButton btnXuatExcel = taoNutTrang("Xuất Excel");
+        JButton btnXuatExcel = taoNutDo("Xuất Excel");
         JButton btnMoLapHoaDon = taoNutTrang("Mở Lập hóa đơn");
-        JButton btnLocDuLieu = taoNutDo("Cập nhật thống kê");
 
         btnLamMoi.addActionListener(e -> {
             txtTimKiemBang.setText(PLACEHOLDER_TIM_KIEM);
@@ -288,6 +262,9 @@ public class GaraThongKe extends JPanel {
             napBoNhoDemKhachHangVaXe();
             taiDuLieuDoanhThuLenBang("Tất cả", "");
         });
+        btnXuatExcel.addActionListener(e ->
+        thongKeService.xuatBangRaExcel(this, tableDoanhThu, "THỐNG KÊ DOANH THU GARA", "ThongKeDoanhThu")
+        );
 
         btnMoLapHoaDon.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
@@ -296,16 +273,10 @@ public class GaraThongKe extends JPanel {
             }
         });
 
-        btnLocDuLieu.addActionListener(e -> {
-            String tuKhoa = txtTimKiemBang.getText().trim();
-            if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
-            taiDuLieuDoanhThuLenBang(cboLocTrangThai.getSelectedItem().toString(), tuKhoa);
-        });
 
         panelBottomButtons.add(btnLamMoi);
         panelBottomButtons.add(btnMoLapHoaDon);
         panelBottomButtons.add(btnXuatExcel);
-        panelBottomButtons.add(btnLocDuLieu);
 
         // --- Gắn các thành phần vào Card Chính ---
         panelCardChinh.add(panelCardTop, BorderLayout.NORTH);
@@ -322,99 +293,29 @@ public class GaraThongKe extends JPanel {
         add(panelCenter, BorderLayout.CENTER);
     }
 
-    // ==================== XỬ LÝ LOAD DỮ LIỆU DATABASE ====================
+    // ==================== XỬ LÝ LOAD DỮ LIỆU QUA SERVICE ====================
 
     private void napBoNhoDemKhachHangVaXe() {
         mapTenKhachHang.clear();
         mapBienSoXe.clear();
-        Connection conn = ConnectDB.getConnection();
-        if (conn == null) return;
-
-        try (PreparedStatement ps = conn.prepareStatement("SELECT maKhachHang, hoTen FROM dbo.KhachHang");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                mapTenKhachHang.put(rs.getString("maKhachHang"), rs.getString("hoTen"));
-            }
-        } catch (SQLException ignored) {
-        }
-
-        try (PreparedStatement ps = conn.prepareStatement("SELECT maPhuongTien, bienSo, mauXe FROM dbo.PhuongTien");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                String bienSo = rs.getString("bienSo");
-                String mauXe = rs.getString("mauXe");
-                mapBienSoXe.put(rs.getString("maPhuongTien"),
-                        mauXe != null && !mauXe.isEmpty() ? bienSo + " (" + mauXe + ")" : bienSo);
-            }
-        } catch (SQLException ignored) {
-        }
+        mapTenKhachHang.putAll(thongKeService.layMapTenKhachHang());
+        mapBienSoXe.putAll(thongKeService.layMapBienSoXe());
     }
 
     private void taiDuLieuDoanhThuLenBang(String trangThaiLoc, String tuKhoa) {
         try {
             tableModel.setRowCount(0);
-            ArrayList<HoaDon> dsHoaDon;
-            if (tuKhoa != null && !tuKhoa.trim().isEmpty()) {
-                dsHoaDon = hoaDonDao.timKiem(tuKhoa.trim());
-            } else if (trangThaiLoc == null || "Tất cả".equals(trangThaiLoc)) {
-                dsHoaDon = hoaDonDao.layDanhSachHoaDon();
-            } else {
-                dsHoaDon = hoaDonDao.timTheoTrangThai(trangThaiLoc);
+            KetQuaDoanhThu kq = thongKeService.thongKeDoanhThu(
+                    trangThaiLoc, tuKhoa, mapTenKhachHang, mapBienSoXe, dtf);
+
+            for (Object[] row : kq.dsDongBang) {
+                tableModel.addRow(row);
             }
 
-            Map<String, BigDecimal> mapVat = layTatCaVatTuDB();
-            BigDecimal tongDaThu = BigDecimal.ZERO;
-            BigDecimal tongChoThu = BigDecimal.ZERO;
-            BigDecimal tongTienVAT = BigDecimal.ZERO;
-            int soHDDaThu = 0;
-            int soHDChoThu = 0;
-
-            int stt = 1;
-            for (HoaDon hd : dsHoaDon) {
-                if (trangThaiLoc != null && !"Tất cả".equals(trangThaiLoc)
-                        && !trangThaiLoc.equalsIgnoreCase(hd.getTrangThai())) {
-                    continue;
-                }
-
-                BigDecimal vat = hd.getVat() != null
-                        ? hd.getVat()
-                        : mapVat.getOrDefault(hd.getMaHoaDon(), BigDecimal.ZERO);
-
-                BigDecimal tamTinh = tinhTamTinh(hd.getMaHoaDon(), hd.getMaPhieuSuaChua());
-                BigDecimal tienVat = tamTinh.multiply(vat).divide(new BigDecimal("100"));
-                BigDecimal tongTien = tamTinh.add(tienVat);
-
-                if (HoaDon.DA_THANH_TOAN.equalsIgnoreCase(hd.getTrangThai())) {
-                    tongDaThu = tongDaThu.add(tongTien);
-                    tongTienVAT = tongTienVAT.add(tienVat);
-                    soHDDaThu++;
-                } else if (HoaDon.CHUA_THANH_TOAN.equalsIgnoreCase(hd.getTrangThai())) {
-                    tongChoThu = tongChoThu.add(tongTien);
-                    soHDChoThu++;
-                }
-
-                String tenKH = mapTenKhachHang.getOrDefault(hd.getMaKhachHang(), hd.getMaKhachHang());
-                String bienSo = mapBienSoXe.getOrDefault(hd.getMaPhuongTien(), hd.getMaPhuongTien());
-                String ngayLapStr = hd.getNgayLap() != null ? hd.getNgayLap().format(dtf) : "";
-
-                tableModel.addRow(new Object[]{
-                        stt++,
-                        hd.getMaHoaDon(),
-                        hd.getMaPhieuSuaChua(),
-                        hd.getMaKhachHang() + " - " + tenKH,
-                        bienSo,
-                        ngayLapStr,
-                        String.format("%,.0f đ", tamTinh),
-                        vat.stripTrailingZeros().toPlainString() + "%",
-                        String.format("%,.0f đ", tongTien),
-                        hd.getTrangThai()
-                });
-            }
-
-            txtTongSoHoaDon.setText((stt - 1) + " hóa đơn (Đã thu: " + soHDDaThu + ", Chờ: " + soHDChoThu + ")");
-            txtDoanhThuChoThu.setText(String.format("%,.0f đ", tongChoThu));
-            txtTongTienVAT.setText(String.format("%,.0f đ", tongTienVAT));
-            txtTongDoanhThuDaThu.setText(String.format("%,.0f đ", tongDaThu));
+            txtTongSoHoaDon.setText(kq.textTongSoHoaDon);
+            txtDoanhThuChoThu.setText(kq.textDoanhThuChoThu);
+            txtTongTienVAT.setText(kq.textTongTienVAT);
+            txtTongDoanhThuDaThu.setText(kq.textTongDoanhThuDaThu);
 
             if (tableModel.getRowCount() > 0) {
                 tableDoanhThu.setRowSelectionInterval(0, 0);
@@ -424,48 +325,6 @@ public class GaraThongKe extends JPanel {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    private BigDecimal tinhTamTinh(String maHoaDon, String maPSC) {
-        BigDecimal tamTinh = BigDecimal.ZERO;
-        try {
-            ArrayList<ChiTietHoaDon> dsCT = ctHoaDonDao.timTheoMaHoaDon(maHoaDon);
-            for (ChiTietHoaDon ct : dsCT) {
-                BigDecimal sl = BigDecimal.valueOf(ct.getSoLuong());
-                BigDecimal dg = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
-                BigDecimal gg = ct.getGiamGia() != null ? ct.getGiamGia() : BigDecimal.ZERO;
-                tamTinh = tamTinh.add(dg.multiply(sl).subtract(gg));
-            }
-            if (tamTinh.compareTo(BigDecimal.ZERO) == 0 && maPSC != null && !maPSC.isEmpty()) {
-                String sql = "SELECT ISNULL(SUM(donGia), 0) AS tongPT FROM dbo.PhuTung WHERE maPhieuSuaChua = ?";
-                try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-                    ps.setString(1, maPSC);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next() && rs.getBigDecimal("tongPT") != null) {
-                            tamTinh = tamTinh.add(rs.getBigDecimal("tongPT"));
-                        }
-                    }
-                }
-            }
-        } catch (SQLException ignored) {
-        }
-        return tamTinh;
-    }
-
-    private Map<String, BigDecimal> layTatCaVatTuDB() {
-        Map<String, BigDecimal> map = new HashMap<>();
-        Connection conn = ConnectDB.getConnection();
-        if (conn == null) return map;
-        String sql = "SELECT maHoaDon, vat FROM dbo.HoaDon";
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                map.put(rs.getString("maHoaDon"),
-                        rs.getBigDecimal("vat") != null ? rs.getBigDecimal("vat") : BigDecimal.ZERO);
-            }
-        } catch (SQLException ignored) {
-        }
-        return map;
     }
 
     // ==================== CÁC HÀM TIỆN ÍCH GIAO DIỆN ====================
