@@ -8,6 +8,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import connectDB.ConnectDB;
+import ui.GaraDangNhap;
 import ui.GaraManHinhChinh;
 import ui.XeUI;
 import ui.LapPhieuTiepNhanUI;
@@ -35,7 +36,7 @@ public class Main {
         }
         
         SwingUtilities.invokeLater(() -> {
-            new GaraManHinhChinh().setVisible(true);
+            new GaraDangNhap().setVisible(true);
         });
     }
 }
