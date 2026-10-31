@@ -163,7 +163,8 @@ public class LapPhieuSuaChuaFrame extends JPanel {
         themO(form, "Ngày lập", txtNgayLap);
         themO(form, "Loại phiếu", cboLoaiPhieu);
         themO(form, "Trạng thái", txtTrangThai);
-
+        
+        txtMaPhieu.setBackground(new Color(240, 240, 240));
         phanTren.add(form, BorderLayout.CENTER);
 
         JPanel ghiNhan = new JPanel(new GridLayout(1, 3, 16, 0));
@@ -698,21 +699,20 @@ public class LapPhieuSuaChuaFrame extends JPanel {
             DichVu dichVu = dichVuTheoMa.get(hangMuc.getMaDichVu());
 
             String tenDichVu = dichVu == null
-                    ? hangMuc.getMaDichVu()
-                    : dichVu.getMaDichVu() + " • " + dichVu.getTenDichVu();
+                    ? ""
+                    : dichVu.getTenDichVu();
 
             model.addRow(new Object[]{
                 hangMuc.getMaHangMuc() == null ? "" : hangMuc.getMaHangMuc(),
                 tenDichVu,
                 hangMuc.getTenHangMuc(),
                 hangMuc.getMoTa(),
-                hangMuc.getChiPhiDuKien(),
+                String.format(Locale.forLanguageTag("vi-VN"),"%,.0f đ", hangMuc.getChiPhiDuKien()),
                 hangMuc.getTrangThai()
             });
         }
 
-        lblTong.setText("Tổng chi phí dự kiến: "
-                + String.format(Locale.forLanguageTag("vi-VN"), "%,.2f đ", tong));
+        lblTong.setText("Tổng chi phí dự kiến: " + String.format(Locale.forLanguageTag("vi-VN"), "%,.2f đ", tong));
 
         capNhatNut();
     }

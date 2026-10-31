@@ -26,18 +26,22 @@ public class PhieuXuatKhoDao {
     private PhieuXuatKho docPhieuXuat(ResultSet rs) throws SQLException {
         Timestamp ngayXuat = rs.getTimestamp("ngayXuat");
 
-        return new PhieuXuatKho(
+        PhieuXuatKho phieu = new PhieuXuatKho(
                 rs.getString("maPhieuXuat"),
                 ngayXuat == null ? null : ngayXuat.toLocalDateTime(),
                 rs.getString("lyDoXuat"),
                 rs.getString("trangThai"),
                 rs.getString("ghiChu"));
+
+        phieu.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
+
+        return phieu;
     }
 
     public ArrayList<PhieuXuatKho> layDanhSachPhieuXuat() throws SQLException {
         ArrayList<PhieuXuatKho> danhSach = new ArrayList<>();
 
-        String sql = "SELECT maPhieuXuat, ngayXuat, lyDoXuat, "
+        String sql = "SELECT maPhieuXuat, maPhieuSuaChua, ngayXuat, lyDoXuat, "
                 + "trangThai, ghiChu "
                 + "FROM dbo.PhieuXuatKho "
                 + "ORDER BY ngayXuat DESC, maPhieuXuat DESC";
@@ -140,26 +144,17 @@ public class PhieuXuatKhoDao {
 
     public boolean themPhieuXuat(PhieuXuatKho phieu) throws SQLException {
         String sql = "INSERT INTO dbo.PhieuXuatKho "
-                + "(maPhieuXuat, ngayXuat, lyDoXuat, trangThai, ghiChu) "
-                + "VALUES (?, ?, ?, ?, ?)";
+                + "(maPhieuXuat, ngayXuat, lyDoXuat, trangThai, "
+                + "ghiChu, maPhieuSuaChua) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, phieu.getMaPhieuXuat());
             ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayXuat()));
-
-            if (phieu.getLyDoXuat() == null) {
-                ps.setNull(3, Types.NVARCHAR);
-            } else {
-                ps.setNString(3, phieu.getLyDoXuat());
-            }
-
+            ps.setNString(3, phieu.getLyDoXuat());
             ps.setNString(4, phieu.getTrangThai());
-
-            if (phieu.getGhiChu() == null) {
-                ps.setNull(5, Types.NVARCHAR);
-            } else {
-                ps.setNString(5, phieu.getGhiChu());
-            }
+            ps.setNString(5, phieu.getGhiChu());
+            ps.setString(6, phieu.getMaPhieuSuaChua());
 
             return ps.executeUpdate() > 0;
         }
@@ -167,28 +162,17 @@ public class PhieuXuatKhoDao {
 
     public boolean suaPhieuXuat(PhieuXuatKho phieu) throws SQLException {
         String sql = "UPDATE dbo.PhieuXuatKho "
-                + "SET ngayXuat = ?, lyDoXuat = ?, "
-                + "trangThai = ?, ghiChu = ? "
+                + "SET ngayXuat = ?, lyDoXuat = ?, trangThai = ?, "
+                + "ghiChu = ?, maPhieuSuaChua = ? "
                 + "WHERE maPhieuXuat = ?";
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayXuat()));
-
-            if (phieu.getLyDoXuat() == null) {
-                ps.setNull(2, Types.NVARCHAR);
-            } else {
-                ps.setNString(2, phieu.getLyDoXuat());
-            }
-
+            ps.setNString(2, phieu.getLyDoXuat());
             ps.setNString(3, phieu.getTrangThai());
-
-            if (phieu.getGhiChu() == null) {
-                ps.setNull(4, Types.NVARCHAR);
-            } else {
-                ps.setNString(4, phieu.getGhiChu());
-            }
-
-            ps.setString(5, phieu.getMaPhieuXuat());
+            ps.setNString(4, phieu.getGhiChu());
+            ps.setString(5, phieu.getMaPhieuSuaChua());
+            ps.setString(6, phieu.getMaPhieuXuat());
 
             return ps.executeUpdate() > 0;
         }

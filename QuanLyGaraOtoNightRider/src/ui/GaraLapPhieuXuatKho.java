@@ -11,7 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-
+import dao.PhieuSuaChuaDao;
+import entity.PhieuSuaChua;
 import service.PhieuXuatKhoService;
 import service.PhuTungService;
 import dao.ChiTietPhieuXuatDao;
@@ -52,7 +53,8 @@ public class GaraLapPhieuXuatKho extends JPanel {
     private boolean dangCapNhatCombo = false;
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private final String PLACEHOLDER_TIM_KIEM = "Tìm theo mã phiếu xuất, lý do hoặc ghi chú (Nhấn Enter)...";
-
+    private JComboBox<String> cboPhieuSuaChua;
+    private final PhieuSuaChuaDao phieuSuaChuaDao = new PhieuSuaChuaDao();
     public GaraLapPhieuXuatKho() {
         khoiTaoGiaoDien();
         napDuLieuComboBox();
@@ -99,6 +101,25 @@ public class GaraLapPhieuXuatKho extends JPanel {
         cboLyDoXuat = new JComboBox<>(new String[]{"Xuất sửa chữa", "Xuất bảo dưỡng", "Xuất bảo hành", "Xuất thanh lý phụ tùng hỏng"});
         cboTrangThai = new JComboBox<>(new String[]{"Đã xuất kho", "Chờ duyệt", "Đã hủy"});
         cboPhuTung = new JComboBox<>();
+        cboPhieuSuaChua = new JComboBox<>();
+        cboPhieuSuaChua.addItem("-- Chọn phiếu sửa chữa --");
+        cboPhieuSuaChua.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(
+                    javax.swing.event.PopupMenuEvent e) {
+                napDanhSachPhieuSuaChua();
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(
+                    javax.swing.event.PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuCanceled(
+                    javax.swing.event.PopupMenuEvent e) {
+            }
+        });
         txtSoLuong = new JTextField("1");
         txtDonGia = new JTextField("0");
         cboNhanVienKho = new JComboBox<>();
@@ -130,7 +151,7 @@ public class GaraLapPhieuXuatKho extends JPanel {
         txtSoLuong.addKeyListener(tinhTienListener);
         txtDonGia.addKeyListener(tinhTienListener);
 
-        JPanel panelGridFields = new JPanel(new GridLayout(3, 3, 25, 10));
+        JPanel panelGridFields = new JPanel(new GridLayout(0, 3, 25, 10));
         panelGridFields.setBackground(Color.WHITE);
         panelGridFields.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
         panelGridFields.add(taoOnhapLieu("Mã phiếu xuất", txtMaPhieuXuat));
@@ -140,7 +161,7 @@ public class GaraLapPhieuXuatKho extends JPanel {
         panelGridFields.add(taoOnhapLieu("Số lượng xuất", txtSoLuong));
         panelGridFields.add(taoOnhapLieu("Đơn giá xuất (VNĐ)", txtDonGia));
         panelGridFields.add(taoOCombo("Nhân viên xuất", cboNhanVienKho));
-        panelGridFields.add(taoOnhapLieu("Ghi chú / Mã phiếu sửa chữa", txtGhiChu));
+        panelGridFields.add(taoOCombo("Phiếu sửa chữa", cboPhieuSuaChua));
         panelGridFields.add(taoOnhapLieu("Tổng giá trị xuất", txtTongGiaTri));
 
         JPanel panelFieldsContainer = new JPanel(new BorderLayout());
@@ -327,6 +348,44 @@ public class GaraLapPhieuXuatKho extends JPanel {
             });
         }
     }
+    
+    private void napDanhSachPhieuSuaChua() {
+        String maDangChon = layMaPhieuSuaChuaDaChon();
+
+        try {
+            ArrayList<PhieuSuaChua> danhSach =
+                    phieuSuaChuaDao.layDanhSachPhieuSuaChua();
+
+            cboPhieuSuaChua.removeAllItems();
+            cboPhieuSuaChua.addItem("-- Chọn phiếu sửa chữa --");
+
+            for (PhieuSuaChua phieu : danhSach) {
+                cboPhieuSuaChua.addItem(
+                        phieu.getMaPhieuSuaChua()
+                        + " - " + phieu.getTrangThai());
+            }
+
+            if (maDangChon != null) {
+                chonItemComboTheoMa(cboPhieuSuaChua, maDangChon);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không tải được phiếu sửa chữa:\n" + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String layMaPhieuSuaChuaDaChon() {
+        if (cboPhieuSuaChua.getSelectedIndex() <= 0) {
+            return null;
+        }
+
+        return layMaTuCombo(cboPhieuSuaChua);
+    }
 
     private void lamMoiFormLapPhieu() {
         try {
@@ -334,6 +393,7 @@ public class GaraLapPhieuXuatKho extends JPanel {
             txtNgayXuat.setText("Tự động ghi nhận khi lưu");
             txtSoLuong.setText("1");
             txtGhiChu.setText("");
+            cboPhieuSuaChua.setSelectedIndex(0);
             if (cboLyDoXuat.getItemCount() > 0) cboLyDoXuat.setSelectedIndex(0);
             if (cboTrangThai.getItemCount() > 0) cboTrangThai.setSelectedIndex(0);
             if (cboPhuTung.getItemCount() > 0) {
@@ -354,7 +414,14 @@ public class GaraLapPhieuXuatKho extends JPanel {
         try {
             PhieuXuatKho pxk = phieuXuatKhoService.timTheoMa(maPhieuXuat);
             if (pxk == null) return;
+            
+            napDanhSachPhieuSuaChua();
+            cboPhieuSuaChua.setSelectedIndex(0);
 
+            if (pxk.getMaPhieuSuaChua() != null) {
+                chonItemComboTheoMa(
+                        cboPhieuSuaChua, pxk.getMaPhieuSuaChua());
+            }
             dangCapNhatCombo = true;
             txtMaPhieuXuat.setText(pxk.getMaPhieuXuat());
             txtNgayXuat.setText(pxk.getNgayXuat() != null ? pxk.getNgayXuat().format(dtf) : "");
@@ -407,8 +474,19 @@ public class GaraLapPhieuXuatKho extends JPanel {
         int soLuong = Integer.parseInt(txtSoLuong.getText().trim());
         BigDecimal donGia = parseSoTien(txtDonGia.getText().trim());
         String ghiChu = txtGhiChu.getText().trim();
+        String maPhieuSuaChua = layMaPhieuSuaChuaDaChon();
+
+        boolean canPhieuSuaChua = "Xuất sửa chữa".equals(lyDo) || "Xuất bảo dưỡng".equals(lyDo) || "Xuất bảo hành".equals(lyDo);
+
+        if (canPhieuSuaChua && maPhieuSuaChua == null) {
+            JOptionPane.showMessageDialog(
+                    this, "Vui lòng chọn phiếu sửa chữa cần xuất phụ tùng.");
+            cboPhieuSuaChua.requestFocusInWindow();
+            return;
+        }
 
         PhieuXuatKho pxk = new PhieuXuatKho(maPX, LocalDateTime.now(), lyDo, trangThai, ghiChu.isEmpty() ? null : ghiChu);
+        pxk.setMaPhieuSuaChua(maPhieuSuaChua);
         ArrayList<ChiTietPhieuXuat> dsCT = new ArrayList<>();
         dsCT.add(new ChiTietPhieuXuat(maPX, maPT, soLuong, donGia));
 
@@ -422,6 +500,7 @@ public class GaraLapPhieuXuatKho extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE
             );
             napDuLieuComboBox();
+            napDanhSachPhieuSuaChua();
             taiDanhSachPhieuXuatLenBang("Tất cả");
             lamMoiFormLapPhieu();
         } else {

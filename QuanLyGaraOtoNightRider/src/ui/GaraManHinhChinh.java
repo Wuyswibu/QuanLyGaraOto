@@ -67,15 +67,11 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("TAI_KHOAN", new GaraTaiKhoanCaNhan());
          
-         themManHinh("DOI_MAT_KHAU", new GaraDoiMatKhau());
-         
          themManHinh("NHAP_KHO", new GaraLapPhieuNhapKho());
          
          themManHinh("XUAT_KHO", new GaraLapPhieuXuatKho());
          
          themManHinh("PHAN_CONG", new GaraPhanCongKTV());
-         
-         themManHinh("TRA_CUU_HOA_DON", new GaraTraCuuHoaDon());
          
          pnlTiepNhan = new LapPhieuTiepNhanUI();
          themManHinh("TIEP_NHAN", pnlTiepNhan);
@@ -167,7 +163,7 @@ public class GaraManHinhChinh extends JFrame {
         String[][] cacItemMenu = {
             {
                 "Màn hình chính", "-",
-                "Tài khoản cá nhân", "Đổi mật khẩu",
+                "Tài khoản cá nhân",
                 "-", "Đăng xuất"
             },
             {
@@ -192,7 +188,7 @@ public class GaraManHinhChinh extends JFrame {
                 "Lập phiếu nhập kho", "Lập phiếu xuất kho"
             },
             {
-                "Lập hóa đơn", "Tra cứu hóa đơn"
+                "Lập hóa đơn",
             },
             {
                 "Thống kê doanh thu", "Thống kê tồn kho",

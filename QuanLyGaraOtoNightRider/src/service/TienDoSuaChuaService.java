@@ -4,12 +4,17 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-
+import java.util.Map;
+import java.util.LinkedHashMap;
 import connectDB.ConnectDB;
 import dao.HangMucDichVuDao;
 import dao.PhieuSuaChuaDao;
 import entity.HangMucDichVu;
 import entity.PhieuSuaChua;
+import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 
 /** Nghiệp vụ tiến độ; dùng lại DAO hiện có, không dùng sp_getapplock. */
 public class TienDoSuaChuaService {
@@ -31,20 +36,95 @@ public class TienDoSuaChuaService {
         }
     }
 
+    public static class PhuTungHienThi {
+        public final String ten;
+        public final BigDecimal donGia;
+
+        public PhuTungHienThi(String ten, BigDecimal donGia) {
+            this.ten = ten;
+            this.donGia = donGia;
+        }
+    }
+
     public static class ChiTiet {
         public final PhieuSuaChua phieu;
         public final List<HangMucDichVu> hangMuc;
+        public final List<PhuTungHienThi> phuTung;
+        public final String tenKyThuatVien;
 
-        public ChiTiet(PhieuSuaChua phieu, List<HangMucDichVu> hangMuc) {
+        public ChiTiet(
+                PhieuSuaChua phieu,
+                List<HangMucDichVu> hangMuc,
+                List<PhuTungHienThi> phuTung,
+                String tenKyThuatVien) {
             this.phieu = phieu;
             this.hangMuc = hangMuc;
+            this.phuTung = phuTung;
+            this.tenKyThuatVien = tenKyThuatVien;
         }
     }
 
     public ChiTiet layChiTiet(String maPhieu) throws SQLException {
         synchronized (ConnectDB.class) {
+            Connection conn = ConnectDB.getConnection();
+
+            if (conn == null || conn.isClosed()) {
+                throw new SQLException("Chưa kết nối cơ sở dữ liệu.");
+            }
+
             PhieuSuaChua phieu = batBuocCoPhieu(maPhieu);
-            return new ChiTiet(phieu, hangMucDao.timTheoMaPhieuSuaChua(maPhieu));
+            String tenKyThuatVien = "Chưa phân công";
+
+            String sqlKTV = "SELECT nv.hoTen "
+                    + "FROM dbo.PhieuSuaChua p "
+                    + "LEFT JOIN dbo.NhanVien nv "
+                    + "ON p.maKyThuatVien = nv.maNhanVien "
+                    + "WHERE p.maPhieuSuaChua = ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(sqlKTV)) {
+                ps.setString(1, maPhieu);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String hoTen = rs.getString("hoTen");
+
+                        if (hoTen != null) {
+                            tenKyThuatVien = hoTen;
+                        }
+                    }
+                }
+            }
+
+            List<PhuTungHienThi> phuTung = new ArrayList<>();
+
+            String sqlPhuTung =
+                    "SELECT DISTINCT p.maPhuTung, p.tenPhuTung, ct.donGia "
+                    + "FROM dbo.PhieuXuatKho x "
+                    + "JOIN dbo.ChiTietPhieuXuat ct "
+                    + "ON ct.maPhieuXuat = x.maPhieuXuat "
+                    + "JOIN dbo.PhuTung p "
+                    + "ON p.maPhuTung = ct.maPhuTung "
+                    + "WHERE x.maPhieuSuaChua = ? "
+                    + "AND x.trangThai IN (N'Đã xuất kho', N'Đã xác nhận') "
+                    + "ORDER BY p.maPhuTung, ct.donGia";
+
+            try (PreparedStatement ps = conn.prepareStatement(sqlPhuTung)) {
+                ps.setString(1, maPhieu);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        phuTung.add(new PhuTungHienThi(
+                                rs.getString("tenPhuTung"),
+                                rs.getBigDecimal("donGia")));
+                    }
+                }
+            }
+
+            return new ChiTiet(
+                    phieu,
+                    hangMucDao.timTheoMaPhieuSuaChua(maPhieu),
+                    phuTung,
+                    tenKyThuatVien);
         }
     }
 
@@ -63,6 +143,10 @@ public class TienDoSuaChuaService {
 
     /** Cập nhật theo mã PSC; đồng bộ trạng thái hạng mục trong cùng transaction. */
     public void capNhatTrangThaiPhieu(String maPhieu, String trangThai) throws SQLException {
+    	if (DA_HOAN_THANH.equals(trangThai)) {
+    	    throw new IllegalArgumentException(
+    	            "Vui lòng xác nhận tiền công thực tế trước khi hoàn thành.");
+    	}
         if (!Arrays.asList("Chờ sửa chữa", DANG_SUA, CHO_KIEM_TRA, DA_HOAN_THANH).contains(trangThai)) {
             throw new IllegalArgumentException("Trạng thái phiếu không hợp lệ.");
         }
@@ -99,6 +183,91 @@ public class TienDoSuaChuaService {
         if (daDong(phieu.getTrangThai())) {
             throw new IllegalArgumentException("Phiếu đã hoàn thành hoặc kết thúc, không thể sửa tiến độ.");
         }
+    }
+    
+    private BigDecimal kiemTraTienCong(String noiDung, String tenHangMuc) {
+        String gia = noiDung == null ? "" : noiDung.trim();
+
+        if (!gia.matches("[0-9]+(?:\\.[0-9]{1,2})?")) {
+            throw new IllegalArgumentException(
+                    "Tiền công của \"" + tenHangMuc
+                    + "\" phải là số không âm, tối đa 2 chữ số thập phân.\n"
+                    + "Ví dụ: 150000. Không nhập dấu phân cách hàng nghìn.");
+        }
+
+        BigDecimal tien = new BigDecimal(gia);
+
+        if (tien.compareTo(new BigDecimal("9999999999999999.99")) > 0) {
+            throw new IllegalArgumentException(
+                    "Tiền công của \"" + tenHangMuc + "\" vượt giới hạn.");
+        }
+
+        return tien;
+    }
+
+    public void hoanThanhPhieu(
+            String maPhieu, Map<String, String> tienCongTheoHangMuc)
+            throws SQLException {
+
+        if (tienCongTheoHangMuc == null) {
+            throw new IllegalArgumentException(
+                    "Chưa có thông tin tiền công thực tế.");
+        }
+
+        // Giữ bản dữ liệu riêng cho thao tác lưu.
+        Map<String, String> duLieu = new LinkedHashMap<>(tienCongTheoHangMuc);
+
+        trongTransaction(() -> {
+            PhieuSuaChua phieu = batBuocCoPhieu(maPhieu);
+            kiemTraChoSua(phieu);
+
+            List<HangMucDichVu> danhSach =
+                    hangMucDao.timTheoMaPhieuSuaChua(maPhieu);
+
+            if (danhSach.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Phiếu chưa có hạng mục dịch vụ.");
+            }
+
+            if (duLieu.size() != danhSach.size()) {
+                throw new IllegalArgumentException(
+                        "Danh sách hạng mục đã thay đổi. Hãy tải lại phiếu.");
+            }
+
+            Map<String, BigDecimal> tienDaKiemTra = new LinkedHashMap<>();
+
+            // Kiểm tra đầy đủ trước khi ghi xuống database.
+            for (HangMucDichVu h : danhSach) {
+                String maHangMuc = h.getMaHangMuc();
+
+                if (!duLieu.containsKey(maHangMuc)) {
+                    throw new IllegalArgumentException(
+                            "Thiếu tiền công của hạng mục: " + h.getTenHangMuc());
+                }
+
+                tienDaKiemTra.put(
+                        maHangMuc,
+                        kiemTraTienCong(
+                                duLieu.get(maHangMuc), h.getTenHangMuc()));
+            }
+
+            for (HangMucDichVu h : danhSach) {
+                boolean thanhCong = hangMucDao.hoanThanhHangMuc(
+                        h.getMaHangMuc(),
+                        maPhieu,
+                        tienDaKiemTra.get(h.getMaHangMuc()));
+
+                if (!thanhCong) {
+                    throw new SQLException(
+                            "Không lưu được tiền công của: " + h.getTenHangMuc());
+                }
+            }
+
+            if (!phieuDao.capNhatTrangThai(maPhieu, DA_HOAN_THANH)) {
+                throw new SQLException(
+                        "Không cập nhật được trạng thái phiếu " + maPhieu);
+            }
+        });
     }
 
     @FunctionalInterface
