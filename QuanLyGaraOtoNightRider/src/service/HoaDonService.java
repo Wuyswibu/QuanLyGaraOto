@@ -212,34 +212,37 @@ public class HoaDonService {
     }
 
     // ==================== 4. CÁC HÀM TÍNH TIỀN & HỖ TRỢ TRUY VẤN PHỤ ====================
-    public BigDecimal tinhTamTinh(String maHoaDon, String maPSC) {
-        BigDecimal tamTinh = BigDecimal.ZERO;
-        try {
-            ArrayList<ChiTietHoaDon> dsCT = ctHoaDonDao.timTheoMaHoaDon(maHoaDon);
-            for (ChiTietHoaDon ct : dsCT) {
-                BigDecimal sl = new BigDecimal(ct.getSoLuong());
-                BigDecimal dg = ct.getDonGia() != null ? ct.getDonGia() : BigDecimal.ZERO;
-                BigDecimal gg = ct.getGiamGia() != null ? ct.getGiamGia() : BigDecimal.ZERO;
-                tamTinh = tamTinh.add(dg.multiply(sl).subtract(gg));
-            }
-            if (tamTinh.compareTo(BigDecimal.ZERO) == 0 && maPSC != null && !maPSC.isEmpty()) {
-                String sql = "SELECT ISNULL(SUM(donGia), 0) AS tongPT FROM dbo.PhuTung WHERE maPhieuSuaChua = ?";
-                try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-                    ps.setString(1, maPSC);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next() && rs.getBigDecimal("tongPT") != null) {
-                            tamTinh = tamTinh.add(rs.getBigDecimal("tongPT"));
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public BigDecimal tinhTamTinh(String maHoaDon, String maPSC) throws SQLException {
+
+        BigDecimal tienCong = tinhTienCongThucTe(maPSC);
+        BigDecimal tienPhuTung = BigDecimal.ZERO;
+        ArrayList<ChiTietHoaDon> danhSach = new ArrayList<>();
+
+        if (maHoaDon != null && !maHoaDon.trim().isEmpty()) {
+            danhSach = ctHoaDonDao.timTheoMaHoaDon(maHoaDon.trim());
         }
-        return tamTinh;
+
+        if (!danhSach.isEmpty()) {
+            for (ChiTietHoaDon ct : danhSach) {
+                BigDecimal soLuong = BigDecimal.valueOf(ct.getSoLuong());
+
+                BigDecimal donGia = ct.getDonGia() == null
+                        ? BigDecimal.ZERO : ct.getDonGia();
+
+                BigDecimal giamGia = ct.getGiamGia() == null
+                        ? BigDecimal.ZERO : ct.getGiamGia();
+
+                tienPhuTung = tienPhuTung.add(
+                        soLuong.multiply(donGia).subtract(giamGia));
+            }
+        } else {
+            tienPhuTung = tinhTienPhuTungDaXuat(maPSC);
+        }
+
+        return tienCong.add(tienPhuTung);
     }
 
-    public BigDecimal tinhTongTienHoaDon(String maHoaDon, String maPSC, BigDecimal vat) {
+    public BigDecimal tinhTongTienHoaDon(String maHoaDon, String maPSC, BigDecimal vat) throws SQLException {
         BigDecimal tamTinh = tinhTamTinh(maHoaDon, maPSC);
         return tinhTongTienTuTamTinh(tamTinh, vat);
     }
@@ -278,6 +281,57 @@ public class HoaDonService {
             e.printStackTrace();
         }
         return maPhuTung;
+    }
+    
+    public BigDecimal tinhTienCongThucTe(String maPSC) throws SQLException {
+        if (maPSC == null || maPSC.trim().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        String sql = "SELECT ISNULL(SUM(chiPhiThucTe), 0) AS tongCong "
+                + "FROM dbo.HangMucDichVu "
+                + "WHERE maPhieuSuaChua = ?";
+
+        try (PreparedStatement ps =
+                ConnectDB.getConnection().prepareStatement(sql)) {
+
+            ps.setString(1, maPSC.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next()
+                        ? rs.getBigDecimal("tongCong")
+                        : BigDecimal.ZERO;
+            }
+        }
+    }
+
+    public BigDecimal tinhTienPhuTungDaXuat(String maPSC)
+            throws SQLException {
+
+        if (maPSC == null || maPSC.trim().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        String sql = "SELECT ISNULL(SUM("
+                + "CAST(ct.soLuong AS DECIMAL(18,0)) * ct.donGia), 0) "
+                + "AS tongPhuTung "
+                + "FROM dbo.PhieuXuatKho x "
+                + "JOIN dbo.ChiTietPhieuXuat ct "
+                + "ON ct.maPhieuXuat = x.maPhieuXuat "
+                + "WHERE x.maPhieuSuaChua = ? "
+                + "AND x.trangThai IN (N'Đã xuất kho', N'Đã xác nhận')";
+
+        try (PreparedStatement ps =
+                ConnectDB.getConnection().prepareStatement(sql)) {
+
+            ps.setString(1, maPSC.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next()
+                        ? rs.getBigDecimal("tongPhuTung")
+                        : BigDecimal.ZERO;
+            }
+        }
     }
 
     // ==================== 5. HIỂN THỊ HÓA ĐƠN GIẤY & XUẤT FILE PDF ====================
@@ -517,22 +571,46 @@ public class HoaDonService {
                 root.add(Box.createVerticalStrut(8));
             }
         } else {
-            // Dự phòng lấy từ bảng PhuTung theo maPhieuSuaChua nếu CTHoaDon trống
-            String sql = "SELECT tenPhuTung, donGia FROM dbo.PhuTung WHERE maPhieuSuaChua = ?";
+            String sql =
+                    "SELECT p.tenPhuTung, ct.soLuong, ct.donGia "
+                    + "FROM dbo.PhieuXuatKho x "
+                    + "JOIN dbo.ChiTietPhieuXuat ct "
+                    + "ON ct.maPhieuXuat = x.maPhieuXuat "
+                    + "JOIN dbo.PhuTung p "
+                    + "ON p.maPhuTung = ct.maPhuTung "
+                    + "WHERE x.maPhieuSuaChua = ? "
+                    + "AND x.trangThai IN (N'Đã xuất kho', N'Đã xác nhận') "
+                    + "ORDER BY x.maPhieuXuat, p.maPhuTung";
+
             try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
+
                 ps.setString(1, hd.getMaPhieuSuaChua());
+
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         String tenPT = rs.getString("tenPhuTung");
-                        BigDecimal dg = rs.getBigDecimal("donGia") != null ? rs.getBigDecimal("donGia") : BigDecimal.ZERO;
-                        tongTienHang = tongTienHang.add(dg);
-                        root.add(taoMucPhuTung(tenPT, "1 x " + String.format("%,.0f đ", dg),
-                                String.format("%,.0f đ", dg), textDark, textMuted));
+                        int soLuong = rs.getInt("soLuong");
+                        BigDecimal donGia = rs.getBigDecimal("donGia");
+                        BigDecimal thanhTien = donGia.multiply(BigDecimal.valueOf(soLuong));
+                        tongTienHang = tongTienHang.add(thanhTien);
+                        root.add(taoMucPhuTung(tenPT, soLuong + " x " + String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ", donGia),
+                                String.format( java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ", thanhTien),
+                                textDark,
+                                textMuted));
+
                         root.add(Box.createVerticalStrut(8));
                     }
                 }
             }
         }
+
+        BigDecimal tienCong = tinhTienCongThucTe(hd.getMaPhieuSuaChua());
+        root.add(taoDongThongTin("Tiền công thực tế", String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ", tienCong), textMuted, textDark, false));
+
+        root.add(Box.createVerticalStrut(8));
+
+        // Tổng trước giảm giá gồm cả tiền công và phụ tùng.
+        tongTienHang = tongTienHang.add(tienCong);
 
         BigDecimal tamTinh = tongTienHang.subtract(tongGiamGia);
         BigDecimal vatPercent = hd.getVat() != null

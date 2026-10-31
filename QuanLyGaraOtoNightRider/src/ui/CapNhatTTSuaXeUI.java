@@ -13,7 +13,8 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-
+import java.util.Map;
+import java.util.LinkedHashMap;
 import entity.HangMucDichVu;
 import entity.PhieuSuaChua;
 import service.TienDoSuaChuaService;
@@ -39,12 +40,12 @@ public class CapNhatTTSuaXeUI extends JPanel {
     private final JButton btnTim = nut("Tìm kiếm", false);
     private final JButton btnTaiLai = nut("Tải lại", false);
     private final JButton btnXuatKho = nut("Yêu cầu xuất kho", false);
+    private final JButton btnPhanCong = nut("Phân công kỹ thuật viên", false);
     private final JButton btnCapNhat = nut("Cập nhật trạng thái phiếu", true);
     private final JProgressBar tienDo = new JProgressBar(0, 100);
     private final JLabel thongBao = new JLabel("Chọn phiếu sửa chữa để xem các hạng mục.");
     private final DefaultTableModel model = new DefaultTableModel(new String[]{
-        "STT", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Kết quả", "Ghi chú"
-    }, 0) {
+        "STT", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Phụ tùng", "Giá phụ tùng", "Kỹ thuật viên","Kết quả", "Ghi chú"}, 0) {
         @Override public boolean isCellEditable(int row, int column) { return false; }
     };
     private final JTable bang = new JTable(model);
@@ -132,6 +133,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
         duoi.add(thongBao, BorderLayout.NORTH);
         JPanel cacNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         cacNut.setOpaque(false);
+        cacNut.add(btnPhanCong);
         cacNut.add(btnXuatKho);
         cacNut.add(btnCapNhat);
 
@@ -157,6 +159,18 @@ public class CapNhatTTSuaXeUI extends JPanel {
                 ((GaraManHinhChinh) cuaSo).chuyenManHinh("XUAT_KHO");
             } else {
                 JOptionPane.showMessageDialog(this, "Mở từ màn hình chính để chuyển sang xuất kho.");
+            }
+        });
+        
+        btnPhanCong.addActionListener(e -> {
+            Window cuaSo = SwingUtilities.getWindowAncestor(this);
+
+            if (cuaSo instanceof GaraManHinhChinh) {
+                ((GaraManHinhChinh) cuaSo).chuyenManHinh("PHAN_CONG");
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vui lòng chạy từ màn hình chính để mở phân công kỹ thuật viên.");
             }
         });
         capNhatNut();
@@ -228,41 +242,173 @@ public class CapNhatTTSuaXeUI extends JPanel {
     private void doBang() {
         model.setRowCount(0);
         hangMucHienThi.clear();
+
         if (chiTiet != null) {
+            List<String> tenPhuTung = new ArrayList<>();
+            List<String> giaPhuTung = new ArrayList<>();
+
+            for (TienDoSuaChuaService.PhuTungHienThi pt : chiTiet.phuTung) {
+                tenPhuTung.add(pt.ten);
+                giaPhuTung.add(tien(pt.donGia));
+            }
+
+            String phuTung = tenPhuTung.isEmpty()
+                    ? "Chưa có"
+                    : String.join("; ", tenPhuTung);
+
+            String gia = giaPhuTung.isEmpty()
+                    ? ""
+                    : String.join("; ", giaPhuTung);
+
             String loc = (String) cboLocTrangThai.getSelectedItem();
+
             for (HangMucDichVu h : chiTiet.hangMuc) {
-                if (!"Tất cả".equals(loc) && !h.getTrangThai().equals(loc)) continue;
+                if (!"Tất cả".equals(loc)
+                        && !java.util.Objects.equals(h.getTrangThai(), loc)) {
+                    continue;
+                }
+
                 hangMucHienThi.add(h);
-                model.addRow(new Object[]{hangMucHienThi.size(), h.getTenHangMuc(), h.getTrangThai(),
-                    tien(h.getChiPhiDuKien()), tien(h.getChiPhiThucTe()), h.getKetQua(), h.getGhiChu()});
+
+                model.addRow(new Object[]{
+                	    hangMucHienThi.size(),
+                	    h.getTenHangMuc(),
+                	    h.getTrangThai(),
+                	    tien(h.getChiPhiDuKien()),
+                	    tien(h.getChiPhiThucTe()),
+                	    phuTung,
+                	    gia,
+                	    chiTiet.tenKyThuatVien,
+                	    h.getKetQua(),
+                	    h.getGhiChu()
+                	});
             }
         }
+
         capNhatNut();
     }
 
     private void suaPhieu() {
-        if (dangTai || chiTiet == null) return;
+        if (dangTai || chiTiet == null) {
+            return;
+        }
         String ma = chiTiet.phieu.getMaPhieuSuaChua();
         JComboBox<String> trangThai = new JComboBox<>(new String[]{
-            "Chờ sửa chữa", "Đang sửa chữa", "Chờ kiểm tra", "Đã hoàn thành"
+            "Chờ sửa chữa",
+            "Đang sửa chữa",
+            "Chờ kiểm tra",
+            "Đã hoàn thành"
         });
+
         String cu = chiTiet.phieu.getTrangThai();
-        if ("Chưa bắt đầu".equals(cu)) cu = "Chờ sửa chữa";
+        if ("Chưa bắt đầu".equals(cu)) {
+            cu = "Chờ sửa chữa";
+        }
         trangThai.setSelectedItem(cu);
         JPanel form = new JPanel(new GridLayout(0, 1, 0, 12));
         form.add(new JLabel("Phiếu sửa chữa: " + ma));
         form.add(new JLabel("Trạng thái hiện tại: " + chiTiet.phieu.getTrangThai()));
         form.add(trangThai);
         form.add(new JLabel("Áp dụng cho toàn bộ hạng mục trong phiếu."));
-        if (JOptionPane.showConfirmDialog(this, form, "Cập nhật trạng thái " + ma,
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+
+        int luaChon = JOptionPane.showConfirmDialog(this,form,"Cập nhật trạng thái " + ma,JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE);
+
+        if (luaChon != JOptionPane.OK_OPTION) {
+            return;
+        }
+
         String moi = (String) trangThai.getSelectedItem();
-        if ("Đã hoàn thành".equals(moi) && JOptionPane.showConfirmDialog(this,
-                "Xác nhận phiếu " + ma + " đã sửa xong và kiểm tra đạt yêu cầu?\n"
-                + "Sau khi hoàn thành, phiếu chỉ được xem.", "Xác nhận hoàn thành",
-                JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
-        chayNen(() -> { service.capNhatTrangThaiPhieu(ma, moi); return true; },
-                ok -> sauKhiLuu(ma, "Đã cập nhật phiếu " + ma + " thành: " + moi));
+
+        if (TienDoSuaChuaService.DA_HOAN_THANH.equals(moi)) {
+            Map<String, String> tienCong = nhapTienCongThucTe();
+
+            if (tienCong == null) {
+                return;
+            }
+
+            int xacNhan = JOptionPane.showConfirmDialog( this,"Xác nhận hoàn thành phiếu " + ma + " và lưu tiền công thực tế?\n" + "Sau khi hoàn thành, phiếu chỉ được xem.", "Xác nhận hoàn thành", JOptionPane.YES_NO_OPTION);
+
+            if (xacNhan != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            chayNen(() -> {
+                service.hoanThanhPhieu(ma, tienCong);
+                return true;
+            }, ok -> sauKhiLuu(
+                    ma, "Đã hoàn thành phiếu và lưu tiền công thực tế."));
+
+            return;
+        }
+
+        chayNen(() -> {
+            service.capNhatTrangThaiPhieu(ma, moi);
+            return true;
+        }, ok -> sauKhiLuu(
+                ma, "Đã cập nhật phiếu " + ma + " thành: " + moi));
+    }
+    
+    private Map<String, String> nhapTienCongThucTe() {
+        if (chiTiet.hangMuc.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this, "Phiếu chưa có hạng mục dịch vụ.");
+            return null;
+        }
+
+        JPanel cacDong = new JPanel(new GridLayout(0, 2, 12, 10));
+
+        Map<String, JTextField> oNhapTheoMa = new LinkedHashMap<>();
+
+        for (HangMucDichVu h : chiTiet.hangMuc) {
+            BigDecimal giaGoiY = h.getChiPhiThucTe();
+
+            if (giaGoiY == null || giaGoiY.signum() == 0) {
+                giaGoiY = h.getChiPhiDuKien();
+            }
+
+            JTextField oNhap = new JTextField(
+                    giaGoiY == null
+                            ? ""
+                            : giaGoiY.stripTrailingZeros().toPlainString(),
+                    15);
+
+            cacDong.add(new JLabel(h.getTenHangMuc()));
+            cacDong.add(oNhap);
+
+            oNhapTheoMa.put(h.getMaHangMuc(), oNhap);
+        }
+
+        JPanel noiDung = new JPanel(new BorderLayout(0, 12));
+        noiDung.add(new JLabel(
+                "Kiểm tra tiền công thực tế (VNĐ), ví dụ: 150000."),
+                BorderLayout.NORTH);
+
+        JScrollPane cuon = new JScrollPane(cacDong);
+        cuon.setBorder(BorderFactory.createEmptyBorder());
+        cuon.setPreferredSize(new Dimension(
+                600,
+                Math.min(350, chiTiet.hangMuc.size() * 42 + 15)));
+
+        noiDung.add(cuon, BorderLayout.CENTER);
+
+        int luaChon = JOptionPane.showConfirmDialog(
+                this,
+                noiDung,
+                "Xác nhận tiền công thực tế",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (luaChon != JOptionPane.OK_OPTION) {
+            return null;
+        }
+
+        Map<String, String> ketQua = new LinkedHashMap<>();
+
+        for (Map.Entry<String, JTextField> entry : oNhapTheoMa.entrySet()) {
+            ketQua.put(entry.getKey(), entry.getValue().getText());
+        }
+
+        return ketQua;
     }
 
     private void sauKhiLuu(String ma, String tin) {
@@ -309,7 +455,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
     }
 
     private static String tien(BigDecimal so) {
-        return so == null ? "" : NumberFormat.getNumberInstance(new Locale("vi", "VN")).format(so);
+        return so == null
+                ? ""
+                : String.format(
+                        Locale.forLanguageTag("vi-VN"), "%,.0f đ", so);
     }
 
     private static void truong(JPanel form, String nhan, JTextField field) {

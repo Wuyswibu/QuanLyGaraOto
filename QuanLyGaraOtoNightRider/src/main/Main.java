@@ -2,16 +2,11 @@ package main;
 
 import java.sql.SQLException;
 
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-
 import connectDB.ConnectDB;
 import ui.GaraDangNhap;
-import ui.GaraManHinhChinh;
-import ui.XeUI;
-import ui.LapPhieuTiepNhanUI;
 
 public class Main {
     public static void main(String[] args) {
