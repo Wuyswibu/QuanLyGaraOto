@@ -33,6 +33,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
     private final JTextField txtChanDoan = new JTextField();
     private final JTextField txtTinhTrang = new JTextField();
     private final JTextField txtNgayLap = new JTextField();
+    private final JTextField txtKyThuatVien = new JTextField();
     private final JComboBox<String> cboPhieu = new JComboBox<>();
     private final JComboBox<String> cboLocTrangThai = new JComboBox<>(new String[]{
         "Tất cả", "Chờ thực hiện", "Chưa bắt đầu", "Đang thực hiện", "Hoàn thành"
@@ -45,10 +46,28 @@ public class CapNhatTTSuaXeUI extends JPanel {
     private final JProgressBar tienDo = new JProgressBar(0, 100);
     private final JLabel thongBao = new JLabel("Chọn phiếu sửa chữa để xem các hạng mục.");
     private final DefaultTableModel model = new DefaultTableModel(new String[]{
-        "STT", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Phụ tùng", "Giá phụ tùng", "Kỹ thuật viên","Kết quả", "Ghi chú"}, 0) {
-        @Override public boolean isCellEditable(int row, int column) { return false; }
+                "STT", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Kết quả", "Ghi chú"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
     };
     private final JTable bang = new JTable(model);
+    private final DefaultTableModel modelPhuTung = new DefaultTableModel(
+            new String[]{
+                "STT", "Phụ tùng", "Số lượng", "Đơn giá", "Thành tiền"
+            }, 0) {
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    private final JTable bangPhuTung = new JTable(modelPhuTung);
+
+    private final JLabel lblTongPhuTung =
+            new JLabel("Tổng tiền phụ tùng: 0 đ");
     private List<PhieuSuaChua> danhSachPhieu = new ArrayList<>();
     private final List<HangMucDichVu> hangMucHienThi = new ArrayList<>();
     private ChiTiet chiTiet;
@@ -69,9 +88,14 @@ public class CapNhatTTSuaXeUI extends JPanel {
         setBorder(new EmptyBorder(18, 28, 18, 28));
         JPanel card = new JPanel(new BorderLayout(0, 14));
         card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(VIEN), new EmptyBorder(20, 22, 20, 22)));
-        add(card);
+        card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(VIEN), new EmptyBorder(20, 22, 20, 22)));
+        JScrollPane cuonTrang = new JScrollPane(card, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        cuonTrang.setBorder(null);
+        cuonTrang.getViewport().setBackground(Color.WHITE);
+        cuonTrang.getVerticalScrollBar().setUnitIncrement(20);
+
+        add(cuonTrang, BorderLayout.CENTER);
 
         JPanel tren = new JPanel(new BorderLayout(0, 12));
         tren.setOpaque(false);
@@ -94,7 +118,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
         chon.add(cboPhieu, BorderLayout.SOUTH);
         tren.add(chon, BorderLayout.CENTER);
 
-        JPanel form = new JPanel(new GridLayout(3, 2, 22, 10));
+        JPanel form = new JPanel(new GridLayout(0, 2, 22, 10));
         form.setOpaque(false);
         truong(form, "Phiếu sửa chữa", txtMaPhieu);
         truong(form, "Mã tiếp nhận", txtMaTiepNhan);
@@ -102,6 +126,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
         truong(form, "Ngày lập", txtNgayLap);
         truong(form, "Tình trạng phiếu", txtTinhTrang);
         truong(form, "Chẩn đoán", txtChanDoan);
+        truong(form, "Kỹ thuật viên phụ trách", txtKyThuatVien);
         tren.add(form, BorderLayout.SOUTH);
         card.add(tren, BorderLayout.NORTH);
 
@@ -124,7 +149,51 @@ public class CapNhatTTSuaXeUI extends JPanel {
         bang.setFillsViewportHeight(true);
         JScrollPane cuon = new JScrollPane(bang);
         cuon.setBorder(BorderFactory.createLineBorder(VIEN));
-        giua.add(cuon, BorderLayout.CENTER);
+        
+        //BẢNG CÔNG VIỆC
+        JPanel vungCongViec = new JPanel(new BorderLayout(0, 6));
+        vungCongViec.setOpaque(false);
+        vungCongViec.add(
+                new JLabel("DANH SÁCH CÔNG VIỆC"), BorderLayout.NORTH);
+        vungCongViec.add(cuon, BorderLayout.CENTER);
+        vungCongViec.setMinimumSize(new Dimension(0, 100));
+
+        // BẢNG PHỤ TÙNG
+        bangPhuTung.setRowHeight(34);
+        bangPhuTung.setFont(new Font("Arial", Font.PLAIN, 13));
+        bangPhuTung.getTableHeader().setFont(
+                new Font("Arial", Font.BOLD, 12));
+        bangPhuTung.getTableHeader().setReorderingAllowed(false);
+        bangPhuTung.setAutoCreateRowSorter(true);
+        bangPhuTung.setFillsViewportHeight(true);
+        bangPhuTung.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JScrollPane cuonPhuTung = new JScrollPane(bangPhuTung);
+        cuonPhuTung.setBorder(BorderFactory.createLineBorder(VIEN));
+
+        JPanel vungPhuTung = new JPanel(new BorderLayout(0, 6));
+        vungPhuTung.setOpaque(false);
+        vungPhuTung.add(
+                new JLabel("PHỤ TÙNG ĐÃ XUẤT CHO PHIẾU"),
+                BorderLayout.NORTH);
+        vungPhuTung.add(cuonPhuTung, BorderLayout.CENTER);
+
+        lblTongPhuTung.setHorizontalAlignment(SwingConstants.RIGHT);
+        vungPhuTung.add(lblTongPhuTung, BorderLayout.SOUTH);
+        vungPhuTung.setMinimumSize(new Dimension(0, 100));
+
+        // Kéo đường phân cách để điều chỉnh chiều cao hai bảng.
+        JSplitPane chiaBang = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                vungCongViec,
+                vungPhuTung);
+
+        chiaBang.setBorder(null);
+        chiaBang.setContinuousLayout(true);
+        chiaBang.setResizeWeight(0.5);
+        chiaBang.setPreferredSize(new Dimension(900, 450));
+
+        giua.add(chiaBang, BorderLayout.CENTER);
         card.add(giua, BorderLayout.CENTER);
 
         JPanel duoi = new JPanel(new BorderLayout(8, 8));
@@ -209,6 +278,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     private void hienThi(ChiTiet duLieu) {
         chiTiet = duLieu;
+        txtKyThuatVien.setText(duLieu == null ? "" : duLieu.tenKyThuatVien);
         PhieuSuaChua p = duLieu == null ? null : duLieu.phieu;
         txtMaPhieu.setText(p == null ? "" : p.getMaPhieuSuaChua());
         txtMaTiepNhan.setText(p == null ? "" : p.getMaTiepNhan());
@@ -241,49 +311,53 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     private void doBang() {
         model.setRowCount(0);
+        modelPhuTung.setRowCount(0);
         hangMucHienThi.clear();
 
+        BigDecimal tongPhuTung = BigDecimal.ZERO;
+
         if (chiTiet != null) {
-            List<String> tenPhuTung = new ArrayList<>();
-            List<String> giaPhuTung = new ArrayList<>();
-
-            for (TienDoSuaChuaService.PhuTungHienThi pt : chiTiet.phuTung) {
-                tenPhuTung.add(pt.ten);
-                giaPhuTung.add(tien(pt.donGia));
-            }
-
-            String phuTung = tenPhuTung.isEmpty()
-                    ? "Chưa có"
-                    : String.join("; ", tenPhuTung);
-
-            String gia = giaPhuTung.isEmpty()
-                    ? ""
-                    : String.join("; ", giaPhuTung);
-
             String loc = (String) cboLocTrangThai.getSelectedItem();
 
+            // Mỗi dòng là một công việc.
             for (HangMucDichVu h : chiTiet.hangMuc) {
-                if (!"Tất cả".equals(loc)
-                        && !java.util.Objects.equals(h.getTrangThai(), loc)) {
+                if (!"Tất cả".equals(loc) && !java.util.Objects.equals(h.getTrangThai(), loc)) {
                     continue;
                 }
 
                 hangMucHienThi.add(h);
 
                 model.addRow(new Object[]{
-                	    hangMucHienThi.size(),
-                	    h.getTenHangMuc(),
-                	    h.getTrangThai(),
-                	    tien(h.getChiPhiDuKien()),
-                	    tien(h.getChiPhiThucTe()),
-                	    phuTung,
-                	    gia,
-                	    chiTiet.tenKyThuatVien,
-                	    h.getKetQua(),
-                	    h.getGhiChu()
-                	});
+                    hangMucHienThi.size(),
+                    h.getTenHangMuc(),
+                    h.getTrangThai(),
+                    tien(h.getChiPhiDuKien()),
+                    tien(h.getChiPhiThucTe()),
+                    h.getKetQua(),
+                    h.getGhiChu()
+                });
+            }
+
+            // Mỗi dòng là một chi tiết xuất phụ tùng.
+            int stt = 1;
+
+            for (TienDoSuaChuaService.PhuTungHienThi pt : chiTiet.phuTung) {
+
+                BigDecimal thanhTien = pt.getThanhTien();
+                tongPhuTung = tongPhuTung.add(thanhTien);
+
+                modelPhuTung.addRow(new Object[]{
+                    stt++,
+                    pt.ten,
+                    pt.soLuong,
+                    pt.donGia == null ? "Nhiều mức giá" : tien(pt.donGia),
+                    tien(thanhTien)
+                });
             }
         }
+
+        lblTongPhuTung.setText(
+                "Tổng tiền phụ tùng: " + tien(tongPhuTung));
 
         capNhatNut();
     }

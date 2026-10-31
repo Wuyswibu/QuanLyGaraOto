@@ -742,7 +742,7 @@ public class LapPhieuSuaChuaFrame extends JPanel {
         btnThemHangMuc.setEnabled(duocNhap);
         btnSuaHangMuc.setEnabled(duocNhap && daChonDong);
         btnBoHangMuc.setEnabled(duocNhap && daChonDong);
-        btnLuu.setEnabled(duocNhap);
+        btnLuu.setEnabled(duocNhap && !danhSachHangMuc.isEmpty());
     }
 
     private boolean xacNhanXoaNoiDung() {
