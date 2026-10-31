@@ -114,7 +114,7 @@ public class GaraNhanVien extends JPanel {
         lblLoiSDT = taoLabelCanhBao();
         lblLoiNgayVaoLam = taoLabelCanhBao();
 
-        cbVaiTro = new JComboBox<>(new String[]{"Tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân", "Quản lý"});
+        cbVaiTro = new JComboBox<>(new String[]{"Nhân viên tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân", "Quản lý"});
         cbVaiTro.setFont(new Font("Arial", Font.PLAIN, 13)); cbVaiTro.setBackground(Color.WHITE);
         cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc", "Đã nghỉ / Khóa"});
         cbTrangThai.setFont(new Font("Arial", Font.PLAIN, 13)); cbTrangThai.setBackground(Color.WHITE);
@@ -167,7 +167,7 @@ public class GaraNhanVien extends JPanel {
             }
         });
 
-        cbLocVaiTro = new JComboBox<>(new String[]{"Tất cả vai trò", "Tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân"});
+        cbLocVaiTro = new JComboBox<>(new String[]{"Tất cả vai trò", "Nhân viên tiếp nhận", "Kỹ thuật viên", "Nhân viên Kho", "Thu ngân"});
         cbLocVaiTro.setFont(new Font("Arial", Font.PLAIN, 12));
         cbLocVaiTro.setBackground(Color.WHITE);
         cbLocVaiTro.addActionListener(e -> taiLaiDuLieuBang());
