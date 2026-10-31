@@ -58,21 +58,14 @@ public class GaraTaiKhoanCaNhan extends JPanel {
     public GaraTaiKhoanCaNhan(String tenDangNhapHienTai) {
         this.tenDangNhapHienTai = tenDangNhapHienTai;
 
-        // Đảm bảo mở kết nối cơ sở dữ liệu trước khi DAO được gọi
         damBaoKetNoiCoSoDuLieu();
-
         this.taiKhoanDao = new TaiKhoanDao();
 
         khoiTaoGiaoDien();
-
-        // Tải dữ liệu lên giao diện
         loadThongTinCaNhan();
         loadDuLieuLenBang();
     }
 
-    /**
-     * Mở kết nối Database an toàn mà không cần chỉnh sửa TaiKhoanDao
-     */
     private void damBaoKetNoiCoSoDuLieu() {
         try {
             if (ConnectDB.getConnection() == null || ConnectDB.getConnection().isClosed()) {
@@ -228,13 +221,30 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         );
         btnDoiMatKhau.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        // CHUYỂN TÊN ĐĂNG NHẬP SANG GaraDoiMatKhau
         btnDoiMatKhau.addActionListener(e -> {
+            String tenDangNhapCanDoi = txtTenDangNhap.getText().trim();
+            if (tenDangNhapCanDoi.isEmpty()) {
+                tenDangNhapCanDoi = this.tenDangNhapHienTai;
+            }
+
             Window cuaSo = SwingUtilities.getWindowAncestor(this);
             if (cuaSo instanceof GaraManHinhChinh) {
                 GaraManHinhChinh manHinhChinh = (GaraManHinhChinh) cuaSo;
-                manHinhChinh.chuyenManHinh("DOI_MAT_KHAU");
+                // Nếu GaraManHinhChinh hỗ trợ truyền tên đăng nhập hoặc chuyển panel trực tiếp:
+                try {
+                    manHinhChinh.chuyenManHinh(tenDangNhapCanDoi);
+                } catch (NoSuchMethodError | Exception ex) {
+                    manHinhChinh.chuyenManHinh("DOI_MAT_KHAU");
+                }
             } else {
-                JOptionPane.showMessageDialog(this, "Hãy mở màn hình này từ GaraManHinhChinh.");
+                // Khi chạy thử nghiệm độc lập
+                JFrame frame = new JFrame("Đổi mật khẩu - NIGHT INVADER");
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.setContentPane(new GaraDoiMatKhau(tenDangNhapCanDoi));
+                frame.setSize(1340, 840);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
             }
         });
 
@@ -248,7 +258,6 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         btnLuuThongTin.setFocusPainted(false);
         btnLuuThongTin.setBorder(BorderFactory.createEmptyBorder(9, 18, 9, 18));
         btnLuuThongTin.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
         btnLuuThongTin.addActionListener(e -> xuLyCapNhat());
 
         JButton btnDangXuat = new JButton("Đăng Xuất →");
@@ -259,7 +268,6 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         btnDangXuat.setBorderPainted(false);
         btnDangXuat.setContentAreaFilled(false);
         btnDangXuat.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
         btnDangXuat.addActionListener(e -> xuLyDangXuat());
 
         panelBottomButtons.add(btnDoiMatKhau);
@@ -267,15 +275,12 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         panelBottomButtons.add(Box.createHorizontalStrut(10));
         panelBottomButtons.add(btnDangXuat);
 
-        // ==================== GẮN PANEL VÀO GIAO DIỆN ====================
         panelCardChinh.add(panelPhiaTren, BorderLayout.NORTH);
         panelCardChinh.add(panelTableSection, BorderLayout.CENTER);
         panelCardChinh.add(panelBottomButtons, BorderLayout.SOUTH);
 
         add(panelCardChinh, BorderLayout.CENTER);
     }
-
-    // ==================== LOAD & CẬP NHẬT DỮ LIỆU TỪ DAO ====================
 
     private void loadThongTinCaNhan() {
         if (tenDangNhapHienTai == null || tenDangNhapHienTai.trim().isEmpty()) {
@@ -342,7 +347,7 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         }
     }
 
-    private void xuLyCapNhat() {
+  private void xuLyCapNhat() {
         String maTK = txtEmail.getText().trim();
         String maNV = txtHoTen.getText().trim();
         String tenDN = txtTenDangNhap.getText().trim();
@@ -354,7 +359,16 @@ public class GaraTaiKhoanCaNhan extends JPanel {
         }
 
         try {
-            TaiKhoan tk = new TaiKhoan(maTK, maNV, tenDN, "", trangThai);
+            // 1. Tìm thông tin tài khoản hiện tại từ database để lấy lại mật khẩu cũ
+            TaiKhoan tkHienTai = taiKhoanDao.timTheoMa(maTK);
+            if (tkHienTai == null) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin tài khoản này trong database!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 2. Tạo đối tượng TaiKhoan với mật khẩu cũ (không truyền chuỗi rỗng "")
+            TaiKhoan tk = new TaiKhoan(maTK, maNV, tenDN, tkHienTai.getMatKhau(), trangThai);
+            
             boolean thanhCong = taiKhoanDao.suaTaiKhoan(tk);
 
             if (thanhCong) {
@@ -365,6 +379,8 @@ public class GaraTaiKhoanCaNhan extends JPanel {
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Lỗi cập nhật: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Cảnh báo dữ liệu", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -424,14 +440,11 @@ public class GaraTaiKhoanCaNhan extends JPanel {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(
-                    UIManager.getSystemLookAndFeelClassName()
-            );
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        // Mở kết nối Database trước khi giao diện được vẽ
         try {
             ConnectDB.getInstance().connect();
         } catch (Exception e) {

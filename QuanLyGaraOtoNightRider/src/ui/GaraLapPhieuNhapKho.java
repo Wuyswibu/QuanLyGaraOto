@@ -31,7 +31,8 @@ public class GaraLapPhieuNhapKho extends JPanel {
     private JTextField txtSoLuong;
     private JTextField txtDonGia;
     private JComboBox<String> cboNhanVienKho;
-    private JTextField txtGhiChu;
+    private JTextField txtNhaCungCap; // Đã tách riêng Nhà cung cấp
+    private JTextField txtGhiChu;     // Đã tách riêng Ghi chú
     private JTextField txtTongGiaTri;
 
     // Bảng và tìm kiếm
@@ -97,6 +98,7 @@ public class GaraLapPhieuNhapKho extends JPanel {
         txtSoLuong = new JTextField("1");
         txtDonGia = new JTextField("0");
         cboNhanVienKho = new JComboBox<>();
+        txtNhaCungCap = new JTextField();
         txtGhiChu = new JTextField();
         txtTongGiaTri = new JTextField("0 đ");
         txtTongGiaTri.setEditable(false);
@@ -124,17 +126,21 @@ public class GaraLapPhieuNhapKho extends JPanel {
         txtSoLuong.addKeyListener(tinhTienListener);
         txtDonGia.addKeyListener(tinhTienListener);
 
-        JPanel panelGridFields = new JPanel(new GridLayout(3, 3, 25, 10));
+        // Chuyển sang GridLayout (2 hàng, 5 cột) để chứa đủ 10 ô nhập liệu cân đối
+        JPanel panelGridFields = new JPanel(new GridLayout(2, 5, 18, 10));
         panelGridFields.setBackground(Color.WHITE);
         panelGridFields.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
+
         panelGridFields.add(taoOnhapLieu("Mã phiếu nhập", txtMaPhieuNhap));
         panelGridFields.add(taoOnhapLieu("Ngày nhập (Tự động)", txtNgayNhap));
         panelGridFields.add(taoOCombo("Trạng thái", cboTrangThai));
         panelGridFields.add(taoOCombo("Phụ tùng nhập", cboPhuTung));
         panelGridFields.add(taoOnhapLieu("Số lượng nhập", txtSoLuong));
+
         panelGridFields.add(taoOnhapLieu("Đơn giá nhập (VNĐ)", txtDonGia));
         panelGridFields.add(taoOCombo("Nhân viên kho", cboNhanVienKho));
-        panelGridFields.add(taoOnhapLieu("Ghi chú / Nhà cung cấp", txtGhiChu));
+        panelGridFields.add(taoOnhapLieu("Nhà cung cấp (*)", txtNhaCungCap));
+        panelGridFields.add(taoOnhapLieu("Ghi chú", txtGhiChu));
         panelGridFields.add(taoOnhapLieu("Tổng giá trị phiếu nhập", txtTongGiaTri));
 
         JPanel panelFieldsContainer = new JPanel(new BorderLayout());
@@ -193,8 +199,8 @@ public class GaraLapPhieuNhapKho extends JPanel {
         panelSearchFilter.add(txtTimKiemBang, BorderLayout.CENTER);
         panelSearchFilter.add(pnlFilterRight, BorderLayout.EAST);
 
-        // Bảng
-        String[] columnNames = {"Mã Phiếu Nhập", "Ngày Nhập", "Phụ Tùng Nhập", "Tổng SL", "Tổng Giá Trị", "Ghi Chú", "Trạng Thái"};
+        // Bảng danh sách phiếu nhập
+        String[] columnNames = {"Mã Phiếu Nhập", "Ngày Nhập", "Phụ Tùng Nhập", "Tổng SL", "Tổng Giá Trị", "Nhà Cung Cấp", "Ghi Chú", "Trạng Thái"};
         tableModel = new DefaultTableModel(null, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -309,6 +315,18 @@ public class GaraLapPhieuNhapKho extends JPanel {
                 tomTat.append(tenPT).append(" (x").append(ct.getSoLuong()).append(")");
             }
 
+            // Tách hiển thị Nhà cung cấp và Ghi chú từ chuỗi lưu trữ
+            String rawGhiChu = pnk.getGhiChu() != null ? pnk.getGhiChu() : "";
+            String nccHienThi = "";
+            String ghiChuHienThi = rawGhiChu;
+
+            if (rawGhiChu.contains("[NCC: ") && rawGhiChu.contains("]")) {
+                int start = rawGhiChu.indexOf("[NCC: ");
+                int end = rawGhiChu.indexOf("]", start);
+                nccHienThi = rawGhiChu.substring(start + 6, end);
+                ghiChuHienThi = (rawGhiChu.substring(0, start) + rawGhiChu.substring(end + 1)).trim();
+            }
+
             String ngayNhapStr = pnk.getNgayNhap() != null ? pnk.getNgayNhap().format(dtf) : "";
             tableModel.addRow(new Object[]{
                     pnk.getMaPhieuNhap(),
@@ -316,7 +334,8 @@ public class GaraLapPhieuNhapKho extends JPanel {
                     tomTat.length() == 0 ? "(Chưa có chi tiết)" : tomTat.toString(),
                     tongSL,
                     String.format("%,.0f đ", tongTien),
-                    pnk.getGhiChu() != null ? pnk.getGhiChu() : "",
+                    nccHienThi,
+                    ghiChuHienThi,
                     pnk.getTrangThai()
             });
         }
@@ -328,6 +347,7 @@ public class GaraLapPhieuNhapKho extends JPanel {
             txtMaPhieuNhap.setEditable(false);
             txtNgayNhap.setText("Tự động ghi nhận khi lưu");
             txtSoLuong.setText("1");
+            txtNhaCungCap.setText("");
             txtGhiChu.setText("");
             if (cboTrangThai.getItemCount() > 0) cboTrangThai.setSelectedIndex(0);
             if (cboPhuTung.getItemCount() > 0) {
@@ -354,7 +374,18 @@ public class GaraLapPhieuNhapKho extends JPanel {
             txtMaPhieuNhap.setEditable(false);
             txtNgayNhap.setText(pnk.getNgayNhap() != null ? pnk.getNgayNhap().format(dtf) : "");
             cboTrangThai.setSelectedItem(pnk.getTrangThai());
-            txtGhiChu.setText(pnk.getGhiChu() != null ? pnk.getGhiChu() : "");
+
+            // Đọc tách Nhà cung cấp và Ghi chú lên 2 ô riêng biệt
+            String rawGhiChu = pnk.getGhiChu() != null ? pnk.getGhiChu() : "";
+            if (rawGhiChu.contains("[NCC: ") && rawGhiChu.contains("]")) {
+                int start = rawGhiChu.indexOf("[NCC: ");
+                int end = rawGhiChu.indexOf("]", start);
+                txtNhaCungCap.setText(rawGhiChu.substring(start + 6, end));
+                txtGhiChu.setText((rawGhiChu.substring(0, start) + rawGhiChu.substring(end + 1)).trim());
+            } else {
+                txtNhaCungCap.setText("");
+                txtGhiChu.setText(rawGhiChu);
+            }
 
             ArrayList<ChiTietPhieuNhap> dsCT = ctPhieuNhapDao.timTheoMaPhieuNhap(maPhieuNhap);
             BigDecimal tongGiaTri = BigDecimal.ZERO;
@@ -382,13 +413,52 @@ public class GaraLapPhieuNhapKho extends JPanel {
     private void luuPhieuNhapQuaService() {
         try {
             String maPN = txtMaPhieuNhap.getText().trim();
+
+            // Kiểm tra tránh bấm xuất/nhập đè lên mã phiếu cũ đã tồn tại
+            if (phieuNhapKhoService.timTheoMa(maPN) != null) {
+                JOptionPane.showMessageDialog(this,
+                        "Phiếu nhập [" + maPN + "] này đã được lưu trong hệ thống rồi!\n"
+                        + "Hãy bấm 'Tạo phiếu mới' để lập phiếu tiếp theo nhé!",
+                        "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             String trangThai = cboTrangThai.getSelectedItem().toString();
             String maPT = layMaTuCombo(cboPhuTung);
             int soLuong = Integer.parseInt(txtSoLuong.getText().trim());
             BigDecimal donGia = parseSoTien(txtDonGia.getText().trim());
-            String ghiChu = txtGhiChu.getText().trim();
 
-            PhieuNhapKho pnk = new PhieuNhapKho(maPN, LocalDateTime.now(), trangThai, ghiChu.isEmpty() ? null : ghiChu);
+            // RÀNG BUỘC NHÀ CUNG CẤP: BẮT ĐẦU BẰNG CHỮ HOA
+            String ncc = txtNhaCungCap.getText().trim();
+            if (ncc.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập tên Nhà cung cấp!", "Cảnh báo nhập liệu", JOptionPane.WARNING_MESSAGE);
+                txtNhaCungCap.requestFocus();
+                return;
+            }
+
+            // Regex kiểm tra ký tự đầu tiên bắt buộc phải là chữ in hoa (\p{Lu})
+            if (!ncc.matches("^[\\p{Lu}].*")) {
+                JOptionPane.showMessageDialog(this,
+                        "Tên nhà cung cấp phải viết hoa chữ cái đầu tiên nha!\n(Ví dụ: Denso, Bosch, Honda, Toyota...)",
+                        "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
+                txtNhaCungCap.requestFocus();
+                return;
+            }
+
+            String ghiChu = txtGhiChu.getText().trim();
+            String tenNV = cboNhanVienKho.getSelectedItem() != null ? cboNhanVienKho.getSelectedItem().toString() : "";
+
+            // Ghép cấu trúc để lưu vào trường ghiChu trong Entity PhieuNhapKho mà không cần sửa CSDL
+            StringBuilder fullGhiChu = new StringBuilder();
+            fullGhiChu.append("[NCC: ").append(ncc).append("]");
+            if (!ghiChu.isEmpty()) {
+                fullGhiChu.append(" ").append(ghiChu);
+            }
+            if (!tenNV.isEmpty()) {
+                fullGhiChu.append(" (NV: ").append(tenNV).append(")");
+            }
+
+            PhieuNhapKho pnk = new PhieuNhapKho(maPN, LocalDateTime.now(), trangThai, fullGhiChu.toString());
             ArrayList<ChiTietPhieuNhap> dsCT = new ArrayList<>();
             dsCT.add(new ChiTietPhieuNhap(maPN, maPT, soLuong, donGia));
 

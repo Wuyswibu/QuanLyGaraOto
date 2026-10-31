@@ -63,4 +63,5 @@ public class PhuTungService {
     public ArrayList<PhuTung> layDanhSachPhuTung() throws SQLException {
         return phuTungDao.layDanhSachPhuTung();
     }
+    
 }
