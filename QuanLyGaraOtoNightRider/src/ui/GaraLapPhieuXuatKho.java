@@ -455,29 +455,38 @@ public class GaraLapPhieuXuatKho extends JPanel {
     }
 }
 
-    private void xemChiTietPhieuXuatPopup() {
+   private void xemChiTietPhieuXuatPopup() {
         String maPX = txtMaPhieuXuat.getText().trim();
         try {
             PhieuXuatKho pxk = phieuXuatKhoService.timTheoMa(maPX);
             if (pxk == null) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu xuất từ bảng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                        "Vui lòng chọn một phiếu xuất từ bảng dưới để xem chi tiết nhé!", 
+                        "Thông báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             ArrayList<ChiTietPhieuXuat> dsCT = ctPhieuXuatDao.timTheoMaPhieuXuat(maPX);
             String[] cols = {"Mã Phụ Tùng", "Tên Phụ Tùng", "Đơn Vị Tính", "Số Lượng Xuất", "Đơn Giá", "Thành Tiền"};
             DefaultTableModel modelCT = new DefaultTableModel(null, cols) {
+                private static final long serialVersionUID = 1L;
                 @Override
                 public boolean isCellEditable(int r, int c) { return false; }
             };
 
+            BigDecimal tongGiaTri = BigDecimal.ZERO;
             for (ChiTietPhieuXuat ct : dsCT) {
                 PhuTung pt = mapPhuTung.get(ct.getMaPhuTung());
                 String tenPT = pt != null ? pt.getTenPhuTung() : ct.getMaPhuTung();
                 String dvt = pt != null ? pt.getDonViTinh() : "Cái";
                 BigDecimal thanhTien = ct.getDonGia().multiply(new BigDecimal(ct.getSoLuong()));
+                tongGiaTri = tongGiaTri.add(thanhTien);
+
                 modelCT.addRow(new Object[]{
-                        ct.getMaPhuTung(), tenPT, dvt, ct.getSoLuong(),
+                        ct.getMaPhuTung(), 
+                        tenPT, 
+                        dvt, 
+                        ct.getSoLuong(),
                         String.format("%,.0f đ", ct.getDonGia()),
                         String.format("%,.0f đ", thanhTien)
                 });
@@ -485,11 +494,61 @@ public class GaraLapPhieuXuatKho extends JPanel {
 
             JTable tblCT = new JTable(modelCT);
             tblCT.setRowHeight(28);
+            tblCT.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+            tblCT.getTableHeader().setBackground(new Color(240, 243, 246));
+            tblCT.setFont(new Font("Arial", Font.PLAIN, 12));
+            tblCT.setSelectionBackground(new Color(40, 100, 150));
+            tblCT.setSelectionForeground(Color.WHITE);
+
             JScrollPane sp = new JScrollPane(tblCT);
-            sp.setPreferredSize(new Dimension(680, 240));
-            JOptionPane.showMessageDialog(this, sp, "Chi tiết phiếu xuất: " + maPX, JOptionPane.PLAIN_MESSAGE);
+            sp.setPreferredSize(new Dimension(720, 220));
+
+            // Panel thông tin tổng quát hiển thị Lý Do Xuất
+            JPanel pnlThongTinChung = new JPanel(new GridLayout(2, 2, 10, 6));
+            pnlThongTinChung.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(220, 225, 230), 1),
+                    BorderFactory.createEmptyBorder(10, 12, 10, 12)
+            ));
+            pnlThongTinChung.setBackground(new Color(248, 249, 251));
+
+            JLabel lblMa = new JLabel(" Mã phiếu: " + pxk.getMaPhieuXuat());
+            lblMa.setFont(new Font("Arial", Font.BOLD, 13));
+
+            String ngayXuatStr = pxk.getNgayXuat() != null ? pxk.getNgayXuat().format(dtf) : "Chưa xác định";
+            JLabel lblNgay = new JLabel(" Ngày xuất: " + ngayXuatStr);
+            lblNgay.setFont(new Font("Arial", Font.PLAIN, 12));
+
+            // Hiển thị nổi bật Lý do xuất
+            String lyDo = pxk.getLyDoXuat() != null && !pxk.getLyDoXuat().trim().isEmpty() 
+                    ? pxk.getLyDoXuat() : "Không ghi rõ";
+            JLabel lblLyDo = new JLabel(" Lý do xuất: " + lyDo);
+            lblLyDo.setFont(new Font("Arial", Font.BOLD, 13));
+            lblLyDo.setForeground(new Color(180, 30, 40));
+
+            JLabel lblTongTien = new JLabel(String.format("• Tổng tiền: %,.0f đ", tongGiaTri));
+            lblTongTien.setFont(new Font("Arial", Font.BOLD, 13));
+            lblTongTien.setForeground(new Color(40, 100, 150));
+
+            pnlThongTinChung.add(lblMa);
+            pnlThongTinChung.add(lblLyDo);
+            pnlThongTinChung.add(lblNgay);
+            pnlThongTinChung.add(lblTongTien);
+
+            // Container chứa cả panel thông tin và bảng phụ tùng
+            JPanel pnlContainer = new JPanel(new BorderLayout(0, 10));
+            pnlContainer.add(pnlThongTinChung, BorderLayout.NORTH);
+            pnlContainer.add(sp, BorderLayout.CENTER);
+
+            JOptionPane.showMessageDialog(
+                    this, 
+                    pnlContainer, 
+                    "Chi tiết phiếu xuất kho: " + maPX, 
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
         } catch (SQLException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi khi lấy thông tin chi tiết: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
