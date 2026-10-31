@@ -5,7 +5,6 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import entity.NhanVien;
 
 import javax.swing.*;
 
@@ -22,7 +21,6 @@ public class GaraManHinhChinh extends JFrame {
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
     private XeUI pnlQuanLyXe;
-    private LapPhieuTiepNhanUI pnlTiepNhan;
 
     public GaraManHinhChinh() {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
@@ -34,21 +32,6 @@ public class GaraManHinhChinh extends JFrame {
         khoiTaoGiaoDien();
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-    }
-    
-    public GaraManHinhChinh(NhanVien nhanVienDangNhap) {
-        this();
-
-        if (nhanVienDangNhap == null) {
-            throw new IllegalArgumentException(
-                    "Chưa có thông tin nhân viên đăng nhập."
-            );
-        }
-
-        pnlTiepNhan.setNguoiTiepNhan(
-                nhanVienDangNhap.getMaNhanVien(),
-                nhanVienDangNhap.getHoTen()
-        );
     }
 
     private void khoiTaoGiaoDien() {
@@ -78,10 +61,8 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("TRA_CUU_HOA_DON", new GaraTraCuuHoaDon());
          
-         pnlTiepNhan = new LapPhieuTiepNhanUI();
-         themManHinh("TIEP_NHAN", pnlTiepNhan);
-         
-         pnlQuanLyXe = new XeUI();
+         themManHinh("TIEP_NHAN", new LapPhieuTiepNhanUI());
+         pnlQuanLyXe = new XeUI(this::hienThiTrangChu);
          themManHinh("XE", pnlQuanLyXe);
          themManHinh("DICH_VU", new QuanLyDichVuFrame());
          themManHinh("LICH_SU", new LichSuSuaChuaFrame());
