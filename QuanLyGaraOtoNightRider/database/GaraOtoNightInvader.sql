@@ -258,3 +258,10 @@ ALTER TABLE dbo.ChiTietPhieuXuat ADD CONSTRAINT CK_ChiTietPhieuXuat_DonGia CHECK
 ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_SoLuong CHECK (soLuong > 0);
 ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_DonGia CHECK (donGia >= 0);
 ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_GiamGia CHECK (giamGia >= 0);
+
+ALTER TABLE dbo.PhieuSuaChua 
+ADD maKyThuatVien VARCHAR(30) NULL;
+
+ALTER TABLE dbo.PhieuSuaChua 
+ADD CONSTRAINT FK_PhieuSuaChua_KTV 
+FOREIGN KEY (maKyThuatVien) REFERENCES dbo.NhanVien(maNhanVien);
