@@ -8,6 +8,8 @@ import java.util.Locale;
 
 import javax.swing.*;
 
+import entity.NhanVien;
+
 public class GaraManHinhChinh extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -21,6 +23,7 @@ public class GaraManHinhChinh extends JFrame {
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
     private XeUI pnlQuanLyXe;
+    private LapPhieuTiepNhanUI pnlTiepNhan;
 
     public GaraManHinhChinh() {
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
@@ -33,7 +36,20 @@ public class GaraManHinhChinh extends JFrame {
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
+    public GaraManHinhChinh(NhanVien nhanVien) {
+        this();
 
+        if (nhanVien == null) {
+            throw new IllegalArgumentException(
+                    "Chưa có thông tin nhân viên đăng nhập."
+            );
+        }
+
+        pnlTiepNhan.setNguoiTiepNhan(
+                nhanVien.getMaNhanVien(),
+                nhanVien.getHoTen()
+        );
+    }
     private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
 
@@ -61,7 +77,8 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("TRA_CUU_HOA_DON", new GaraTraCuuHoaDon());
          
-         themManHinh("TIEP_NHAN", new LapPhieuTiepNhanUI());
+         pnlTiepNhan = new LapPhieuTiepNhanUI();
+         themManHinh("TIEP_NHAN", pnlTiepNhan);
          pnlQuanLyXe = new XeUI(this::hienThiTrangChu);
          themManHinh("XE", pnlQuanLyXe);
          themManHinh("DICH_VU", new QuanLyDichVuFrame());

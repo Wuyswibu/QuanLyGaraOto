@@ -80,21 +80,22 @@ public class NhanVienDao {
     }
 
     public NhanVien timTheoMa(String maNhanVien) throws SQLException {
-        String sql = "SELECT maNhanVien, maPhanQuyen, hoTen, "
-                + "soDienThoai, email, ngaySinh, ngayVaoLam, trangThai "
-                + "FROM dbo.NhanVien WHERE maNhanVien = ?";
+        String sql =
+                "SELECT nv.maNhanVien, nv.maPhanQuyen, pq.tenChuc, "
+                + "nv.hoTen, nv.soDienThoai, nv.email, "
+                + "nv.ngaySinh, nv.ngayVaoLam, nv.trangThai "
+                + "FROM dbo.NhanVien nv "
+                + "LEFT JOIN dbo.PhanQuyen pq "
+                + "ON nv.maPhanQuyen = pq.maPhanQuyen "
+                + "WHERE nv.maNhanVien = ?";
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, maNhanVien);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return docNhanVien(rs);
-                }
+                return rs.next() ? docNhanVien(rs) : null;
             }
         }
-
-        return null;
     }
 
     public ArrayList<NhanVien> timTheoSoDienThoai(String soDienThoai) throws SQLException {

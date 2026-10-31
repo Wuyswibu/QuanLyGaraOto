@@ -116,7 +116,7 @@ public class PhieuTiepNhanService {
         return doc(c -> {
             if (!c.getAutoCommit()) throw new SQLException("Kết nối đang có transaction khác; không thể lập phiếu.");
             return transaction(c, tx -> {
-                    TiepNhanHoSoDao h=hoSo(c); h.khoaLapPhieu();
+                    TiepNhanHoSoDao h=hoSo(c);
                     if (!h.nhanVienTonTai(trim(d.maNhanVien))) throw loi("nhanVien","Nhân viên đăng nhập không còn tồn tại.");
                     KhachHang k;
                     if (trim(d.maKH).isEmpty()) {
