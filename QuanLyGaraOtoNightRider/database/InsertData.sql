@@ -98,21 +98,24 @@ VALUES
     (N'PT015', N'KH015', N'51A-10015', N'CR-V', N'Hoạt động');
 INSERT INTO dbo.PhieuTiepNhan (maTiepNhan, maPhuongTien, maNhanVien, ngayGioTiepNhan, ngayGioHenTra, odo, mucNhienLieu, tinhTrangBanDau, yeuCauKhachHang, ghiChu, trangThai)
 VALUES
-    (N'PTN001', N'PT001', N'NV002', N'2026-10-01T08:15:00', N'2026-10-01T10:30:00', 23500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu động cơ', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN002', N'PT002', N'NV002', N'2026-10-02T09:40:00', N'2026-10-02T13:15:00', 27000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc dầu', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN003', N'PT003', N'NV002', N'2026-10-03T13:20:00', N'2026-10-03T15:45:00', 30500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc gió động cơ', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN004', N'PT004', N'NV002', N'2026-10-04T10:05:00', N'2026-10-04T14:00:00', 34000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc gió điều hòa', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN005', N'PT005', N'NV002', N'2026-10-05T15:30:00', N'2026-10-06T10:00:00', 37500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay má phanh trước', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN006', N'PT006', N'NV002', N'2026-10-06T07:45:00', N'2026-10-06T11:20:00', 41000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay bugi', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN007', N'PT007', N'NV002', N'2026-10-07T14:10:00', N'2026-10-07T17:00:00', 44500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay nước làm mát', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN008', N'PT008', N'NV002', N'2026-10-08T11:25:00', N'2026-10-08T16:40:00', 48000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu hộp số', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN009', N'PT009', N'NV010', N'2026-10-09T16:05:00', N'2026-10-10T14:30:00', 51500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dây curoa', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN010', N'PT010', N'NV010', N'2026-10-10T08:50:00', N'2026-10-10T10:15:00', 55000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay ắc quy', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN011', N'PT011', N'NV010', N'2026-10-11T09:15:00', N'2026-10-11T11:00:00', 58500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay bóng đèn pha', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN012', N'PT012', N'NV010', N'2026-10-12T13:45:00', N'2026-10-12T14:30:00', 62000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay gạt mưa', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN013', N'PT013', N'NV010', N'2026-10-13T10:35:00', N'2026-10-13T16:15:00', 65500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lốp xe', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN014', N'PT014', N'NV010', N'2026-10-14T15:10:00', N'2026-10-15T09:45:00', 69000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu phanh', N'Khách đã nhận xe', N'Đã giao xe'),
-    (N'PTN015', N'PT015', N'NV010', N'2026-10-15T08:25:00', N'2026-10-15T13:50:00', 72500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc nhiên liệu', N'Khách đã nhận xe', N'Đã giao xe');
+    (N'PTN001', N'PT001', N'NV002', N'2026-10-01T08:15:00', N'2026-10-01T10:30:00', 23500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu động cơ', NULL, N'Đã tiếp nhận'),
+    (N'PTN002', N'PT002', N'NV002', N'2026-10-02T09:40:00', N'2026-10-02T13:15:00', 27000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc dầu', NULL, N'Đã tiếp nhận'),
+    (N'PTN003', N'PT003', N'NV002', N'2026-10-03T13:20:00', N'2026-10-03T15:45:00', 30500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc gió động cơ', NULL, N'Đã tiếp nhận'),
+    (N'PTN004', N'PT004', N'NV002', N'2026-10-04T10:05:00', N'2026-10-04T14:00:00', 34000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc gió điều hòa', NULL, N'Đã tiếp nhận'),
+    (N'PTN005', N'PT005', N'NV002', N'2026-10-05T15:30:00', N'2026-10-06T10:00:00', 37500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay má phanh trước', NULL, N'Đã tiếp nhận'),
+    (N'PTN006', N'PT006', N'NV002', N'2026-10-06T07:45:00', N'2026-10-06T11:20:00', 41000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay bugi', NULL, N'Đã tiếp nhận'),
+    (N'PTN007', N'PT007', N'NV002', N'2026-10-07T14:10:00', N'2026-10-07T17:00:00', 44500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay nước làm mát', NULL, N'Đã tiếp nhận'),
+    (N'PTN008', N'PT008', N'NV002', N'2026-10-08T11:25:00', N'2026-10-08T16:40:00', 48000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu hộp số', NULL, N'Đã tiếp nhận'),
+    (N'PTN009', N'PT009', N'NV010', N'2026-10-09T16:05:00', N'2026-10-10T14:30:00', 51500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dây curoa', NULL, N'Đã tiếp nhận'),
+    (N'PTN010', N'PT010', N'NV010', N'2026-10-10T08:50:00', N'2026-10-10T10:15:00', 55000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay ắc quy', NULL, N'Đã tiếp nhận'),
+    (N'PTN011', N'PT011', N'NV010', N'2026-10-11T09:15:00', N'2026-10-11T11:00:00', 58500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay bóng đèn pha', NULL, N'Đã tiếp nhận'),
+    (N'PTN012', N'PT012', N'NV010', N'2026-10-12T13:45:00', N'2026-10-12T14:30:00', 62000, N'1/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay gạt mưa', NULL, N'Đã tiếp nhận'),
+    (N'PTN013', N'PT013', N'NV010', N'2026-10-13T10:35:00', N'2026-10-13T16:15:00', 65500, N'1/2', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lốp xe', NULL, N'Đã tiếp nhận'),
+    (N'PTN014', N'PT014', N'NV010', N'2026-10-14T15:10:00', N'2026-10-15T09:45:00', 69000, N'3/4', N'Xe cần kiểm tra và bảo dưỡng', N'Thay dầu phanh', NULL, N'Đã tiếp nhận'),
+    (N'PTN015', N'PT015', N'NV010', N'2026-10-15T08:25:00', N'2026-10-15T13:50:00', 72500, N'Đầy', N'Xe cần kiểm tra và bảo dưỡng', N'Thay lọc nhiên liệu', NULL, N'Đã tiếp nhận'),
+	(N'PTN016', N'PT001', 'NV002', '2026-10-30T08:15:00', '2026-10-31T10:30:00', 25000, N'1/2', N'Động cơ phát tiếng kêu, dầu động cơ sẫm màu', N'Kiểm tra động cơ và thay dầu', NULL, N'Đã tiếp nhận'),
+    (N'PTN017', N'PT002', 'NV010', '2026-10-30T09:40:00', '2026-10-31T14:00:00', 29000, N'3/4', N'Phanh phát tiếng kêu khi giảm tốc', N'Kiểm tra phanh và thay má phanh nếu cần', N'Khách muốn biết chi phí trước khi sửa', N'Đã tiếp nhận'),
+    (N'PTN018', N'PT003', 'NV002', '2026-10-30T13:20:00', '2026-11-01T09:00:00', 33000, N'1/4', N'Điều hòa làm lạnh yếu', N'Kiểm tra điều hòa và lọc gió', NULL, N'Đã tiếp nhận');
 INSERT INTO dbo.PhieuSuaChua (maPhieuSuaChua, maTiepNhan, ngayLap, chanDoan, loaiPhieu, trangThai, ghiChu)
 VALUES
     (N'PSC001', N'PTN001', N'2026-10-01T09:00:00', N'Kiểm tra: cần thay dầu động cơ', N'Bảo dưỡng', N'Đã hoàn thành', NULL),
@@ -215,23 +218,23 @@ VALUES
     (N'PNK013', N'PU013', 50, 1280000),
     (N'PNK014', N'PU014', 50, 144000),
     (N'PNK015', N'PU015', 50, 280000);
-INSERT INTO dbo.PhieuXuatKho (maPhieuXuat, ngayXuat, lyDoXuat, trangThai, ghiChu)
+INSERT INTO dbo.PhieuXuatKho (maPhieuXuat, maPhieuSuaChua, ngayXuat, lyDoXuat, trangThai, ghiChu)
 VALUES
-    (N'PXK001', N'2026-10-01T10:00:00', N'Phục vụ phiếu PSC001', N'Đã xác nhận', NULL),
-    (N'PXK002', N'2026-10-02T10:00:00', N'Phục vụ phiếu PSC002', N'Đã xác nhận', NULL),
-    (N'PXK003', N'2026-10-03T10:00:00', N'Phục vụ phiếu PSC003', N'Đã xác nhận', NULL),
-    (N'PXK004', N'2026-10-04T10:00:00', N'Phục vụ phiếu PSC004', N'Đã xác nhận', NULL),
-    (N'PXK005', N'2026-10-05T10:00:00', N'Phục vụ phiếu PSC005', N'Đã xác nhận', NULL),
-    (N'PXK006', N'2026-10-06T10:00:00', N'Phục vụ phiếu PSC006', N'Đã xác nhận', NULL),
-    (N'PXK007', N'2026-10-07T10:00:00', N'Phục vụ phiếu PSC007', N'Đã xác nhận', NULL),
-    (N'PXK008', N'2026-10-08T10:00:00', N'Phục vụ phiếu PSC008', N'Đã xác nhận', NULL),
-    (N'PXK009', N'2026-10-09T10:00:00', N'Phục vụ phiếu PSC009', N'Đã xác nhận', NULL),
-    (N'PXK010', N'2026-10-10T10:00:00', N'Phục vụ phiếu PSC010', N'Đã xác nhận', NULL),
-    (N'PXK011', N'2026-10-11T10:00:00', N'Phục vụ phiếu PSC011', N'Đã xác nhận', NULL),
-    (N'PXK012', N'2026-10-12T10:00:00', N'Phục vụ phiếu PSC012', N'Đã xác nhận', NULL),
-    (N'PXK013', N'2026-10-13T10:00:00', N'Phục vụ phiếu PSC013', N'Đã xác nhận', NULL),
-    (N'PXK014', N'2026-10-14T10:00:00', N'Phục vụ phiếu PSC014', N'Đã xác nhận', NULL),
-    (N'PXK015', N'2026-10-15T10:00:00', N'Phục vụ phiếu PSC015', N'Đã xác nhận', NULL);
+    ('PXK001', 'PSC001', '2026-10-01T10:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK002', 'PSC002', '2026-10-02T10:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK003', 'PSC003', '2026-10-03T10:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK004', 'PSC004', '2026-10-04T10:30:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK005', 'PSC005', '2026-10-05T16:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK006', 'PSC006', '2026-10-06T10:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK007', 'PSC007', '2026-10-07T14:30:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK008', 'PSC008', '2026-10-08T12:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK009', 'PSC009', '2026-10-09T16:30:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK010', 'PSC010', '2026-10-10T09:15:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK011', 'PSC011', '2026-10-11T09:45:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK012', 'PSC012', '2026-10-12T14:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK013', 'PSC013', '2026-10-13T11:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK014', 'PSC014', '2026-10-14T15:45:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL),
+    ('PXK015', 'PSC015', '2026-10-15T10:00:00', N'Phục vụ sửa chữa', N'Đã xác nhận', NULL);
 INSERT INTO dbo.ChiTietPhieuXuat (maPhieuXuat, maPhuTung, soLuong, donGia)
 VALUES
     (N'PXK001', N'PU001', 4, 280000),
