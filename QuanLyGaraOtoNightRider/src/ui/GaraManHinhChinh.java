@@ -24,6 +24,7 @@ public class GaraManHinhChinh extends JFrame {
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
     private XeUI pnlQuanLyXe;
+    private LichLamViecCuaToiUI pnlLichCuaToi;
     private NhanVien nhanVienDangNhap;
     private PhanQuyenService phanQuyen;
 
@@ -90,6 +91,8 @@ public class GaraManHinhChinh extends JFrame {
          
          themManHinh("PHAN_CONG", new GaraPhanCongKTV());
          themManHinh("PHAN_CONG_CA", new PhanCongCaUI());
+         pnlLichCuaToi = new LichLamViecCuaToiUI(nhanVienDangNhap);
+         themManHinh("LICH_CUA_TOI", pnlLichCuaToi);
          
          pnlTiepNhan = new LapPhieuTiepNhanUI();
          themManHinh("TIEP_NHAN", pnlTiepNhan);
@@ -156,6 +159,9 @@ public class GaraManHinhChinh extends JFrame {
         for (Component component : panelNoiDung.getComponents()) {
             if (maManHinh.equals(component.getName())) {
                 cardLayout.show(panelNoiDung, maManHinh);
+                if ("LICH_CUA_TOI".equals(maManHinh)) {
+                    pnlLichCuaToi.taiDuLieu();
+                }
                 return;
             }
         }
@@ -195,9 +201,10 @@ public class GaraManHinhChinh extends JFrame {
 
         String[][] cacItemMenu = {
             {
-                "Màn hình chính", "-",
-                "Tài khoản cá nhân",
-                "-", "Đăng xuất"
+            	"Màn hình chính", "-",
+            	"Tài khoản cá nhân",
+            	"Ca trực của tôi",
+            	"-", "Đăng xuất"
             },
             {
                 "Quản lý khách hàng"
@@ -442,7 +449,9 @@ public class GaraManHinhChinh extends JFrame {
             case "Tài khoản cá nhân":
                 chuyenManHinh("TAI_KHOAN");
                 break;
-
+            case "Ca trực của tôi":
+                chuyenManHinh("LICH_CUA_TOI");
+                break;
             case "Đổi mật khẩu":
                 chuyenManHinh("DOI_MAT_KHAU");
                 break;

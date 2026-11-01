@@ -55,6 +55,9 @@ public class PhanQuyenService {
     }
 
     public boolean duocMoManHinh(String ma) {
+    	if ("LICH_CUA_TOI".equals(ma)) {
+    	        return true;
+    	    }
         if (thuoc(ma, "TRANG_CHU", "TAI_KHOAN", "DOI_MAT_KHAU")) {
             return true;
         }
