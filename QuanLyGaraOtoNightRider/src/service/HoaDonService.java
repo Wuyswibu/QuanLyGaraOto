@@ -54,7 +54,16 @@ public class HoaDonService {
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss - dd/MM/yyyy");
 
+    private final String maNguoiDung;
+
     public HoaDonService() {
+        this(null);
+    }
+
+    public HoaDonService(NhanVien nhanVien) {
+        this.maNguoiDung = nhanVien == null
+                ? null : nhanVien.getMaNhanVien();
+
         this.hoaDonDao = new HoaDonDao();
         this.ctHoaDonDao = new ChiTietHoaDonDao();
         this.phieuSuaChuaDao = new PhieuSuaChuaDao();
@@ -62,7 +71,39 @@ public class HoaDonService {
         this.nhanVienDao = new NhanVienDao();
         this.xeDao = new XeDao();
     }
+    private NhanVien kiemTraQuyen(String thaoTac)
+            throws SQLException {
 
+        if (maNguoiDung == null) {
+            throw new IllegalArgumentException(
+                    "Vui lòng đăng nhập trước khi thao tác.");
+        }
+
+        NhanVien nv = nhanVienDao.timTheoMa(maNguoiDung);
+
+        if (nv == null || !"Đang làm".equals(nv.getTrangThai())) {
+            throw new IllegalArgumentException(
+                    "Nhân viên không còn quyền hoạt động.");
+        }
+
+        PhanQuyenService.napQuyenDangNhap(nv);
+
+        if (!new PhanQuyenService(nv).duocThaoTac(thaoTac)) {
+            throw new IllegalArgumentException(
+                    "Bạn không có quyền thực hiện thao tác này.");
+        }
+
+        return nv;
+    }
+
+    private boolean duocInHoaDon() {
+        try {
+            kiemTraQuyen("IN_HOA_DON");
+            return true;
+        } catch (SQLException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
     // ==================== 1. CÁC HÀM LẤY DANH MỤC ====================
     public ArrayList<PhieuSuaChua> layDanhSachPhieuSuaChua() throws SQLException {
         return phieuSuaChuaDao.layDanhSachPhieuSuaChua();
@@ -168,38 +209,77 @@ public class HoaDonService {
 
     // ==================== 3. CÁC HÀM NGHIỆP VỤ LẬP / CẬP NHẬT / THANH TOÁN ====================
     public boolean themHoaDonMoi(HoaDon hdMoi) throws SQLException {
+        NhanVien nv = kiemTraQuyen("LAP_HOA_DON");
+
+        if (hdMoi == null) {
+            throw new IllegalArgumentException("Thiếu thông tin hóa đơn.");
+        }
+
+        hdMoi.setMaNhanVien(nv.getMaNhanVien());
+        hdMoi.setTrangThai(HoaDon.CHUA_THANH_TOAN);
+
         return hoaDonDao.themHoaDon(hdMoi);
     }
 
-    public boolean capNhatHoaDon(HoaDon hdTonTai, String maPSC, String maKH, String maPT, String maNV, BigDecimal vat, String trangThaiMoi) throws SQLException {
-        LocalDateTime ngayLapGoc = hdTonTai.getNgayLap() != null ? hdTonTai.getNgayLap() : LocalDateTime.now();
-        HoaDon hdSua = new HoaDon(hdTonTai.getMaHoaDon(), maPSC, maKH, maPT, maNV, ngayLapGoc, vat, hdTonTai.getTrangThai());
-        hdSua.setVat(vat);
+    public boolean capNhatHoaDon(
+            HoaDon hdTonTai, String maPSC, String maKH,
+            String maPT, String maNV, BigDecimal vat,
+            String trangThaiMoi) throws SQLException {
 
-        boolean kqSua = hoaDonDao.suaHoaDon(hdSua);
-        boolean kqTrangThai = true;
-        if (!hdTonTai.getTrangThai().equals(trangThaiMoi)) {
-            kqTrangThai = hoaDonDao.capNhatTrangThai(hdTonTai.getMaHoaDon(), hdTonTai.getTrangThai(), trangThaiMoi);
+        kiemTraQuyen("LAP_HOA_DON");
+
+        if (hdTonTai == null) {
+            throw new IllegalArgumentException("Không tìm thấy hóa đơn.");
         }
-        return kqSua || kqTrangThai;
+
+        if (!HoaDon.CHUA_THANH_TOAN.equals(hdTonTai.getTrangThai())) {
+            throw new IllegalArgumentException(
+                    "Chỉ được sửa hóa đơn chưa thanh toán.");
+        }
+
+        HoaDon hdSua = new HoaDon(
+                hdTonTai.getMaHoaDon(),
+                maPSC, maKH, maPT,
+                hdTonTai.getMaNhanVien(),
+                hdTonTai.getNgayLap(),
+                vat,
+                HoaDon.CHUA_THANH_TOAN);
+
+        // Đổi trạng thái qua nút thanh toán/hủy riêng.
+        return hoaDonDao.suaHoaDon(hdSua);
     }
     public boolean huyHoaDon(String maHoaDon) throws SQLException {
+        kiemTraQuyen("HUY_HOA_DON");
+
         if (maHoaDon == null || maHoaDon.trim().isEmpty()) {
             throw new IllegalArgumentException("Vui lòng chọn hóa đơn.");
         }
 
         return hoaDonDao.capNhatTrangThai(
+                maHoaDon.trim(),
+                HoaDon.CHUA_THANH_TOAN,
+                HoaDon.DA_HUY);
+    }
+    public boolean xacNhanThanhToan(
+            String maHoaDon, String trangThaiHienTai)
+            throws SQLException {
+
+        kiemTraQuyen("THANH_TOAN");
+
+        return hoaDonDao.capNhatTrangThai(
                 maHoaDon,
                 HoaDon.CHUA_THANH_TOAN,
-                HoaDon.DA_THANH_TOAN
-        );
-    }
-    public boolean xacNhanThanhToan(String maHoaDon, String trangThaiHienTai) throws SQLException {
-        return hoaDonDao.capNhatTrangThai(maHoaDon, trangThaiHienTai, HoaDon.DA_THANH_TOAN);
+                HoaDon.DA_THANH_TOAN);
     }
     public void banGiaoXe(String maHoaDon, String maNhanVien)
             throws SQLException {
+    	
+    	NhanVien nguoiGiao = kiemTraQuyen("BAN_GIAO");
 
+    	if (!nguoiGiao.getMaNhanVien().equals(maNhanVien)) {
+    	    throw new IllegalArgumentException(
+    	            "Người bàn giao phải là nhân viên đang đăng nhập.");
+    	}
         if (maHoaDon == null || maHoaDon.trim().isEmpty()
                 || maNhanVien == null || maNhanVien.trim().isEmpty()) {
             throw new IllegalArgumentException(
@@ -449,6 +529,7 @@ public class HoaDonService {
             btnQuayLai.addActionListener(e -> dialog.dispose());
 
             JButton btnInPDF = new JButton("In hóa đơn");
+            btnInPDF.setEnabled(duocInHoaDon());
             btnInPDF.setFont(new Font("Arial", Font.BOLD, 13));
             btnInPDF.setBackground(new Color(95, 65, 50));
             btnInPDF.setForeground(Color.WHITE);
@@ -480,6 +561,16 @@ public class HoaDonService {
      * Xuất trực tiếp Hóa đơn giấy ra file PDF (.pdf) khi bấm nút "In hóa đơn"
      */
     public void xuatHoaDonRaPDF(Component parent, String maHoaDon) {
+    	try {
+    	    kiemTraQuyen("IN_HOA_DON");
+    	} catch (SQLException | IllegalArgumentException ex) {
+    	    JOptionPane.showMessageDialog(
+    	            parent,
+    	            ex.getMessage(),
+    	            "Không đủ quyền",
+    	            JOptionPane.WARNING_MESSAGE);
+    	    return;
+    	}
         if (maHoaDon == null || maHoaDon.trim().isEmpty()) {
             JOptionPane.showMessageDialog(parent,
                     "Vui lòng chọn một hóa đơn để xuất PDF!",

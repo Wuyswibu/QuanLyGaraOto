@@ -24,6 +24,7 @@ import entity.NhanVien;
 import entity.PhieuSuaChua;
 import entity.Xe;
 import service.HoaDonService;
+import service.PhanQuyenService;
 
 public class GaraLapHoaDon extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -38,6 +39,7 @@ public class GaraLapHoaDon extends JPanel {
     private JTextField txtVAT;
     private JComboBox<String> cboTrangThai;
     private JTextField txtTongTien;
+    private PhanQuyenService quyenNguoiDung;
 
     // Tìm kiếm, Lọc & Bảng danh sách Hóa Đơn
     private JTextField txtTimKiemBang;
@@ -62,15 +64,35 @@ public class GaraLapHoaDon extends JPanel {
     private final String PLACEHOLDER_TIM_KIEM = "Tìm kiếm theo mã HĐ, mã phiếu, tên khách, SĐT hoặc biển số...";
 
     public GaraLapHoaDon() {
-        // Khởi tạo tầng Service
-        hoaDonService = new HoaDonService();
+        this(null);
+    }
+
+    public GaraLapHoaDon(NhanVien nhanVien) {
+        quyenNguoiDung = nhanVien == null
+                ? null : new PhanQuyenService(nhanVien);
+
+        hoaDonService = new HoaDonService(nhanVien);
+
         khoiTaoGiaoDien();
-        // 1. Nạp dữ liệu vào các ComboBox và Map danh mục
         napDuLieuComboBox();
-        // 2. Nạp toàn bộ danh sách Hóa đơn đã lập lên JTable
         taiDanhSachHoaDonLenBang("Tất cả");
-        // 3. Khởi tạo form ở chế độ chuẩn bị lập hóa đơn mới
         lamMoiFormLapHoaDon();
+
+        boolean duocLap = coQuyen("LAP_HOA_DON");
+
+        cboPhieuSuaChua.setEnabled(duocLap);
+        cboNhanVien.setEnabled(false);
+        txtVAT.setEditable(duocLap);
+
+        if (nhanVien != null) {
+            chonItemComboTheoMa(
+                    cboNhanVien, nhanVien.getMaNhanVien());
+        }
+    }
+
+    private boolean coQuyen(String thaoTac) {
+        return quyenNguoiDung != null
+                && quyenNguoiDung.duocThaoTac(thaoTac);
     }
 
     private void khoiTaoGiaoDien() {
@@ -289,6 +311,10 @@ public class GaraLapHoaDon extends JPanel {
         btnBanGiao = taoNutDo("Bàn giao xe");
         btnBanGiao.setEnabled(false);
         JButton btnHuyHoaDon = taoNutTrang("Hủy hóa đơn");
+        btnLuuHoaDon.setEnabled(coQuyen("LAP_HOA_DON"));
+        btnXacNhan.setEnabled(coQuyen("THANH_TOAN"));
+        btnHuyHoaDon.setEnabled(coQuyen("HUY_HOA_DON"));
+        btnInHoaDon.setEnabled(coQuyen("IN_HOA_DON"));
         
         btnHuyHoaDon.addActionListener(e -> huyHoaDon());
         btnBanGiao.addActionListener(e -> banGiaoXe());
@@ -444,7 +470,7 @@ public class GaraLapHoaDon extends JPanel {
         try {
             String maMoi = hoaDonService.taoMaHoaDonMoi();
             txtMaHoaDon.setText(maMoi);
-            txtMaHoaDon.setEditable(true);
+            txtMaHoaDon.setEditable(coQuyen("LAP_HOA_DON"));
             // Để trạng thái chờ tự động ghi nhận thời gian thực khi nhấn Lưu
             txtNgayLap.setText("Tự động ghi nhận khi lưu");
             txtVAT.setText("8");
@@ -453,7 +479,7 @@ public class GaraLapHoaDon extends JPanel {
                 cboPhieuSuaChua.setSelectedIndex(0);
                 tuDongDienTheoPhieuSuaChua(layMaTuCombo(cboPhieuSuaChua));
             }
-        } catch (SQLException e) {
+        } catch (SQLException | IllegalArgumentException e) {
             e.printStackTrace();
         }
     }
@@ -479,7 +505,8 @@ public class GaraLapHoaDon extends JPanel {
         String banGiao = mapBanGiao.get(maHD);
 
         btnBanGiao.setEnabled(
-                HoaDon.DA_THANH_TOAN.equals(thanhToan)
+                coQuyen("BAN_GIAO")
+                && HoaDon.DA_THANH_TOAN.equals(thanhToan)
                 && "Chưa giao xe".equals(banGiao));
     }
 

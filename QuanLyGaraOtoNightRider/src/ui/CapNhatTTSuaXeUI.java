@@ -78,7 +78,11 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     public CapNhatTTSuaXeUI(TienDoSuaChuaService service) {
         this.service = service;
+
         taoGiaoDien();
+
+        btnPhanCong.setVisible(service.laQuanLy());
+
         SwingUtilities.invokeLater(() -> loadDuLieu(""));
     }
 
@@ -274,7 +278,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
             dangDoPhieu = false;
             if (ds.isEmpty()) {
                 hienThi(null);
-                thongBao.setText("Không tìm thấy phiếu sửa chữa. Phiếu tiếp nhận cần được lập phiếu sửa chữa trước.");
+                thongBao.setText(
+                        service.laQuanLy()
+                        ? "Không tìm thấy phiếu sửa chữa phù hợp."
+                        : "Không có phiếu phù hợp được phân công cho bạn.");
             } else {
                 taiChiTiet(ds.get(chon).getMaPhieuSuaChua());
             }

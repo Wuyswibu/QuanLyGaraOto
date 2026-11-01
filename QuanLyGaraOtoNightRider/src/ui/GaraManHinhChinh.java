@@ -5,6 +5,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import service.PhanQuyenService;
 
 import javax.swing.*;
 
@@ -24,6 +25,11 @@ public class GaraManHinhChinh extends JFrame {
     
     private XeUI pnlQuanLyXe;
     private NhanVien nhanVienDangNhap;
+    private PhanQuyenService phanQuyen;
+
+    public PhanQuyenService getPhanQuyen() {
+        return phanQuyen;
+    }
 
     public NhanVien getNhanVienDangNhap() {
         return nhanVienDangNhap;
@@ -31,6 +37,20 @@ public class GaraManHinhChinh extends JFrame {
     private LapPhieuTiepNhanUI pnlTiepNhan;
 
     public GaraManHinhChinh() {
+        throw new IllegalStateException(
+                "Vui lòng chạy main.Main và đăng nhập trước.");
+    }
+
+    public GaraManHinhChinh(NhanVien nhanVien) {
+        if (nhanVien == null) {
+            throw new IllegalArgumentException(
+                    "Chưa có thông tin nhân viên đăng nhập.");
+        }
+
+        // Phải gán trước khi tạo giao diện.
+        this.nhanVienDangNhap = nhanVien;
+        this.phanQuyen = new PhanQuyenService(nhanVien);
+
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
         setSize(1340, 840);
         setLocationRelativeTo(null);
@@ -39,23 +59,13 @@ public class GaraManHinhChinh extends JFrame {
 
         khoiTaoGiaoDien();
 
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-    }
-    public GaraManHinhChinh(NhanVien nhanVien) {
-        this();
-
-        if (nhanVien == null) {
-            throw new IllegalArgumentException(
-                    "Chưa có thông tin nhân viên đăng nhập."
-            );
+        if (pnlTiepNhan != null) {
+            pnlTiepNhan.setNguoiTiepNhan(
+                    nhanVien.getMaNhanVien(),
+                    nhanVien.getHoTen());
         }
 
-        this.nhanVienDangNhap = nhanVien;
-
-        pnlTiepNhan.setNguoiTiepNhan(
-                nhanVien.getMaNhanVien(),
-                nhanVien.getHoTen()
-        );
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
     private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
@@ -88,7 +98,11 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("DICH_VU", new QuanLyDichVuFrame());
          themManHinh("LICH_SU", new LichSuSuaChuaFrame());
          themManHinh("SUA_CHUA", new LapPhieuSuaChuaFrame());
-         themManHinh("TINH_TRANG_SUA_XE", new CapNhatTTSuaXeUI());
+         themManHinh(
+        	        "TINH_TRANG_SUA_XE",
+        	        new CapNhatTTSuaXeUI(
+        	                new service.TienDoSuaChuaService(
+        	                        nhanVienDangNhap)));
          themManHinh("DS_PHIEU_TIEP_NHAN", new PhieuTiepNhanUI());
          
          themManHinh("THONG_KE_DOANH_THU", new GaraThongKe(0));
@@ -99,7 +113,9 @@ public class GaraManHinhChinh extends JFrame {
 //         CapNhatTTSuaXeUI panelTinhTrang = new CapNhatTTSuaXeUI();
 //         themManHinh("TINH_TRANG_SUA_XE", panelTinhTrang);
          
-         themManHinh("LAP_HOA_DON", new GaraLapHoaDon());
+         themManHinh(
+        	        "LAP_HOA_DON",
+        	        new GaraLapHoaDon(nhanVienDangNhap));
          
          themManHinh("NHAN_SU", new GaraNhanVien(0));
          
@@ -128,6 +144,15 @@ public class GaraManHinhChinh extends JFrame {
     public void chuyenManHinh(String maManHinh) {
         // Các màn hình chưa chuyển thành JPanel sẽ báo rõ,
         // tránh bấm menu mà không thấy phản hồi.
+    	if (!phanQuyen.duocMoManHinh(maManHinh)) {
+    	    JOptionPane.showMessageDialog(
+    	            this,
+    	            "Bạn không có quyền sử dụng chức năng này.",
+    	            "Không đủ quyền",
+    	            JOptionPane.WARNING_MESSAGE
+    	    );
+    	    return;
+    	}
         for (Component component : panelNoiDung.getComponents()) {
             if (maManHinh.equals(component.getName())) {
                 cardLayout.show(panelNoiDung, maManHinh);
@@ -220,7 +245,7 @@ public class GaraManHinhChinh extends JFrame {
         menuBar.add(Box.createHorizontalGlue());
 
         JMenu menuTaiKhoan = taoMenuDropdown(
-            "Xin chào, Chủ Gara",
+        		"Xin chào, " + nhanVienDangNhap.getHoTen(),
             new String[] {
                 "Tài khoản cá nhân",
                 "Đổi mật khẩu",
@@ -767,7 +792,9 @@ public class GaraManHinhChinh extends JFrame {
         );
 
         JLabel lblTrangThai = new JLabel(
-            "Đang hoạt động | Vai trò: Chủ Gara | Chi nhánh: Gara chính"
+        		"Đang hoạt động | Vai trò: "
+        		        + nhanVienDangNhap.getTenChuc()
+        		        + " | Chi nhánh: Gara chính"
         );
         lblTrangThai.setFont(new Font("Arial", Font.PLAIN, 12));
         lblTrangThai.setForeground(Color.DARK_GRAY);
@@ -799,6 +826,12 @@ public class GaraManHinhChinh extends JFrame {
         return new ImageIcon(image);
     }
     public void moXeCuaKhachHang(String maKhachHang) {
+        if (!phanQuyen.duocMoManHinh("XE")) {
+            JOptionPane.showMessageDialog(
+                    this, "Bạn không có quyền quản lý xe.");
+            return;
+        }
+
         pnlQuanLyXe.hienThiXeCuaKhachHang(maKhachHang);
         chuyenManHinh("XE");
     }

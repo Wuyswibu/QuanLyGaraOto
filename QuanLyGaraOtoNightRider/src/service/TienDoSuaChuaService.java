@@ -15,6 +15,10 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import entity.NhanVien;
+import dao.NhanVienDao;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Nghiệp vụ tiến độ; dùng lại DAO hiện có, không dùng sp_getapplock. */
 public class TienDoSuaChuaService {
@@ -27,12 +31,95 @@ public class TienDoSuaChuaService {
 
     private final PhieuSuaChuaDao phieuDao = new PhieuSuaChuaDao();
     private final HangMucDichVuDao hangMucDao = new HangMucDichVuDao();
+    private final String maNguoiDung;
+    private final boolean quanLy;
 
-    public List<PhieuSuaChua> timPhieu(String tuKhoa) throws SQLException {
+    public TienDoSuaChuaService() {
+        this(null);
+    }
+
+    public TienDoSuaChuaService(NhanVien nhanVien) {
+        maNguoiDung = nhanVien == null
+                ? null : nhanVien.getMaNhanVien();
+
+        quanLy = nhanVien != null
+                && new PhanQuyenService(nhanVien).laQuanLy();
+    }
+
+    public boolean laQuanLy() {
+        return quanLy;
+    }
+
+    private NhanVien kiemTraNguoiDung() throws SQLException {
+        if (maNguoiDung == null) {
+            throw new IllegalArgumentException(
+                    "Vui lòng đăng nhập trước khi xem tiến độ.");
+        }
+
+        NhanVien nv = new NhanVienDao().timTheoMa(maNguoiDung);
+
+        if (nv == null || !"Đang làm".equals(nv.getTrangThai())) {
+            throw new IllegalArgumentException(
+                    "Nhân viên không còn quyền hoạt động.");
+        }
+
+        PhanQuyenService.napQuyenDangNhap(nv);
+
+        if (!new PhanQuyenService(nv)
+                .duocThaoTac("CAP_NHAT_TIEN_DO")) {
+
+            throw new IllegalArgumentException(
+                    "Chỉ kỹ thuật viên hoặc quản lý được sử dụng tiến độ.");
+        }
+
+        return nv;
+    }
+
+    public List<PhieuSuaChua> timPhieu(String tuKhoa)
+            throws SQLException {
+
         synchronized (ConnectDB.class) {
-            return tuKhoa == null || tuKhoa.trim().isEmpty()
+            NhanVien nv = kiemTraNguoiDung();
+
+            List<PhieuSuaChua> danhSach =
+                    tuKhoa == null || tuKhoa.trim().isEmpty()
                     ? phieuDao.layDanhSachPhieuSuaChua()
                     : phieuDao.timKiem(tuKhoa.trim());
+
+            if (new PhanQuyenService(nv).laQuanLy()) {
+                return danhSach;
+            }
+
+            Set<String> maPhieuDuocGiao = new HashSet<>();
+
+            String sql =
+                    "SELECT maPhieuSuaChua "
+                    + "FROM dbo.PhieuSuaChua "
+                    + "WHERE maKyThuatVien = ?";
+
+            try (PreparedStatement ps =
+                        ConnectDB.getConnection().prepareStatement(sql)) {
+
+                ps.setString(1, nv.getMaNhanVien());
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        maPhieuDuocGiao.add(
+                                rs.getString("maPhieuSuaChua"));
+                    }
+                }
+            }
+
+            List<PhieuSuaChua> ketQua = new ArrayList<>();
+
+            for (PhieuSuaChua phieu : danhSach) {
+                if (maPhieuDuocGiao.contains(
+                        phieu.getMaPhieuSuaChua())) {
+                    ketQua.add(phieu);
+                }
+            }
+
+            return ketQua;
         }
     }
 
@@ -186,12 +273,61 @@ public class TienDoSuaChuaService {
         });
     }
 
-    private PhieuSuaChua batBuocCoPhieu(String ma) throws SQLException {
+    private PhieuSuaChua batBuocCoPhieu(String ma)
+            throws SQLException {
+
         if (ma == null || ma.trim().isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng chọn phiếu sửa chữa.");
+            throw new IllegalArgumentException(
+                    "Vui lòng chọn phiếu sửa chữa.");
         }
-        PhieuSuaChua phieu = phieuDao.timTheoMa(ma);
-        if (phieu == null) throw new IllegalArgumentException("Phiếu sửa chữa không còn tồn tại.");
+
+        NhanVien nv = kiemTraNguoiDung();
+        Connection conn = ConnectDB.getConnection();
+
+        /*
+         * Khi đang cập nhật trong transaction, giữ người phụ trách
+         * ổn định đến lúc commit/rollback.
+         */
+        String khoa = conn.getAutoCommit()
+                ? ""
+                : " WITH (UPDLOCK, HOLDLOCK) ";
+
+        String sql =
+                "SELECT maKyThuatVien "
+                + "FROM dbo.PhieuSuaChua"
+                + khoa
+                + " WHERE maPhieuSuaChua = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, ma.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalArgumentException(
+                            "Phiếu sửa chữa không còn tồn tại.");
+                }
+
+                boolean laQuanLy =
+                        new PhanQuyenService(nv).laQuanLy();
+
+                if (!laQuanLy
+                        && !nv.getMaNhanVien().equals(
+                                rs.getString("maKyThuatVien"))) {
+
+                    throw new IllegalArgumentException(
+                            "Bạn chỉ được xem và cập nhật "
+                            + "phiếu được phân công cho mình.");
+                }
+            }
+        }
+
+        PhieuSuaChua phieu = phieuDao.timTheoMa(ma.trim());
+
+        if (phieu == null) {
+            throw new IllegalArgumentException(
+                    "Phiếu sửa chữa không còn tồn tại.");
+        }
+
         return phieu;
     }
 
