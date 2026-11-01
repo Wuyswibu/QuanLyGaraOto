@@ -37,6 +37,7 @@ public final class KhachHangUI extends JPanel {
     private final JButton btnTimKiem = new JButton("Tìm kiếm");
     private final JButton btnTrangChu = new JButton("Về màn hình chính");
     private final JButton btnNhapMoi = new JButton("Nhập khách mới");
+    private final JButton btnLamMoi = new JButton("Làm mới");
     private final JButton btnThem = new JButton("Thêm khách hàng");
     private final JButton btnSua = new JButton("Sửa thông tin");
     private final JButton btnNgungSuDung = new JButton("Ngừng sử dụng");
@@ -212,6 +213,8 @@ public final class KhachHangUI extends JPanel {
         btnXemXe.setPreferredSize(new Dimension(165, 30));
         pnl.add(btnTrangChu);
         pnl.add(btnNhapMoi);
+        btnLamMoi.setPreferredSize(new Dimension(110, 30));
+        pnl.add(btnLamMoi);
         pnl.add(btnThem);
         pnl.add(btnSua);
         pnl.add(btnNgungSuDung);
@@ -260,6 +263,11 @@ public final class KhachHangUI extends JPanel {
                     txtMaKhachHang.getText().trim()
                 );
             }
+        });
+        btnLamMoi.addActionListener(e -> {
+            if (dangXuLy) return;
+            xoaForm();
+            loadKhachHangFromSQL();
         });
     }
 
@@ -527,6 +535,7 @@ public final class KhachHangUI extends JPanel {
         txtTimKiem.setEnabled(!dangXuLy);
         cboLocTrangThai.setEnabled(!dangXuLy);
         btnNhapMoi.setEnabled(!dangXuLy);
+        btnLamMoi.setEnabled(!dangXuLy);
         btnThem.setEnabled(!dangXuLy);
         btnSua.setEnabled(!dangXuLy);
         btnNgungSuDung.setEnabled(!dangXuLy);

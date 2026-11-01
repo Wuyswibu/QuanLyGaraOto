@@ -183,9 +183,74 @@ public class HoaDonService {
         }
         return kqSua || kqTrangThai;
     }
+    public boolean huyHoaDon(String maHoaDon) throws SQLException {
+        if (maHoaDon == null || maHoaDon.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn hóa đơn.");
+        }
 
+        return hoaDonDao.capNhatTrangThai(
+                maHoaDon,
+                HoaDon.CHUA_THANH_TOAN,
+                HoaDon.DA_THANH_TOAN
+        );
+    }
     public boolean xacNhanThanhToan(String maHoaDon, String trangThaiHienTai) throws SQLException {
         return hoaDonDao.capNhatTrangThai(maHoaDon, trangThaiHienTai, HoaDon.DA_THANH_TOAN);
+    }
+    public void banGiaoXe(String maHoaDon, String maNhanVien)
+            throws SQLException {
+
+        if (maHoaDon == null || maHoaDon.trim().isEmpty()
+                || maNhanVien == null || maNhanVien.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Chưa chọn hóa đơn hoặc chưa đăng nhập."
+            );
+        }
+
+        String sql =
+                "UPDATE tn SET "
+                + "tn.trangThai = N'Đã giao xe', "
+                + "tn.ngayGioBanGiao = SYSDATETIME(), "
+                + "tn.maNhanVienBanGiao = ? "
+                + "FROM dbo.PhieuTiepNhan tn "
+                + "JOIN dbo.PhieuSuaChua sc "
+                + "ON sc.maTiepNhan = tn.maTiepNhan "
+                + "JOIN dbo.HoaDon hd "
+                + "ON hd.maPhieuSuaChua = sc.maPhieuSuaChua "
+                + "WHERE hd.maHoaDon = ? "
+                + "AND hd.maPhuongTien = tn.maPhuongTien "
+                + "AND hd.trangThai = N'Đã thanh toán' "
+                + "AND sc.trangThai = N'Đã hoàn thành' "
+                + "AND tn.trangThai NOT IN (N'Đã giao xe', N'Đã hủy') "
+                + "AND tn.ngayGioBanGiao IS NULL";
+
+        synchronized (ConnectDB.class) {
+            java.sql.Connection c = ConnectDB.getConnection();
+
+            if (c == null || c.isClosed()) {
+                throw new SQLException("Chưa kết nối database.");
+            }
+
+            if (!c.getAutoCommit()) {
+                throw new SQLException(
+                        "Đang có giao dịch khác. Vui lòng thử lại."
+                );
+            }
+
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, maNhanVien.trim());
+                ps.setString(2, maHoaDon.trim());
+
+                if (ps.executeUpdate() != 1) {
+                    throw new IllegalArgumentException(
+                            "Không thể bàn giao.\n"
+                            + "Hóa đơn phải đã thanh toán, "
+                            + "phiếu sửa chữa đã hoàn thành "
+                            + "và phiếu tiếp nhận chưa giao hoặc hủy."
+                    );
+                }
+            }
+        }
     }
 
     public String[] layThongTinLienKetTuPhieuSuaChua(String maPSC) {
@@ -807,5 +872,10 @@ public class HoaDonService {
 
     private void ghiChuoiPDF(ByteArrayOutputStream out, String str) throws Exception {
         out.write(str.getBytes(StandardCharsets.US_ASCII));
+    }
+    public java.util.Map<String, String> layTrangThaiBanGiao()
+            throws SQLException {
+
+        return new dao.HoaDonDao().layTrangThaiBanGiao();
     }
 }

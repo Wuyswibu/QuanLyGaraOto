@@ -23,6 +23,11 @@ public class GaraManHinhChinh extends JFrame {
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
     private XeUI pnlQuanLyXe;
+    private NhanVien nhanVienDangNhap;
+
+    public NhanVien getNhanVienDangNhap() {
+        return nhanVienDangNhap;
+    }
     private LapPhieuTiepNhanUI pnlTiepNhan;
 
     public GaraManHinhChinh() {
@@ -44,6 +49,8 @@ public class GaraManHinhChinh extends JFrame {
                     "Chưa có thông tin nhân viên đăng nhập."
             );
         }
+
+        this.nhanVienDangNhap = nhanVien;
 
         pnlTiepNhan.setNguoiTiepNhan(
                 nhanVien.getMaNhanVien(),
@@ -72,6 +79,7 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("XUAT_KHO", new GaraLapPhieuXuatKho());
          
          themManHinh("PHAN_CONG", new GaraPhanCongKTV());
+         themManHinh("PHAN_CONG_CA", new PhanCongCaUI());
          
          pnlTiepNhan = new LapPhieuTiepNhanUI();
          themManHinh("TIEP_NHAN", pnlTiepNhan);
@@ -170,7 +178,7 @@ public class GaraManHinhChinh extends JFrame {
                 "Quản lý khách hàng"
             },
             {
-                "Quản lý xe", "Lịch sử sửa chữa"
+                "Quản lý xe",
             },
             {
                 "Quản lý dịch vụ",
@@ -179,7 +187,8 @@ public class GaraManHinhChinh extends JFrame {
                 "Lập phiếu tiếp nhận xe",
                 "Danh sách phiếu tiếp nhận",
                 "Lập phiếu sửa chữa / Báo giá",
-                "Cập nhật tình trạng sửa xe"
+                "Cập nhật tình trạng sửa xe",
+                "Lịch sử sửa chữa"
             },
             {
                 "Quản lý phụ tùng"
@@ -188,14 +197,16 @@ public class GaraManHinhChinh extends JFrame {
                 "Lập phiếu nhập kho", "Lập phiếu xuất kho"
             },
             {
-                "Lập hóa đơn",
+                "Lập hóa đơn",
             },
             {
                 "Thống kê doanh thu", "Thống kê tồn kho",
                 "Phụ tùng bán chạy", "Phụ tùng bán chậm"
             },
             {
-                "Quản lý nhân sự", "Phân công kỹ thuật viên"
+            	"Quản lý nhân sự",
+            	"Phân công kỹ thuật viên",
+            	"Phân công ca làm việc"
             }
         };
 
@@ -225,6 +236,31 @@ public class GaraManHinhChinh extends JFrame {
         }
 
         menuBar.add(menuTaiKhoan);
+        menuBar.add(Box.createHorizontalStrut(12));
+
+        JButton btnDangXuat = new JButton("Đăng xuất");
+
+        btnDangXuat.setUI(
+                new javax.swing.plaf.basic.BasicButtonUI());
+
+        btnDangXuat.setFont(new Font("Arial", Font.BOLD, 13));
+        btnDangXuat.setBackground(new Color(188, 25, 58));
+        btnDangXuat.setForeground(Color.WHITE);
+        btnDangXuat.setOpaque(true);
+        btnDangXuat.setContentAreaFilled(true);
+        btnDangXuat.setBorderPainted(false);
+        btnDangXuat.setFocusPainted(false);
+
+        btnDangXuat.setBorder(
+                BorderFactory.createEmptyBorder(9, 16, 9, 16));
+
+        btnDangXuat.setCursor(
+                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        btnDangXuat.setMaximumSize(btnDangXuat.getPreferredSize());
+        btnDangXuat.addActionListener(e -> dangXuat());
+
+        menuBar.add(btnDangXuat);
 
         return menuBar;
     }
@@ -257,6 +293,24 @@ public class GaraManHinhChinh extends JFrame {
     // ==================== ĐIỀU HƯỚNG CHUNG ====================
 
     private void xuLyDieuHuong(String tenChucNang) {
+    	String tenChuan = java.text.Normalizer.normalize(
+    	        tenChucNang,
+    	        java.text.Normalizer.Form.NFD
+    	).replaceAll("\\p{M}", "")
+    	 .replace('đ', 'd')
+    	 .replace('Đ', 'D')
+    	 .toLowerCase(java.util.Locale.ROOT)
+    	 .replaceAll("[\\s\\p{Z}\\p{Cf}]+", " ")
+    	 .trim();
+
+    	if (tenChuan.equals("quan ly hoa don")
+    	        || tenChuan.equals("lap hoa don")
+    	        || tenChuan.equals("hoa don")
+    	        || tenChuan.equals("tra cuu hoa don")) {
+
+    	    chuyenManHinh("LAP_HOA_DON");
+    	    return;
+    	}
         switch (tenChucNang.trim()) {
             case "Màn hình chính":
                 hienThiTrangChu();
@@ -321,6 +375,8 @@ public class GaraManHinhChinh extends JFrame {
                 break;
 
             case "Hóa đơn":
+            case "Quản Lý Hóa Đơn":
+            case "Quản lý hóa đơn":
             case "Lập hóa đơn":
                 chuyenManHinh("LAP_HOA_DON");
                 break;
@@ -354,7 +410,9 @@ public class GaraManHinhChinh extends JFrame {
             case "Phân công kỹ thuật viên":
                 chuyenManHinh("PHAN_CONG");
                 break;
-
+            case "Phân công ca làm việc":
+                chuyenManHinh("PHAN_CONG_CA");
+                break;
             case "Hệ thống":
             case "Tài khoản cá nhân":
                 chuyenManHinh("TAI_KHOAN");
@@ -365,12 +423,7 @@ public class GaraManHinhChinh extends JFrame {
                 break;
 
             case "Đăng xuất":
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Chưa gắn màn hình đăng nhập để đăng xuất.",
-                    "Thông báo",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+                dangXuat();
                 break;
 
             default:
@@ -765,4 +818,23 @@ public class GaraManHinhChinh extends JFrame {
             new GaraManHinhChinh().setVisible(true);
         });
     }
-}
+    private void dangXuat() {
+        int luaChon = JOptionPane.showConfirmDialog(
+                this,
+                "Bạn có chắc chắn muốn đăng xuất không?",
+                "Xác nhận đăng xuất",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (luaChon != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        GaraDangNhap manHinhDangNhap = new GaraDangNhap();
+        manHinhDangNhap.setLocationRelativeTo(null);
+        manHinhDangNhap.setVisible(true);
+
+        dispose();
+    }
+    }

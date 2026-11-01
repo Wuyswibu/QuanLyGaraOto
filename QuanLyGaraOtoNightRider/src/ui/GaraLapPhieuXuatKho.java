@@ -255,6 +255,15 @@ public class GaraLapPhieuXuatKho extends JPanel {
         JButton btnTaoMoi = taoNutTrang("Tạo phiếu mới");
         JButton btnXemChiTiet = taoNutTrang("Xem chi tiết phụ tùng");
         JButton btnXacNhan = taoNutDo("Xác nhận xuất kho");
+        JButton btnYeuCau = taoNutDo("Yêu cầu đang chờ");
+
+        btnYeuCau.addActionListener(e -> {
+            if (YeuCauPhuTungDialog.xuLy(this)) {
+                napDuLieuComboBox();
+                taiDanhSachPhieuXuatLenBang("Tất cả");
+                lamMoiFormLapPhieu();
+            }
+        });
 
         btnTaoMoi.addActionListener(e -> {
             tablePhieuXuat.clearSelection();
@@ -262,7 +271,8 @@ public class GaraLapPhieuXuatKho extends JPanel {
         });
         btnXemChiTiet.addActionListener(e -> xemChiTietPhieuXuatPopup());
         btnXacNhan.addActionListener(e -> luuPhieuXuatQuaService());
-
+        
+        panelBottomButtons.add(btnYeuCau);
         panelBottomButtons.add(btnTaoMoi);
         panelBottomButtons.add(btnXemChiTiet);
         panelBottomButtons.add(btnXacNhan);

@@ -40,7 +40,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
     });
     private final JButton btnTim = nut("Tìm kiếm", false);
     private final JButton btnTaiLai = nut("Tải lại", false);
-    private final JButton btnXuatKho = nut("Yêu cầu xuất kho", false);
+    private final JButton btnXuatKho = nut("Yêu cầu phụ tùng", false);
     private final JButton btnPhanCong = nut("Phân công kỹ thuật viên", false);
     private final JButton btnCapNhat = nut("Cập nhật trạng thái phiếu", true);
     private final JProgressBar tienDo = new JProgressBar(0, 100);
@@ -223,12 +223,14 @@ public class CapNhatTTSuaXeUI extends JPanel {
         btnCapNhat.addActionListener(e -> suaPhieu());
 
         btnXuatKho.addActionListener(e -> {
-            Window cuaSo = SwingUtilities.getWindowAncestor(this);
-            if (cuaSo instanceof GaraManHinhChinh) {
-                ((GaraManHinhChinh) cuaSo).chuyenManHinh("XUAT_KHO");
-            } else {
-                JOptionPane.showMessageDialog(this, "Mở từ màn hình chính để chuyển sang xuất kho.");
+            if (chiTiet == null) {
+                JOptionPane.showMessageDialog(
+                        this, "Vui lòng chọn phiếu sửa chữa.");
+                return;
             }
+
+            YeuCauPhuTungDialog.gui(
+                    this, chiTiet.phieu.getMaPhieuSuaChua());
         });
         btnCapNhat.setUI(new javax.swing.plaf.basic.BasicButtonUI());
         btnCapNhat.setOpaque(true);

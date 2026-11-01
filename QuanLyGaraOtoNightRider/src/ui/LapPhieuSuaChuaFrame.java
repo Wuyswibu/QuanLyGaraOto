@@ -634,6 +634,17 @@ public class LapPhieuSuaChuaFrame extends JPanel {
         }
 
         PhieuTiepNhan tiepNhan = layTiepNhanDangChon();
+        if (danhSachHangMuc.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Vui lòng thêm ít nhất một hạng mục sửa chữa trước khi lưu phiếu.",
+                    "Chưa có hạng mục",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            btnThemHangMuc.requestFocusInWindow();
+            return;
+        }
 
         String maTiepNhan = tiepNhan == null
                 ? null

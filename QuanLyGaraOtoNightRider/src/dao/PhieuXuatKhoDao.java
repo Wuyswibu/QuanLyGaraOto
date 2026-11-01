@@ -57,7 +57,7 @@ public class PhieuXuatKhoDao {
     }
 
     public PhieuXuatKho timTheoMa(String maPhieuXuat) throws SQLException {
-        String sql = "SELECT maPhieuXuat, ngayXuat, lyDoXuat, "
+        String sql = "SELECT maPhieuXuat, maPhieuSuaChua, ngayXuat, lyDoXuat, "
                 + "trangThai, ghiChu "
                 + "FROM dbo.PhieuXuatKho WHERE maPhieuXuat = ?";
 
