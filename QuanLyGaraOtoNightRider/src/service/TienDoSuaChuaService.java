@@ -38,11 +38,19 @@ public class TienDoSuaChuaService {
 
     public static class PhuTungHienThi {
         public final String ten;
+        public final int soLuong;
         public final BigDecimal donGia;
+        private final BigDecimal thanhTien;
 
-        public PhuTungHienThi(String ten, BigDecimal donGia) {
+        public PhuTungHienThi(String ten, int soLuong, BigDecimal donGia, BigDecimal thanhTien) {
             this.ten = ten;
+            this.soLuong = soLuong;
             this.donGia = donGia;
+            this.thanhTien = thanhTien;
+        }
+
+        public BigDecimal getThanhTien() {
+            return thanhTien;
         }
     }
 
@@ -98,7 +106,12 @@ public class TienDoSuaChuaService {
             List<PhuTungHienThi> phuTung = new ArrayList<>();
 
             String sqlPhuTung =
-                    "SELECT DISTINCT p.maPhuTung, p.tenPhuTung, ct.donGia "
+                    "SELECT p.maPhuTung, p.tenPhuTung, "
+                    + "SUM(ct.soLuong) AS soLuong, "
+                    + "CASE WHEN MIN(ct.donGia) = MAX(ct.donGia) "
+                    + "THEN MIN(ct.donGia) ELSE NULL END AS donGia, "
+                    + "SUM(CAST(ct.soLuong AS DECIMAL(18,0)) "
+                    + "* ct.donGia) AS thanhTien "
                     + "FROM dbo.PhieuXuatKho x "
                     + "JOIN dbo.ChiTietPhieuXuat ct "
                     + "ON ct.maPhieuXuat = x.maPhieuXuat "
@@ -106,16 +119,19 @@ public class TienDoSuaChuaService {
                     + "ON p.maPhuTung = ct.maPhuTung "
                     + "WHERE x.maPhieuSuaChua = ? "
                     + "AND x.trangThai IN (N'Đã xuất kho', N'Đã xác nhận') "
-                    + "ORDER BY p.maPhuTung, ct.donGia";
+                    + "GROUP BY p.maPhuTung, p.tenPhuTung "
+                    + "ORDER BY p.maPhuTung";
 
             try (PreparedStatement ps = conn.prepareStatement(sqlPhuTung)) {
                 ps.setString(1, maPhieu);
 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        phuTung.add(new PhuTungHienThi(
-                                rs.getString("tenPhuTung"),
-                                rs.getBigDecimal("donGia")));
+                    	phuTung.add(new PhuTungHienThi(
+                    	        rs.getString("tenPhuTung"),
+                    	        rs.getInt("soLuong"),
+                    	        rs.getBigDecimal("donGia"),
+                    	        rs.getBigDecimal("thanhTien")));
                     }
                 }
             }
