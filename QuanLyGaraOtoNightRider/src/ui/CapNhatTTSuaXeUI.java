@@ -161,6 +161,12 @@ public class CapNhatTTSuaXeUI extends JPanel {
                 JOptionPane.showMessageDialog(this, "Mở từ màn hình chính để chuyển sang xuất kho.");
             }
         });
+        btnCapNhat.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnCapNhat.setOpaque(true);
+        btnCapNhat.setContentAreaFilled(true);
+        btnCapNhat.setBackground(new Color(190, 22, 58));
+        btnCapNhat.setForeground(Color.WHITE);
+        btnCapNhat.setFocusPainted(false); 
         
         btnPhanCong.addActionListener(e -> {
             Window cuaSo = SwingUtilities.getWindowAncestor(this);
@@ -172,6 +178,8 @@ public class CapNhatTTSuaXeUI extends JPanel {
                         this,
                         "Vui lòng chạy từ màn hình chính để mở phân công kỹ thuật viên.");
             }
+            
+            
         });
         capNhatNut();
     }
