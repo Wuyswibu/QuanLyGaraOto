@@ -22,7 +22,59 @@ public class PhieuSuaChuaDao {
 
         return conn;
     }
+    public java.util.Map<String, String[]> layThongTinLichSu()
+            throws SQLException {
 
+        java.util.Map<String, String[]> ketQua = new java.util.HashMap<>();
+
+        String sql =
+                "SELECT p.maPhieuSuaChua, x.bienSo, x.mauXe, k.hoTen, "
+                + "nv.maNhanVien AS maKTV, nv.hoTen AS tenKTV, "
+                + "t.ngayGioHenTra, t.ngayGioBanGiao "
+                + "FROM dbo.PhieuSuaChua p "
+                + "LEFT JOIN dbo.PhieuTiepNhan t "
+                + "ON t.maTiepNhan = p.maTiepNhan "
+                + "LEFT JOIN dbo.PhuongTien x "
+                + "ON x.maPhuongTien = t.maPhuongTien "
+                + "LEFT JOIN dbo.KhachHang k "
+                + "ON k.maKhachHang = x.maKhachHang "
+                + "LEFT JOIN dbo.NhanVien nv "
+                + "ON nv.maNhanVien = p.maKyThuatVien";
+        
+        java.time.format.DateTimeFormatter dinhDang =
+                java.time.format.DateTimeFormatter.ofPattern(
+                        "dd/MM/yyyy HH:mm");
+
+        try (PreparedStatement ps = ketNoi().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Timestamp henTra = rs.getTimestamp("ngayGioHenTra");
+                Timestamp banGiao = rs.getTimestamp("ngayGioBanGiao");
+                
+                String maKTV = rs.getString("maKTV");
+                String tenKTV = rs.getString("tenKTV");
+
+                String kyThuatVien = maKTV == null
+                        ? "Chưa ghi nhận"
+                        : maKTV + " - " + tenKTV;
+                ketQua.put(rs.getString("maPhieuSuaChua"), new String[]{
+                    rs.getString("bienSo"),
+                    rs.getString("hoTen"),
+                    rs.getString("mauXe"),
+                    henTra == null
+                            ? "Chưa hẹn"
+                            : henTra.toLocalDateTime().format(dinhDang),
+                    banGiao == null
+                            ? "Chưa bàn giao"
+                            : banGiao.toLocalDateTime().format(dinhDang)
+                            , kyThuatVien
+                });
+            }
+        }
+
+        return ketQua;
+    }
     private PhieuSuaChua docPhieu(ResultSet rs) throws SQLException {
         Timestamp ngayLap = rs.getTimestamp("ngayLap");
 

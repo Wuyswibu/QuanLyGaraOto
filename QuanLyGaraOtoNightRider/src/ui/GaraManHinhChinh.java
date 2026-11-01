@@ -5,6 +5,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import service.PhanQuyenService;
 
 import javax.swing.*;
 
@@ -23,9 +24,34 @@ public class GaraManHinhChinh extends JFrame {
     private final JPanel panelNoiDung = new JPanel(cardLayout);
     
     private XeUI pnlQuanLyXe;
+    private LichLamViecCuaToiUI pnlLichCuaToi;
+    private NhanVien nhanVienDangNhap;
+    private PhanQuyenService phanQuyen;
+
+    public PhanQuyenService getPhanQuyen() {
+        return phanQuyen;
+    }
+
+    public NhanVien getNhanVienDangNhap() {
+        return nhanVienDangNhap;
+    }
     private LapPhieuTiepNhanUI pnlTiepNhan;
 
     public GaraManHinhChinh() {
+        throw new IllegalStateException(
+                "Vui lòng chạy main.Main và đăng nhập trước.");
+    }
+
+    public GaraManHinhChinh(NhanVien nhanVien) {
+        if (nhanVien == null) {
+            throw new IllegalArgumentException(
+                    "Chưa có thông tin nhân viên đăng nhập.");
+        }
+
+        // Phải gán trước khi tạo giao diện.
+        this.nhanVienDangNhap = nhanVien;
+        this.phanQuyen = new PhanQuyenService(nhanVien);
+
         setTitle("Hệ thống Quản lý Gara Ô Tô - Night Invader");
         setSize(1340, 840);
         setLocationRelativeTo(null);
@@ -34,21 +60,13 @@ public class GaraManHinhChinh extends JFrame {
 
         khoiTaoGiaoDien();
 
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-    }
-    public GaraManHinhChinh(NhanVien nhanVien) {
-        this();
-
-        if (nhanVien == null) {
-            throw new IllegalArgumentException(
-                    "Chưa có thông tin nhân viên đăng nhập."
-            );
+        if (pnlTiepNhan != null) {
+            pnlTiepNhan.setNguoiTiepNhan(
+                    nhanVien.getMaNhanVien(),
+                    nhanVien.getHoTen());
         }
 
-        pnlTiepNhan.setNguoiTiepNhan(
-                nhanVien.getMaNhanVien(),
-                nhanVien.getHoTen()
-        );
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
     private void khoiTaoGiaoDien() {
         setLayout(new BorderLayout());
@@ -72,6 +90,9 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("XUAT_KHO", new GaraLapPhieuXuatKho());
          
          themManHinh("PHAN_CONG", new GaraPhanCongKTV());
+         themManHinh("PHAN_CONG_CA", new PhanCongCaUI());
+         pnlLichCuaToi = new LichLamViecCuaToiUI(nhanVienDangNhap);
+         themManHinh("LICH_CUA_TOI", pnlLichCuaToi);
          
          pnlTiepNhan = new LapPhieuTiepNhanUI();
          themManHinh("TIEP_NHAN", pnlTiepNhan);
@@ -80,7 +101,11 @@ public class GaraManHinhChinh extends JFrame {
          themManHinh("DICH_VU", new QuanLyDichVuFrame());
          themManHinh("LICH_SU", new LichSuSuaChuaFrame());
          themManHinh("SUA_CHUA", new LapPhieuSuaChuaFrame());
-         themManHinh("TINH_TRANG_SUA_XE", new CapNhatTTSuaXeUI());
+         themManHinh(
+        	        "TINH_TRANG_SUA_XE",
+        	        new CapNhatTTSuaXeUI(
+        	                new service.TienDoSuaChuaService(
+        	                        nhanVienDangNhap)));
          themManHinh("DS_PHIEU_TIEP_NHAN", new PhieuTiepNhanUI());
          
          themManHinh("THONG_KE_DOANH_THU", new GaraThongKe(0));
@@ -91,7 +116,9 @@ public class GaraManHinhChinh extends JFrame {
 //         CapNhatTTSuaXeUI panelTinhTrang = new CapNhatTTSuaXeUI();
 //         themManHinh("TINH_TRANG_SUA_XE", panelTinhTrang);
          
-         themManHinh("LAP_HOA_DON", new GaraLapHoaDon());
+         themManHinh(
+        	        "LAP_HOA_DON",
+        	        new GaraLapHoaDon(nhanVienDangNhap));
          
          themManHinh("NHAN_SU", new GaraNhanVien(0));
          
@@ -120,9 +147,21 @@ public class GaraManHinhChinh extends JFrame {
     public void chuyenManHinh(String maManHinh) {
         // Các màn hình chưa chuyển thành JPanel sẽ báo rõ,
         // tránh bấm menu mà không thấy phản hồi.
+    	if (!phanQuyen.duocMoManHinh(maManHinh)) {
+    	    JOptionPane.showMessageDialog(
+    	            this,
+    	            "Bạn không có quyền sử dụng chức năng này.",
+    	            "Không đủ quyền",
+    	            JOptionPane.WARNING_MESSAGE
+    	    );
+    	    return;
+    	}
         for (Component component : panelNoiDung.getComponents()) {
             if (maManHinh.equals(component.getName())) {
                 cardLayout.show(panelNoiDung, maManHinh);
+                if ("LICH_CUA_TOI".equals(maManHinh)) {
+                    pnlLichCuaToi.taiDuLieu();
+                }
                 return;
             }
         }
@@ -162,15 +201,16 @@ public class GaraManHinhChinh extends JFrame {
 
         String[][] cacItemMenu = {
             {
-                "Màn hình chính", "-",
-                "Tài khoản cá nhân",
-                "-", "Đăng xuất"
+            	"Màn hình chính", "-",
+            	"Tài khoản cá nhân",
+            	"Ca trực của tôi",
+            	"-", "Đăng xuất"
             },
             {
                 "Quản lý khách hàng"
             },
             {
-                "Quản lý xe", "Lịch sử sửa chữa"
+                "Quản lý xe",
             },
             {
                 "Quản lý dịch vụ",
@@ -179,7 +219,8 @@ public class GaraManHinhChinh extends JFrame {
                 "Lập phiếu tiếp nhận xe",
                 "Danh sách phiếu tiếp nhận",
                 "Lập phiếu sửa chữa / Báo giá",
-                "Cập nhật tình trạng sửa xe"
+                "Cập nhật tình trạng sửa xe",
+                "Lịch sử sửa chữa"
             },
             {
                 "Quản lý phụ tùng"
@@ -188,14 +229,16 @@ public class GaraManHinhChinh extends JFrame {
                 "Lập phiếu nhập kho", "Lập phiếu xuất kho"
             },
             {
-                "Lập hóa đơn",
+                "Lập hóa đơn",
             },
             {
                 "Thống kê doanh thu", "Thống kê tồn kho",
                 "Phụ tùng bán chạy", "Phụ tùng bán chậm"
             },
             {
-                "Quản lý nhân sự", "Phân công kỹ thuật viên"
+            	"Quản lý nhân sự",
+            	"Phân công kỹ thuật viên",
+            	"Phân công ca làm việc"
             }
         };
 
@@ -209,7 +252,7 @@ public class GaraManHinhChinh extends JFrame {
         menuBar.add(Box.createHorizontalGlue());
 
         JMenu menuTaiKhoan = taoMenuDropdown(
-            "Xin chào, Chủ Gara",
+        		"Xin chào, " + nhanVienDangNhap.getHoTen(),
             new String[] {
                 "Tài khoản cá nhân",
                 "Đổi mật khẩu",
@@ -225,6 +268,31 @@ public class GaraManHinhChinh extends JFrame {
         }
 
         menuBar.add(menuTaiKhoan);
+        menuBar.add(Box.createHorizontalStrut(12));
+
+        JButton btnDangXuat = new JButton("Đăng xuất");
+
+        btnDangXuat.setUI(
+                new javax.swing.plaf.basic.BasicButtonUI());
+
+        btnDangXuat.setFont(new Font("Arial", Font.BOLD, 13));
+        btnDangXuat.setBackground(new Color(188, 25, 58));
+        btnDangXuat.setForeground(Color.WHITE);
+        btnDangXuat.setOpaque(true);
+        btnDangXuat.setContentAreaFilled(true);
+        btnDangXuat.setBorderPainted(false);
+        btnDangXuat.setFocusPainted(false);
+
+        btnDangXuat.setBorder(
+                BorderFactory.createEmptyBorder(9, 16, 9, 16));
+
+        btnDangXuat.setCursor(
+                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        btnDangXuat.setMaximumSize(btnDangXuat.getPreferredSize());
+        btnDangXuat.addActionListener(e -> dangXuat());
+
+        menuBar.add(btnDangXuat);
 
         return menuBar;
     }
@@ -257,6 +325,24 @@ public class GaraManHinhChinh extends JFrame {
     // ==================== ĐIỀU HƯỚNG CHUNG ====================
 
     private void xuLyDieuHuong(String tenChucNang) {
+    	String tenChuan = java.text.Normalizer.normalize(
+    	        tenChucNang,
+    	        java.text.Normalizer.Form.NFD
+    	).replaceAll("\\p{M}", "")
+    	 .replace('đ', 'd')
+    	 .replace('Đ', 'D')
+    	 .toLowerCase(java.util.Locale.ROOT)
+    	 .replaceAll("[\\s\\p{Z}\\p{Cf}]+", " ")
+    	 .trim();
+
+    	if (tenChuan.equals("quan ly hoa don")
+    	        || tenChuan.equals("lap hoa don")
+    	        || tenChuan.equals("hoa don")
+    	        || tenChuan.equals("tra cuu hoa don")) {
+
+    	    chuyenManHinh("LAP_HOA_DON");
+    	    return;
+    	}
         switch (tenChucNang.trim()) {
             case "Màn hình chính":
                 hienThiTrangChu();
@@ -321,6 +407,8 @@ public class GaraManHinhChinh extends JFrame {
                 break;
 
             case "Hóa đơn":
+            case "Quản Lý Hóa Đơn":
+            case "Quản lý hóa đơn":
             case "Lập hóa đơn":
                 chuyenManHinh("LAP_HOA_DON");
                 break;
@@ -354,23 +442,22 @@ public class GaraManHinhChinh extends JFrame {
             case "Phân công kỹ thuật viên":
                 chuyenManHinh("PHAN_CONG");
                 break;
-
+            case "Phân công ca làm việc":
+                chuyenManHinh("PHAN_CONG_CA");
+                break;
             case "Hệ thống":
             case "Tài khoản cá nhân":
                 chuyenManHinh("TAI_KHOAN");
                 break;
-
+            case "Ca trực của tôi":
+                chuyenManHinh("LICH_CUA_TOI");
+                break;
             case "Đổi mật khẩu":
                 chuyenManHinh("DOI_MAT_KHAU");
                 break;
 
             case "Đăng xuất":
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Chưa gắn màn hình đăng nhập để đăng xuất.",
-                    "Thông báo",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+                dangXuat();
                 break;
 
             default:
@@ -714,7 +801,9 @@ public class GaraManHinhChinh extends JFrame {
         );
 
         JLabel lblTrangThai = new JLabel(
-            "Đang hoạt động | Vai trò: Chủ Gara | Chi nhánh: Gara chính"
+        		"Đang hoạt động | Vai trò: "
+        		        + nhanVienDangNhap.getTenChuc()
+        		        + " | Chi nhánh: Gara chính"
         );
         lblTrangThai.setFont(new Font("Arial", Font.PLAIN, 12));
         lblTrangThai.setForeground(Color.DARK_GRAY);
@@ -746,6 +835,12 @@ public class GaraManHinhChinh extends JFrame {
         return new ImageIcon(image);
     }
     public void moXeCuaKhachHang(String maKhachHang) {
+        if (!phanQuyen.duocMoManHinh("XE")) {
+            JOptionPane.showMessageDialog(
+                    this, "Bạn không có quyền quản lý xe.");
+            return;
+        }
+
         pnlQuanLyXe.hienThiXeCuaKhachHang(maKhachHang);
         chuyenManHinh("XE");
     }
@@ -765,4 +860,23 @@ public class GaraManHinhChinh extends JFrame {
             new GaraManHinhChinh().setVisible(true);
         });
     }
-}
+    private void dangXuat() {
+        int luaChon = JOptionPane.showConfirmDialog(
+                this,
+                "Bạn có chắc chắn muốn đăng xuất không?",
+                "Xác nhận đăng xuất",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (luaChon != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        GaraDangNhap manHinhDangNhap = new GaraDangNhap();
+        manHinhDangNhap.setLocationRelativeTo(null);
+        manHinhDangNhap.setVisible(true);
+
+        dispose();
+    }
+    }

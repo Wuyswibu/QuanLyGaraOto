@@ -52,7 +52,7 @@ public class DangNhapService {
                     "Nhân viên đã ngừng làm việc, không thể đăng nhập."
             );
         }
-
+        PhanQuyenService.napQuyenDangNhap(nhanVien);
         return nhanVien;
     }
 }

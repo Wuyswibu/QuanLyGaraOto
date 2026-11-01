@@ -40,7 +40,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
     });
     private final JButton btnTim = nut("Tìm kiếm", false);
     private final JButton btnTaiLai = nut("Tải lại", false);
-    private final JButton btnXuatKho = nut("Yêu cầu xuất kho", false);
+    private final JButton btnXuatKho = nut("Yêu cầu phụ tùng", false);
     private final JButton btnPhanCong = nut("Phân công kỹ thuật viên", false);
     private final JButton btnCapNhat = nut("Cập nhật trạng thái phiếu", true);
     private final JProgressBar tienDo = new JProgressBar(0, 100);
@@ -78,7 +78,11 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     public CapNhatTTSuaXeUI(TienDoSuaChuaService service) {
         this.service = service;
+
         taoGiaoDien();
+
+        btnPhanCong.setVisible(service.laQuanLy());
+
         SwingUtilities.invokeLater(() -> loadDuLieu(""));
     }
 
@@ -223,13 +227,21 @@ public class CapNhatTTSuaXeUI extends JPanel {
         btnCapNhat.addActionListener(e -> suaPhieu());
 
         btnXuatKho.addActionListener(e -> {
-            Window cuaSo = SwingUtilities.getWindowAncestor(this);
-            if (cuaSo instanceof GaraManHinhChinh) {
-                ((GaraManHinhChinh) cuaSo).chuyenManHinh("XUAT_KHO");
-            } else {
-                JOptionPane.showMessageDialog(this, "Mở từ màn hình chính để chuyển sang xuất kho.");
+            if (chiTiet == null) {
+                JOptionPane.showMessageDialog(
+                        this, "Vui lòng chọn phiếu sửa chữa.");
+                return;
             }
+
+            YeuCauPhuTungDialog.gui(
+                    this, chiTiet.phieu.getMaPhieuSuaChua());
         });
+        btnCapNhat.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnCapNhat.setOpaque(true);
+        btnCapNhat.setContentAreaFilled(true);
+        btnCapNhat.setBackground(new Color(190, 22, 58));
+        btnCapNhat.setForeground(Color.WHITE);
+        btnCapNhat.setFocusPainted(false); 
         
         btnPhanCong.addActionListener(e -> {
             Window cuaSo = SwingUtilities.getWindowAncestor(this);
@@ -241,6 +253,8 @@ public class CapNhatTTSuaXeUI extends JPanel {
                         this,
                         "Vui lòng chạy từ màn hình chính để mở phân công kỹ thuật viên.");
             }
+            
+            
         });
         capNhatNut();
     }
@@ -264,7 +278,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
             dangDoPhieu = false;
             if (ds.isEmpty()) {
                 hienThi(null);
-                thongBao.setText("Không tìm thấy phiếu sửa chữa. Phiếu tiếp nhận cần được lập phiếu sửa chữa trước.");
+                thongBao.setText(
+                        service.laQuanLy()
+                        ? "Không tìm thấy phiếu sửa chữa phù hợp."
+                        : "Không có phiếu phù hợp được phân công cho bạn.");
             } else {
                 taiChiTiet(ds.get(chon).getMaPhieuSuaChua());
             }
