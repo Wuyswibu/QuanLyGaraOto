@@ -6,6 +6,10 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+<<<<<<< HEAD
 	<classpathentry kind="lib" path="D:/PTUDcode/mssql-jdbc-13.6.0.jre11.jar"/>
+=======
+	<classpathentry kind="lib" path="lib/mssql-jdbc-13.6.0.jre11.jar"/>
+>>>>>>> refs/remotes/origin/test
 	<classpathentry kind="output" path="bin"/>
 </classpath>

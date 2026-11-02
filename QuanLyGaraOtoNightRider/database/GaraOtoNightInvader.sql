@@ -1,4 +1,5 @@
-﻿CREATE DATABASE NightInvader;
+﻿
+CREATE DATABASE NightInvader;
 GO
 USE NightInvader;
 GO
@@ -21,7 +22,8 @@ CREATE TABLE dbo.NhanVien (
     ngayVaoLam DATE NOT NULL,
     trangThai NVARCHAR(40) NOT NULL,
     CONSTRAINT PK_NhanVien PRIMARY KEY (maNhanVien),
-    CONSTRAINT FK_NhanVien_PhanQuyen FOREIGN KEY (maPhanQuyen) REFERENCES dbo.PhanQuyen(maPhanQuyen)
+    CONSTRAINT FK_NhanVien_PhanQuyen FOREIGN KEY (maPhanQuyen) REFERENCES dbo.PhanQuyen(maPhanQuyen),
+    CONSTRAINT CK_NhanVien_Ngay CHECK (ngaySinh IS NULL OR ngayVaoLam > ngaySinh)
 );
 
 CREATE TABLE dbo.TaiKhoan (
@@ -31,7 +33,9 @@ CREATE TABLE dbo.TaiKhoan (
     matKhau VARCHAR(255) NOT NULL,
     trangThai NVARCHAR(40) NOT NULL,
     CONSTRAINT PK_TaiKhoan PRIMARY KEY (maTaiKhoan),
-    CONSTRAINT FK_TaiKhoan_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien)
+    CONSTRAINT FK_TaiKhoan_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT UQ_TaiKhoan_TenDangNhap UNIQUE (tenDangNhap),
+    CONSTRAINT UQ_TaiKhoan_NhanVien UNIQUE (maNhanVien)
 );
 
 CREATE TABLE dbo.CaLamViec (
@@ -40,7 +44,8 @@ CREATE TABLE dbo.CaLamViec (
     gioBatDau TIME(0) NOT NULL,
     gioKetThuc TIME(0) NOT NULL,
     trangThai BIT NOT NULL,
-    CONSTRAINT PK_CaLamViec PRIMARY KEY (maCa)
+    CONSTRAINT PK_CaLamViec PRIMARY KEY (maCa),
+    CONSTRAINT CK_CaLamViec_Gio CHECK (gioKetThuc > gioBatDau)
 );
 
 CREATE TABLE dbo.PhanCongCa (
@@ -72,7 +77,8 @@ CREATE TABLE dbo.PhuongTien (
     mauXe NVARCHAR(100) NOT NULL,
     trangThai NVARCHAR(40) NOT NULL,
     CONSTRAINT PK_PhuongTien PRIMARY KEY (maPhuongTien),
-    CONSTRAINT FK_PhuongTien_KhachHang FOREIGN KEY (maKhachHang) REFERENCES dbo.KhachHang(maKhachHang)
+    CONSTRAINT FK_PhuongTien_KhachHang FOREIGN KEY (maKhachHang) REFERENCES dbo.KhachHang(maKhachHang),
+    CONSTRAINT UQ_PhuongTien_BienSo UNIQUE (bienSo)
 );
 
 CREATE TABLE dbo.PhieuTiepNhan (
@@ -80,16 +86,20 @@ CREATE TABLE dbo.PhieuTiepNhan (
     maPhuongTien VARCHAR(30) NOT NULL,
     maNhanVien VARCHAR(30) NOT NULL,
     ngayGioTiepNhan DATETIME2(0) NOT NULL,
-	ngayGioHenTra DATETIME2(0) NULL,
+    ngayGioHenTra DATETIME2(0) NULL,
     odo INT NOT NULL,
     mucNhienLieu NVARCHAR(20) NOT NULL,
     tinhTrangBanDau NVARCHAR(2000) NOT NULL,
     yeuCauKhachHang NVARCHAR(2000) NOT NULL,
     ghiChu NVARCHAR(1000) NULL,
     trangThai NVARCHAR(40) NOT NULL,
+    ngayGioBanGiao DATETIME2(0) NULL,
+    maNhanVienBanGiao VARCHAR(30) NULL,
     CONSTRAINT PK_PhieuTiepNhan PRIMARY KEY (maTiepNhan),
     CONSTRAINT FK_PhieuTiepNhan_PhuongTien FOREIGN KEY (maPhuongTien) REFERENCES dbo.PhuongTien(maPhuongTien),
-    CONSTRAINT FK_PhieuTiepNhan_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien)
+    CONSTRAINT FK_PhieuTiepNhan_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT FK_PhieuTiepNhan_NhanVienBanGiao FOREIGN KEY (maNhanVienBanGiao) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT CK_PhieuTiepNhan_ODO CHECK (odo >= 0)
 );
 
 CREATE TABLE dbo.PhieuSuaChua (
@@ -100,8 +110,11 @@ CREATE TABLE dbo.PhieuSuaChua (
     loaiPhieu NVARCHAR(20) NOT NULL,
     trangThai NVARCHAR(40) NOT NULL,
     ghiChu NVARCHAR(1000) NULL,
+    maKyThuatVien VARCHAR(30) NULL,
     CONSTRAINT PK_PhieuSuaChua PRIMARY KEY (maPhieuSuaChua),
-    CONSTRAINT FK_PhieuSuaChua_TiepNhan FOREIGN KEY (maTiepNhan) REFERENCES dbo.PhieuTiepNhan(maTiepNhan)
+    CONSTRAINT FK_PhieuSuaChua_TiepNhan FOREIGN KEY (maTiepNhan) REFERENCES dbo.PhieuTiepNhan(maTiepNhan),
+    CONSTRAINT FK_PhieuSuaChua_KTV FOREIGN KEY (maKyThuatVien) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT UQ_PhieuSuaChua_TiepNhan UNIQUE (maTiepNhan)
 );
 
 CREATE TABLE dbo.DichVu (
@@ -110,7 +123,8 @@ CREATE TABLE dbo.DichVu (
     moTa NVARCHAR(1000) NULL,
     donGia DECIMAL(18,2) NOT NULL,
     trangThai BIT NOT NULL,
-    CONSTRAINT PK_DichVu PRIMARY KEY (maDichVu)
+    CONSTRAINT PK_DichVu PRIMARY KEY (maDichVu),
+    CONSTRAINT CK_DichVu_DonGia CHECK (donGia >= 0)
 );
 
 CREATE TABLE dbo.HangMucDichVu (
@@ -126,7 +140,9 @@ CREATE TABLE dbo.HangMucDichVu (
     ghiChu NVARCHAR(1000) NULL,
     CONSTRAINT PK_HangMucDichVu PRIMARY KEY (maHangMuc),
     CONSTRAINT FK_HangMuc_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua),
-    CONSTRAINT FK_HangMuc_DichVu FOREIGN KEY (maDichVu) REFERENCES dbo.DichVu(maDichVu)
+    CONSTRAINT FK_HangMuc_DichVu FOREIGN KEY (maDichVu) REFERENCES dbo.DichVu(maDichVu),
+    CONSTRAINT CK_HangMuc_ChiPhiDuKien CHECK (chiPhiDuKien >= 0),
+    CONSTRAINT CK_HangMuc_ChiPhiThucTe CHECK (chiPhiThucTe >= 0)
 );
 
 CREATE TABLE dbo.PhuTung (
@@ -140,7 +156,10 @@ CREATE TABLE dbo.PhuTung (
     mucTonToiThieu INT NOT NULL,
     trangThai NVARCHAR(40) NOT NULL,
     CONSTRAINT PK_PhuTung PRIMARY KEY (maPhuTung),
-    CONSTRAINT FK_PhuTung_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua)
+    CONSTRAINT FK_PhuTung_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua),
+    CONSTRAINT CK_PhuTung_DonGia CHECK (donGia >= 0),
+    CONSTRAINT CK_PhuTung_SoLuongTon CHECK (soLuongTon >= 0),
+    CONSTRAINT CK_PhuTung_MucTonToiThieu CHECK (mucTonToiThieu >= 0)
 );
 
 CREATE TABLE dbo.PhieuNhapKho (
@@ -158,16 +177,20 @@ CREATE TABLE dbo.ChiTietPhieuNhap (
     donGia DECIMAL(18,2) NOT NULL,
     CONSTRAINT PK_ChiTietPhieuNhap PRIMARY KEY (maPhieuNhap, maPhuTung),
     CONSTRAINT FK_ChiTietPhieuNhap_PhieuNhap FOREIGN KEY (maPhieuNhap) REFERENCES dbo.PhieuNhapKho(maPhieuNhap),
-    CONSTRAINT FK_ChiTietPhieuNhap_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung)
+    CONSTRAINT FK_ChiTietPhieuNhap_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung),
+    CONSTRAINT CK_ChiTietPhieuNhap_SoLuong CHECK (soLuong > 0),
+    CONSTRAINT CK_ChiTietPhieuNhap_DonGia CHECK (donGia >= 0)
 );
 
 CREATE TABLE dbo.PhieuXuatKho (
     maPhieuXuat VARCHAR(30) NOT NULL,
+    maPhieuSuaChua VARCHAR(30) NULL,
     ngayXuat DATETIME2(0) NOT NULL,
     lyDoXuat NVARCHAR(255) NULL,
     trangThai NVARCHAR(40) NOT NULL,
     ghiChu NVARCHAR(1000) NULL,
-    CONSTRAINT PK_PhieuXuatKho PRIMARY KEY (maPhieuXuat)
+    CONSTRAINT PK_PhieuXuatKho PRIMARY KEY (maPhieuXuat),
+    CONSTRAINT FK_PhieuXuatKho_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua)
 );
 
 CREATE TABLE dbo.ChiTietPhieuXuat (
@@ -177,7 +200,9 @@ CREATE TABLE dbo.ChiTietPhieuXuat (
     donGia DECIMAL(18,2) NOT NULL,
     CONSTRAINT PK_ChiTietPhieuXuat PRIMARY KEY (maPhieuXuat, maPhuTung),
     CONSTRAINT FK_ChiTietPhieuXuat_PhieuXuat FOREIGN KEY (maPhieuXuat) REFERENCES dbo.PhieuXuatKho(maPhieuXuat),
-    CONSTRAINT FK_ChiTietPhieuXuat_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung)
+    CONSTRAINT FK_ChiTietPhieuXuat_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung),
+    CONSTRAINT CK_ChiTietPhieuXuat_SoLuong CHECK (soLuong > 0),
+    CONSTRAINT CK_ChiTietPhieuXuat_DonGia CHECK (donGia >= 0)
 );
 
 CREATE TABLE dbo.HoaDon (
@@ -193,9 +218,11 @@ CREATE TABLE dbo.HoaDon (
     CONSTRAINT FK_HoaDon_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua),
     CONSTRAINT FK_HoaDon_KhachHang FOREIGN KEY (maKhachHang) REFERENCES dbo.KhachHang(maKhachHang),
     CONSTRAINT FK_HoaDon_PhuongTien FOREIGN KEY (maPhuongTien) REFERENCES dbo.PhuongTien(maPhuongTien),
-    CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien)
+    CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNhanVien) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT UQ_HoaDon_PhieuSuaChua UNIQUE (maPhieuSuaChua),
+    CONSTRAINT CK_HoaDon_VAT CHECK (vat >= 0 AND vat <= 100),
+    CONSTRAINT CK_HoaDon_TrangThai CHECK (trangThai IN (N'Chưa thanh toán', N'Đã thanh toán', N'Đã hủy'))
 );
-
 
 CREATE TABLE dbo.CTHoaDon (
     maHoaDon VARCHAR(30) NOT NULL,
@@ -205,7 +232,10 @@ CREATE TABLE dbo.CTHoaDon (
     giamGia DECIMAL(18,2) NOT NULL,
     CONSTRAINT PK_CTHoaDon PRIMARY KEY (maHoaDon, maPhuTung),
     CONSTRAINT FK_CTHoaDon_HoaDon FOREIGN KEY (maHoaDon) REFERENCES dbo.HoaDon(maHoaDon),
-    CONSTRAINT FK_CTHoaDon_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung)
+    CONSTRAINT FK_CTHoaDon_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung),
+    CONSTRAINT CK_CTHoaDon_SoLuong CHECK (soLuong > 0),
+    CONSTRAINT CK_CTHoaDon_DonGia CHECK (donGia >= 0),
+    CONSTRAINT CK_CTHoaDon_GiamGia CHECK (giamGia >= 0)
 );
 
 CREATE TABLE dbo.PhuongThucThanhToan (
@@ -216,7 +246,8 @@ CREATE TABLE dbo.PhuongThucThanhToan (
     maGiaoDich VARCHAR(100) NULL,
     trangThai NVARCHAR(40) NOT NULL,
     CONSTRAINT PK_PhuongThucThanhToan PRIMARY KEY (maThanhToan),
-    CONSTRAINT FK_ThanhToan_HoaDon FOREIGN KEY (maHoaDon) REFERENCES dbo.HoaDon(maHoaDon)
+    CONSTRAINT FK_ThanhToan_HoaDon FOREIGN KEY (maHoaDon) REFERENCES dbo.HoaDon(maHoaDon),
+    CONSTRAINT UQ_ThanhToan_HoaDon UNIQUE (maHoaDon)
 );
 
 CREATE TABLE dbo.PhieuBaoHanh (
@@ -234,34 +265,28 @@ CREATE TABLE dbo.PhieuBaoHanh (
     CONSTRAINT FK_PhieuBaoHanh_PhuongTien FOREIGN KEY (maPhuongTien) REFERENCES dbo.PhuongTien(maPhuongTien)
 );
 
-ALTER TABLE dbo.TaiKhoan ADD CONSTRAINT UQ_TaiKhoan_TenDangNhap UNIQUE (tenDangNhap);
-ALTER TABLE dbo.PhuongTien ADD CONSTRAINT UQ_PhuongTien_BienSo UNIQUE (bienSo);
-ALTER TABLE dbo.TaiKhoan ADD CONSTRAINT UQ_TaiKhoan_NhanVien UNIQUE (maNhanVien);
-ALTER TABLE dbo.PhieuSuaChua ADD CONSTRAINT UQ_PhieuSuaChua_TiepNhan UNIQUE (maTiepNhan);
-ALTER TABLE dbo.HoaDon ADD CONSTRAINT UQ_HoaDon_PhieuSuaChua UNIQUE (maPhieuSuaChua);
-ALTER TABLE dbo.HoaDon ADD CONSTRAINT CK_HoaDon_VAT CHECK (vat >= 0 AND vat <= 100);
-ALTER TABLE dbo.HoaDon ADD CONSTRAINT CK_HoaDon_TrangThai CHECK (trangThai IN (N'Chưa thanh toán', N'Đã thanh toán', N'Đã hủy'));
-ALTER TABLE dbo.PhuongThucThanhToan ADD CONSTRAINT UQ_ThanhToan_HoaDon UNIQUE (maHoaDon);
-ALTER TABLE dbo.CaLamViec ADD CONSTRAINT CK_CaLamViec_Gio CHECK (gioKetThuc > gioBatDau);
-ALTER TABLE dbo.NhanVien ADD CONSTRAINT CK_NhanVien_Ngay CHECK (ngaySinh IS NULL OR ngayVaoLam > ngaySinh);
-ALTER TABLE dbo.PhieuTiepNhan ADD CONSTRAINT CK_PhieuTiepNhan_ODO CHECK (odo >= 0);
-ALTER TABLE dbo.DichVu ADD CONSTRAINT CK_DichVu_DonGia CHECK (donGia >= 0);
-ALTER TABLE dbo.HangMucDichVu ADD CONSTRAINT CK_HangMuc_ChiPhiDuKien CHECK (chiPhiDuKien >= 0);
-ALTER TABLE dbo.HangMucDichVu ADD CONSTRAINT CK_HangMuc_ChiPhiThucTe CHECK (chiPhiThucTe >= 0);
-ALTER TABLE dbo.PhuTung ADD CONSTRAINT CK_PhuTung_DonGia CHECK (donGia >= 0);
-ALTER TABLE dbo.PhuTung ADD CONSTRAINT CK_PhuTung_SoLuongTon CHECK (soLuongTon >= 0);
-ALTER TABLE dbo.PhuTung ADD CONSTRAINT CK_PhuTung_MucTonToiThieu CHECK (mucTonToiThieu >= 0);
-ALTER TABLE dbo.ChiTietPhieuNhap ADD CONSTRAINT CK_ChiTietPhieuNhap_SoLuong CHECK (soLuong > 0);
-ALTER TABLE dbo.ChiTietPhieuNhap ADD CONSTRAINT CK_ChiTietPhieuNhap_DonGia CHECK (donGia >= 0);
-ALTER TABLE dbo.ChiTietPhieuXuat ADD CONSTRAINT CK_ChiTietPhieuXuat_SoLuong CHECK (soLuong > 0);
-ALTER TABLE dbo.ChiTietPhieuXuat ADD CONSTRAINT CK_ChiTietPhieuXuat_DonGia CHECK (donGia >= 0);
-ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_SoLuong CHECK (soLuong > 0);
-ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_DonGia CHECK (donGia >= 0);
-ALTER TABLE dbo.CTHoaDon ADD CONSTRAINT CK_CTHoaDon_GiamGia CHECK (giamGia >= 0);
+CREATE TABLE dbo.YeuCauPhuTung (
+    maYeuCau BIGINT IDENTITY(1,1) NOT NULL,
+    maPhieuSuaChua VARCHAR(30) NOT NULL,
+    maNhanVienYeuCau VARCHAR(30) NOT NULL,
+    ngayYeuCau DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
+    trangThai NVARCHAR(40) NOT NULL DEFAULT N'Chờ xử lý',
+    ghiChu NVARCHAR(255) NULL,
+    maPhieuXuat VARCHAR(30) NULL,
+    maNhanVienXuat VARCHAR(30) NULL,
+    CONSTRAINT PK_YeuCauPhuTung PRIMARY KEY (maYeuCau),
+    CONSTRAINT FK_YeuCauPhuTung_PhieuSuaChua FOREIGN KEY (maPhieuSuaChua) REFERENCES dbo.PhieuSuaChua(maPhieuSuaChua),
+    CONSTRAINT FK_YeuCauPhuTung_NhanVienYeuCau FOREIGN KEY (maNhanVienYeuCau) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT FK_YeuCauPhuTung_NhanVienXuat FOREIGN KEY (maNhanVienXuat) REFERENCES dbo.NhanVien(maNhanVien),
+    CONSTRAINT FK_YeuCauPhuTung_PhieuXuat FOREIGN KEY (maPhieuXuat) REFERENCES dbo.PhieuXuatKho(maPhieuXuat)
+);
 
-ALTER TABLE dbo.PhieuSuaChua 
-ADD maKyThuatVien VARCHAR(30) NULL;
-
-ALTER TABLE dbo.PhieuSuaChua 
-ADD CONSTRAINT FK_PhieuSuaChua_KTV 
-FOREIGN KEY (maKyThuatVien) REFERENCES dbo.NhanVien(maNhanVien);
+CREATE TABLE dbo.ChiTietYeuCauPhuTung (
+    maYeuCau BIGINT NOT NULL,
+    maPhuTung VARCHAR(30) NOT NULL,
+    soLuong INT NOT NULL,
+    CONSTRAINT PK_ChiTietYeuCauPhuTung PRIMARY KEY (maYeuCau, maPhuTung),
+    CONSTRAINT FK_ChiTietYeuCauPhuTung_YeuCau FOREIGN KEY (maYeuCau) REFERENCES dbo.YeuCauPhuTung(maYeuCau),
+    CONSTRAINT FK_ChiTietYeuCauPhuTung_PhuTung FOREIGN KEY (maPhuTung) REFERENCES dbo.PhuTung(maPhuTung),
+    CONSTRAINT CK_ChiTietYeuCauPhuTung_SoLuong CHECK (soLuong > 0)
+);
