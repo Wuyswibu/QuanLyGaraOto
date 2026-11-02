@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class PhieuXuatKho {
     private String maPhieuXuat;
+    private String maPhieuSuaChua;
     private LocalDateTime ngayXuat;
     private String lyDoXuat;
     private String trangThai;
@@ -30,6 +31,24 @@ public class PhieuXuatKho {
             throw new IllegalArgumentException("Mã phiếu xuất không được rỗng và tối đa 30 ký tự.");
         }
         this.maPhieuXuat = maPhieuXuat.trim();
+    }
+    
+    public String getMaPhieuSuaChua() {
+        return maPhieuSuaChua;
+    }
+
+    public void setMaPhieuSuaChua(String maPhieuSuaChua) {
+        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty()) {
+            this.maPhieuSuaChua = null;
+            return;
+        }
+
+        if (maPhieuSuaChua.trim().length() > 30) {
+            throw new IllegalArgumentException(
+                    "Mã phiếu sửa chữa tối đa 30 ký tự.");
+        }
+
+        this.maPhieuSuaChua = maPhieuSuaChua.trim();
     }
 
     public LocalDateTime getNgayXuat() {

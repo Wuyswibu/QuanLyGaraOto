@@ -223,29 +223,31 @@ public class GaraTaiKhoanCaNhan extends JPanel {
 
         // CHUYỂN TÊN ĐĂNG NHẬP SANG GaraDoiMatKhau
         btnDoiMatKhau.addActionListener(e -> {
-            String tenDangNhapCanDoi = txtTenDangNhap.getText().trim();
-            if (tenDangNhapCanDoi.isEmpty()) {
-                tenDangNhapCanDoi = this.tenDangNhapHienTai;
+            int dongChon = tableQuyenHan.getSelectedRow();
+
+            if (dongChon == -1) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vui lòng chọn tài khoản cần đổi mật khẩu.");
+                return;
             }
 
-            Window cuaSo = SwingUtilities.getWindowAncestor(this);
-            if (cuaSo instanceof GaraManHinhChinh) {
-                GaraManHinhChinh manHinhChinh = (GaraManHinhChinh) cuaSo;
-                // Nếu GaraManHinhChinh hỗ trợ truyền tên đăng nhập hoặc chuyển panel trực tiếp:
-                try {
-                    manHinhChinh.chuyenManHinh(tenDangNhapCanDoi);
-                } catch (NoSuchMethodError | Exception ex) {
-                    manHinhChinh.chuyenManHinh("DOI_MAT_KHAU");
-                }
-            } else {
-                // Khi chạy thử nghiệm độc lập
-                JFrame frame = new JFrame("Đổi mật khẩu - NIGHT INVADER");
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.setContentPane(new GaraDoiMatKhau(tenDangNhapCanDoi));
-                frame.setSize(1340, 840);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            }
+            int dongModel = tableQuyenHan.convertRowIndexToModel(dongChon);
+            String tenDangNhap = modelTable.getValueAt(dongModel, 2).toString();
+
+            Window cuaSoCha = SwingUtilities.getWindowAncestor(this);
+
+            javax.swing.JDialog hopThoai = new javax.swing.JDialog(
+                    cuaSoCha,
+                    "Đổi mật khẩu - NIGHT INVADER",
+                    java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+
+            hopThoai.setDefaultCloseOperation(
+                    javax.swing.JDialog.DISPOSE_ON_CLOSE);
+            hopThoai.setContentPane(new GaraDoiMatKhau(tenDangNhap));
+            hopThoai.setSize(1000, 650);
+            hopThoai.setLocationRelativeTo(this);
+            hopThoai.setVisible(true);
         });
 
         JButton btnLuuThongTin = new JButton("Lưu thông tin");

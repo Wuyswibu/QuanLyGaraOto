@@ -197,4 +197,21 @@ public class HangMucDichVuDao {
             return ps.executeUpdate() > 0;
         }
     }
+    
+    public boolean hoanThanhHangMuc(
+            String maHangMuc, String maPhieuSuaChua,
+            java.math.BigDecimal chiPhiThucTe) throws SQLException {
+
+        String sql = "UPDATE dbo.HangMucDichVu "
+                + "SET chiPhiThucTe = ?, trangThai = N'Hoàn thành' "
+                + "WHERE maHangMuc = ? AND maPhieuSuaChua = ?";
+
+        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+            ps.setBigDecimal(1, chiPhiThucTe);
+            ps.setString(2, maHangMuc);
+            ps.setString(3, maPhieuSuaChua);
+
+            return ps.executeUpdate() == 1;
+        }
+    }
 }

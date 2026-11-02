@@ -297,10 +297,9 @@ public class PhieuSuaChuaService {
     }
 
     public BigDecimal tinhTongChiPhiDuKien(List<HangMucDichVu> danhSach) {
-        if (danhSach == null) {
-            throw taoLoi(DANH_SACH_HANG_MUC,
-                    "Danh sách hạng mục không được null.");
-        }
+    	if (danhSach == null || danhSach.isEmpty()) {
+    	    return BigDecimal.ZERO;
+    	}
 
         BigDecimal tong = BigDecimal.ZERO;
 
@@ -327,10 +326,12 @@ public class PhieuSuaChuaService {
 
     private ArrayList<HangMucDichVu> saoChepHangMuc(
             List<HangMucDichVu> danhSach) {
-        if (danhSach == null) {
-            throw taoLoi(DANH_SACH_HANG_MUC,
-                    "Danh sách hạng mục không được null.");
-        }
+    	if (danhSach == null || danhSach.isEmpty()) {
+    	    throw taoLoi(
+    	            DANH_SACH_HANG_MUC,
+    	            "Vui lòng thêm ít nhất một hạng mục sửa chữa trước khi lưu phiếu."
+    	    );
+    	}
 
         ArrayList<HangMucDichVu> ketQua = new ArrayList<>();
 

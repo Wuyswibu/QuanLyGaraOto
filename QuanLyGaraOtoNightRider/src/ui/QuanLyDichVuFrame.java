@@ -81,10 +81,12 @@ public class QuanLyDichVuFrame extends JPanel {
         JPanel form = new JPanel(new GridLayout(2, 2, 24, 12));
         form.setOpaque(false);
         txtMaDichVu.setEditable(false);
+        
         themO(form, "Mã dịch vụ", txtMaDichVu);
         themO(form, "Tên dịch vụ", txtTenDichVu);
         themO(form, "Đơn giá dịch vụ (VNĐ)", txtDonGia);
         themO(form, "Trạng thái", cboTrangThai);
+        txtMaDichVu.setBackground(new Color(240, 240, 240));
         phanTren.add(form, BorderLayout.CENTER);
         txtMoTa.setLineWrap(true);
         txtMoTa.setWrapStyleWord(true);

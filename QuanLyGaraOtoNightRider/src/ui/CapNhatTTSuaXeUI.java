@@ -13,13 +13,14 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-
+import java.util.Map;
+import java.util.LinkedHashMap;
 import entity.HangMucDichVu;
 import entity.PhieuSuaChua;
 import service.TienDoSuaChuaService;
 import service.TienDoSuaChuaService.ChiTiet;
 
-/** Giao diện cập nhật tiến độ từ hạng mục thật trong SQL. */
+/** Chọn mã PSC để cập nhật trạng thái cả phiếu; bảng dịch vụ chỉ để xem. */
 public class CapNhatTTSuaXeUI extends JPanel {
     private static final long serialVersionUID = 1L;
     private static final Color DO = new Color(180, 30, 40);
@@ -32,23 +33,41 @@ public class CapNhatTTSuaXeUI extends JPanel {
     private final JTextField txtChanDoan = new JTextField();
     private final JTextField txtTinhTrang = new JTextField();
     private final JTextField txtNgayLap = new JTextField();
+    private final JTextField txtKyThuatVien = new JTextField();
     private final JComboBox<String> cboPhieu = new JComboBox<>();
     private final JComboBox<String> cboLocTrangThai = new JComboBox<>(new String[]{
-        "Tất cả", "Chưa bắt đầu", "Đang thực hiện", "Hoàn thành"
+        "Tất cả", "Chờ thực hiện", "Chưa bắt đầu", "Đang thực hiện", "Hoàn thành"
     });
     private final JButton btnTim = nut("Tìm kiếm", false);
     private final JButton btnTaiLai = nut("Tải lại", false);
-    private final JButton btnXuatKho = nut("Yêu cầu xuất kho", false);
-    private final JButton btnCapNhat = nut("Cập nhật hạng mục", false);
-    private final JButton btnHoanThanh = nut("Hoàn thành kiểm tra", true);
+    private final JButton btnXuatKho = nut("Yêu cầu phụ tùng", false);
+    private final JButton btnPhanCong = nut("Phân công kỹ thuật viên", false);
+    private final JButton btnCapNhat = nut("Cập nhật trạng thái phiếu", true);
     private final JProgressBar tienDo = new JProgressBar(0, 100);
     private final JLabel thongBao = new JLabel("Chọn phiếu sửa chữa để xem các hạng mục.");
     private final DefaultTableModel model = new DefaultTableModel(new String[]{
-        "Mã hạng mục", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Kết quả", "Ghi chú"
-    }, 0) {
-        @Override public boolean isCellEditable(int row, int column) { return false; }
+                "STT", "Công việc", "Trạng thái", "Công dự kiến", "Công thực tế", "Kết quả", "Ghi chú"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
     };
     private final JTable bang = new JTable(model);
+    private final DefaultTableModel modelPhuTung = new DefaultTableModel(
+            new String[]{
+                "STT", "Phụ tùng", "Số lượng", "Đơn giá", "Thành tiền"
+            }, 0) {
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    private final JTable bangPhuTung = new JTable(modelPhuTung);
+
+    private final JLabel lblTongPhuTung =
+            new JLabel("Tổng tiền phụ tùng: 0 đ");
     private List<PhieuSuaChua> danhSachPhieu = new ArrayList<>();
     private final List<HangMucDichVu> hangMucHienThi = new ArrayList<>();
     private ChiTiet chiTiet;
@@ -59,7 +78,11 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     public CapNhatTTSuaXeUI(TienDoSuaChuaService service) {
         this.service = service;
+
         taoGiaoDien();
+
+        btnPhanCong.setVisible(service.laQuanLy());
+
         SwingUtilities.invokeLater(() -> loadDuLieu(""));
     }
 
@@ -69,9 +92,14 @@ public class CapNhatTTSuaXeUI extends JPanel {
         setBorder(new EmptyBorder(18, 28, 18, 28));
         JPanel card = new JPanel(new BorderLayout(0, 14));
         card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(VIEN), new EmptyBorder(20, 22, 20, 22)));
-        add(card);
+        card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(VIEN), new EmptyBorder(20, 22, 20, 22)));
+        JScrollPane cuonTrang = new JScrollPane(card, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        cuonTrang.setBorder(null);
+        cuonTrang.getViewport().setBackground(Color.WHITE);
+        cuonTrang.getVerticalScrollBar().setUnitIncrement(20);
+
+        add(cuonTrang, BorderLayout.CENTER);
 
         JPanel tren = new JPanel(new BorderLayout(0, 12));
         tren.setOpaque(false);
@@ -94,7 +122,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
         chon.add(cboPhieu, BorderLayout.SOUTH);
         tren.add(chon, BorderLayout.CENTER);
 
-        JPanel form = new JPanel(new GridLayout(3, 2, 22, 10));
+        JPanel form = new JPanel(new GridLayout(0, 2, 22, 10));
         form.setOpaque(false);
         truong(form, "Phiếu sửa chữa", txtMaPhieu);
         truong(form, "Mã tiếp nhận", txtMaTiepNhan);
@@ -102,6 +130,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
         truong(form, "Ngày lập", txtNgayLap);
         truong(form, "Tình trạng phiếu", txtTinhTrang);
         truong(form, "Chẩn đoán", txtChanDoan);
+        truong(form, "Kỹ thuật viên phụ trách", txtKyThuatVien);
         tren.add(form, BorderLayout.SOUTH);
         card.add(tren, BorderLayout.NORTH);
 
@@ -124,7 +153,51 @@ public class CapNhatTTSuaXeUI extends JPanel {
         bang.setFillsViewportHeight(true);
         JScrollPane cuon = new JScrollPane(bang);
         cuon.setBorder(BorderFactory.createLineBorder(VIEN));
-        giua.add(cuon, BorderLayout.CENTER);
+        
+        //BẢNG CÔNG VIỆC
+        JPanel vungCongViec = new JPanel(new BorderLayout(0, 6));
+        vungCongViec.setOpaque(false);
+        vungCongViec.add(
+                new JLabel("DANH SÁCH CÔNG VIỆC"), BorderLayout.NORTH);
+        vungCongViec.add(cuon, BorderLayout.CENTER);
+        vungCongViec.setMinimumSize(new Dimension(0, 100));
+
+        // BẢNG PHỤ TÙNG
+        bangPhuTung.setRowHeight(34);
+        bangPhuTung.setFont(new Font("Arial", Font.PLAIN, 13));
+        bangPhuTung.getTableHeader().setFont(
+                new Font("Arial", Font.BOLD, 12));
+        bangPhuTung.getTableHeader().setReorderingAllowed(false);
+        bangPhuTung.setAutoCreateRowSorter(true);
+        bangPhuTung.setFillsViewportHeight(true);
+        bangPhuTung.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JScrollPane cuonPhuTung = new JScrollPane(bangPhuTung);
+        cuonPhuTung.setBorder(BorderFactory.createLineBorder(VIEN));
+
+        JPanel vungPhuTung = new JPanel(new BorderLayout(0, 6));
+        vungPhuTung.setOpaque(false);
+        vungPhuTung.add(
+                new JLabel("PHỤ TÙNG ĐÃ XUẤT CHO PHIẾU"),
+                BorderLayout.NORTH);
+        vungPhuTung.add(cuonPhuTung, BorderLayout.CENTER);
+
+        lblTongPhuTung.setHorizontalAlignment(SwingConstants.RIGHT);
+        vungPhuTung.add(lblTongPhuTung, BorderLayout.SOUTH);
+        vungPhuTung.setMinimumSize(new Dimension(0, 100));
+
+        // Kéo đường phân cách để điều chỉnh chiều cao hai bảng.
+        JSplitPane chiaBang = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                vungCongViec,
+                vungPhuTung);
+
+        chiaBang.setBorder(null);
+        chiaBang.setContinuousLayout(true);
+        chiaBang.setResizeWeight(0.5);
+        chiaBang.setPreferredSize(new Dimension(900, 450));
+
+        giua.add(chiaBang, BorderLayout.CENTER);
         card.add(giua, BorderLayout.CENTER);
 
         JPanel duoi = new JPanel(new BorderLayout(8, 8));
@@ -133,9 +206,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
         duoi.add(thongBao, BorderLayout.NORTH);
         JPanel cacNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         cacNut.setOpaque(false);
+        cacNut.add(btnPhanCong);
         cacNut.add(btnXuatKho);
         cacNut.add(btnCapNhat);
-        cacNut.add(btnHoanThanh);
+
         duoi.add(cacNut, BorderLayout.SOUTH);
         card.add(duoi, BorderLayout.SOUTH);
 
@@ -150,15 +224,37 @@ public class CapNhatTTSuaXeUI extends JPanel {
         });
         cboLocTrangThai.addActionListener(e -> doBang());
         bang.getSelectionModel().addListSelectionListener(e -> capNhatNut());
-        btnCapNhat.addActionListener(e -> suaHangMuc());
-        btnHoanThanh.addActionListener(e -> hoanThanh());
+        btnCapNhat.addActionListener(e -> suaPhieu());
+
         btnXuatKho.addActionListener(e -> {
-            Window cuaSo = SwingUtilities.getWindowAncestor(this);
-            if (cuaSo instanceof GaraManHinhChinh) {
-                ((GaraManHinhChinh) cuaSo).chuyenManHinh("XUAT_KHO");
-            } else {
-                JOptionPane.showMessageDialog(this, "Mở từ màn hình chính để chuyển sang xuất kho.");
+            if (chiTiet == null) {
+                JOptionPane.showMessageDialog(
+                        this, "Vui lòng chọn phiếu sửa chữa.");
+                return;
             }
+
+            YeuCauPhuTungDialog.gui(
+                    this, chiTiet.phieu.getMaPhieuSuaChua());
+        });
+        btnCapNhat.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnCapNhat.setOpaque(true);
+        btnCapNhat.setContentAreaFilled(true);
+        btnCapNhat.setBackground(new Color(190, 22, 58));
+        btnCapNhat.setForeground(Color.WHITE);
+        btnCapNhat.setFocusPainted(false); 
+        
+        btnPhanCong.addActionListener(e -> {
+            Window cuaSo = SwingUtilities.getWindowAncestor(this);
+
+            if (cuaSo instanceof GaraManHinhChinh) {
+                ((GaraManHinhChinh) cuaSo).chuyenManHinh("PHAN_CONG");
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vui lòng chạy từ màn hình chính để mở phân công kỹ thuật viên.");
+            }
+            
+            
         });
         capNhatNut();
     }
@@ -182,7 +278,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
             dangDoPhieu = false;
             if (ds.isEmpty()) {
                 hienThi(null);
-                thongBao.setText("Không tìm thấy phiếu sửa chữa. Phiếu tiếp nhận cần được lập phiếu sửa chữa trước.");
+                thongBao.setText(
+                        service.laQuanLy()
+                        ? "Không tìm thấy phiếu sửa chữa phù hợp."
+                        : "Không có phiếu phù hợp được phân công cho bạn.");
             } else {
                 taiChiTiet(ds.get(chon).getMaPhieuSuaChua());
             }
@@ -196,6 +295,7 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     private void hienThi(ChiTiet duLieu) {
         chiTiet = duLieu;
+        txtKyThuatVien.setText(duLieu == null ? "" : duLieu.tenKyThuatVien);
         PhieuSuaChua p = duLieu == null ? null : duLieu.phieu;
         txtMaPhieu.setText(p == null ? "" : p.getMaPhieuSuaChua());
         txtMaTiepNhan.setText(p == null ? "" : p.getMaTiepNhan());
@@ -206,14 +306,11 @@ public class CapNhatTTSuaXeUI extends JPanel {
         txtNgayLap.setText(p == null || p.getNgayLap() == null ? ""
                 : p.getNgayLap().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         int tong = duLieu == null ? 0 : duLieu.hangMuc.size();
-        int xong = duLieu == null ? 0 : TienDoSuaChuaService.soHoanThanh(duLieu.hangMuc);
-        tienDo.setValue(tong == 0 ? 0 : xong * 100 / tong);
-        tienDo.setString(xong + "/" + tong + " hạng mục hoàn thành");
-        thongBao.setText(p == null ? "Chưa chọn phiếu."
-                : tong == 0 ? "Phiếu chưa có hạng mục dịch vụ. Cần bổ sung tại chức năng lập phiếu sửa chữa."
+        tienDo.setVisible(false);
+        thongBao.setText(p == null ? "Chọn mã phiếu PSC để cập nhật trạng thái."
                 : TienDoSuaChuaService.daDong(p.getTrangThai()) ? "Phiếu đã kết thúc; chỉ xem thông tin."
-                : xong == tong ? "Đã xong các hạng mục. Kiểm tra xe trước khi bấm Hoàn thành kiểm tra."
-                : "Chọn một hạng mục để cập nhật trạng thái, kết quả và ghi chú.");
+                : "Đang chọn " + p.getMaPhieuSuaChua() + " — cập nhật trạng thái cho toàn bộ phiếu ("
+                        + tong + " hạng mục).");
         if (p != null) {
             int index = cboPhieu.getSelectedIndex();
             if (index >= 0 && index < danhSachPhieu.size()
@@ -231,74 +328,178 @@ public class CapNhatTTSuaXeUI extends JPanel {
 
     private void doBang() {
         model.setRowCount(0);
+        modelPhuTung.setRowCount(0);
         hangMucHienThi.clear();
+
+        BigDecimal tongPhuTung = BigDecimal.ZERO;
+
         if (chiTiet != null) {
             String loc = (String) cboLocTrangThai.getSelectedItem();
+
+            // Mỗi dòng là một công việc.
             for (HangMucDichVu h : chiTiet.hangMuc) {
-                if (!"Tất cả".equals(loc) && !h.getTrangThai().equals(loc)) continue;
+                if (!"Tất cả".equals(loc) && !java.util.Objects.equals(h.getTrangThai(), loc)) {
+                    continue;
+                }
+
                 hangMucHienThi.add(h);
-                model.addRow(new Object[]{h.getMaHangMuc(), h.getTenHangMuc(), h.getTrangThai(),
-                    tien(h.getChiPhiDuKien()), tien(h.getChiPhiThucTe()), h.getKetQua(), h.getGhiChu()});
+
+                model.addRow(new Object[]{
+                    hangMucHienThi.size(),
+                    h.getTenHangMuc(),
+                    h.getTrangThai(),
+                    tien(h.getChiPhiDuKien()),
+                    tien(h.getChiPhiThucTe()),
+                    h.getKetQua(),
+                    h.getGhiChu()
+                });
+            }
+
+            // Mỗi dòng là một chi tiết xuất phụ tùng.
+            int stt = 1;
+
+            for (TienDoSuaChuaService.PhuTungHienThi pt : chiTiet.phuTung) {
+
+                BigDecimal thanhTien = pt.getThanhTien();
+                tongPhuTung = tongPhuTung.add(thanhTien);
+
+                modelPhuTung.addRow(new Object[]{
+                    stt++,
+                    pt.ten,
+                    pt.soLuong,
+                    pt.donGia == null ? "Nhiều mức giá" : tien(pt.donGia),
+                    tien(thanhTien)
+                });
             }
         }
+
+        lblTongPhuTung.setText(
+                "Tổng tiền phụ tùng: " + tien(tongPhuTung));
+
         capNhatNut();
     }
 
-    private HangMucDichVu hangMucChon() {
-        int row = bang.getSelectedRow();
-        return row < 0 ? null : hangMucHienThi.get(bang.convertRowIndexToModel(row));
-    }
-
-    private void suaHangMuc() {
-        HangMucDichVu h = hangMucChon();
-        if (dangTai || h == null || chiTiet == null) return;
-        String maPhieu = chiTiet.phieu.getMaPhieuSuaChua();
-        JComboBox<String> trangThai = new JComboBox<>(new String[]{
-            "Chưa bắt đầu", "Đang thực hiện", "Hoàn thành"
-        });
-        trangThai.setSelectedItem(h.getTrangThai());
-        JTextArea ketQua = new JTextArea(h.getKetQua(), 5, 40);
-        JTextArea ghiChu = new JTextArea(h.getGhiChu(), 3, 40);
-        ketQua.setLineWrap(true);
-        ketQua.setWrapStyleWord(true);
-        ghiChu.setLineWrap(true);
-        ghiChu.setWrapStyleWord(true);
-        JPanel form = new JPanel();
-        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.add(new JLabel(h.getMaHangMuc() + " - " + h.getTenHangMuc()));
-        form.add(Box.createVerticalStrut(10));
-        form.add(new JLabel("Trạng thái"));
-        form.add(trangThai);
-        form.add(new JLabel("Kết quả (tối đa 2000 ký tự; bắt buộc khi hoàn thành)"));
-        form.add(new JScrollPane(ketQua));
-        form.add(new JLabel("Ghi chú (tối đa 1000 ký tự)"));
-        form.add(new JScrollPane(ghiChu));
-        while (JOptionPane.showConfirmDialog(this, form, "Cập nhật hạng mục",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
-            String tt = (String) trangThai.getSelectedItem();
-            if (ketQua.getText().trim().length() > 2000 || ghiChu.getText().trim().length() > 1000
-                    || ("Hoàn thành".equals(tt) && ketQua.getText().trim().isEmpty())) {
-                JOptionPane.showMessageDialog(this, "Kiểm tra độ dài và nhập kết quả khi hoàn thành.");
-                continue;
-            }
-            String kq = ketQua.getText();
-            String gc = ghiChu.getText();
-            chayNen(() -> {
-                service.capNhatHangMuc(maPhieu, h.getMaHangMuc(), tt, kq, gc);
-                return true;
-            }, ok -> sauKhiLuu(maPhieu, "Đã lưu tiến độ hạng mục vào SQL."));
-            break;
+    private void suaPhieu() {
+        if (dangTai || chiTiet == null) {
+            return;
         }
-    }
-
-    private void hoanThanh() {
-        if (dangTai || chiTiet == null) return;
         String ma = chiTiet.phieu.getMaPhieuSuaChua();
-        if (JOptionPane.showConfirmDialog(this,
-                "Xác nhận đã kiểm tra xe đạt yêu cầu?\nPhiếu " + ma + " sẽ chuyển sang Đã hoàn thành.",
-                "Hoàn thành kiểm tra", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
-        chayNen(() -> { service.hoanThanhKiemTra(ma); return true; },
-                ok -> sauKhiLuu(ma, "Phiếu sửa chữa đã hoàn thành. Tiếp tục lập hóa đơn và giao xe."));
+        JComboBox<String> trangThai = new JComboBox<>(new String[]{
+            "Chờ sửa chữa",
+            "Đang sửa chữa",
+            "Chờ kiểm tra",
+            "Đã hoàn thành"
+        });
+
+        String cu = chiTiet.phieu.getTrangThai();
+        if ("Chưa bắt đầu".equals(cu)) {
+            cu = "Chờ sửa chữa";
+        }
+        trangThai.setSelectedItem(cu);
+        JPanel form = new JPanel(new GridLayout(0, 1, 0, 12));
+        form.add(new JLabel("Phiếu sửa chữa: " + ma));
+        form.add(new JLabel("Trạng thái hiện tại: " + chiTiet.phieu.getTrangThai()));
+        form.add(trangThai);
+        form.add(new JLabel("Áp dụng cho toàn bộ hạng mục trong phiếu."));
+
+        int luaChon = JOptionPane.showConfirmDialog(this,form,"Cập nhật trạng thái " + ma,JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE);
+
+        if (luaChon != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String moi = (String) trangThai.getSelectedItem();
+
+        if (TienDoSuaChuaService.DA_HOAN_THANH.equals(moi)) {
+            Map<String, String> tienCong = nhapTienCongThucTe();
+
+            if (tienCong == null) {
+                return;
+            }
+
+            int xacNhan = JOptionPane.showConfirmDialog( this,"Xác nhận hoàn thành phiếu " + ma + " và lưu tiền công thực tế?\n" + "Sau khi hoàn thành, phiếu chỉ được xem.", "Xác nhận hoàn thành", JOptionPane.YES_NO_OPTION);
+
+            if (xacNhan != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            chayNen(() -> {
+                service.hoanThanhPhieu(ma, tienCong);
+                return true;
+            }, ok -> sauKhiLuu(
+                    ma, "Đã hoàn thành phiếu và lưu tiền công thực tế."));
+
+            return;
+        }
+
+        chayNen(() -> {
+            service.capNhatTrangThaiPhieu(ma, moi);
+            return true;
+        }, ok -> sauKhiLuu(
+                ma, "Đã cập nhật phiếu " + ma + " thành: " + moi));
+    }
+    
+    private Map<String, String> nhapTienCongThucTe() {
+        if (chiTiet.hangMuc.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this, "Phiếu chưa có hạng mục dịch vụ.");
+            return null;
+        }
+
+        JPanel cacDong = new JPanel(new GridLayout(0, 2, 12, 10));
+
+        Map<String, JTextField> oNhapTheoMa = new LinkedHashMap<>();
+
+        for (HangMucDichVu h : chiTiet.hangMuc) {
+            BigDecimal giaGoiY = h.getChiPhiThucTe();
+
+            if (giaGoiY == null || giaGoiY.signum() == 0) {
+                giaGoiY = h.getChiPhiDuKien();
+            }
+
+            JTextField oNhap = new JTextField(
+                    giaGoiY == null
+                            ? ""
+                            : giaGoiY.stripTrailingZeros().toPlainString(),
+                    15);
+
+            cacDong.add(new JLabel(h.getTenHangMuc()));
+            cacDong.add(oNhap);
+
+            oNhapTheoMa.put(h.getMaHangMuc(), oNhap);
+        }
+
+        JPanel noiDung = new JPanel(new BorderLayout(0, 12));
+        noiDung.add(new JLabel(
+                "Kiểm tra tiền công thực tế (VNĐ), ví dụ: 150000."),
+                BorderLayout.NORTH);
+
+        JScrollPane cuon = new JScrollPane(cacDong);
+        cuon.setBorder(BorderFactory.createEmptyBorder());
+        cuon.setPreferredSize(new Dimension(
+                600,
+                Math.min(350, chiTiet.hangMuc.size() * 42 + 15)));
+
+        noiDung.add(cuon, BorderLayout.CENTER);
+
+        int luaChon = JOptionPane.showConfirmDialog(
+                this,
+                noiDung,
+                "Xác nhận tiền công thực tế",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (luaChon != JOptionPane.OK_OPTION) {
+            return null;
+        }
+
+        Map<String, String> ketQua = new LinkedHashMap<>();
+
+        for (Map.Entry<String, JTextField> entry : oNhapTheoMa.entrySet()) {
+            ketQua.put(entry.getKey(), entry.getValue().getText());
+        }
+
+        return ketQua;
     }
 
     private void sauKhiLuu(String ma, String tin) {
@@ -339,14 +540,16 @@ public class CapNhatTTSuaXeUI extends JPanel {
         cboPhieu.setEnabled(!dangTai && !danhSachPhieu.isEmpty());
         cboLocTrangThai.setEnabled(!dangTai);
         bang.setEnabled(!dangTai);
-        btnCapNhat.setEnabled(!dangTai && duocSua && bang.getSelectedRow() >= 0);
+        btnCapNhat.setEnabled(!dangTai && duocSua);
         btnXuatKho.setEnabled(!dangTai && duocSua);
-        btnHoanThanh.setEnabled(!dangTai && duocSua && !chiTiet.hangMuc.isEmpty()
-                && TienDoSuaChuaService.soHoanThanh(chiTiet.hangMuc) == chiTiet.hangMuc.size());
+
     }
 
     private static String tien(BigDecimal so) {
-        return so == null ? "" : NumberFormat.getNumberInstance(new Locale("vi", "VN")).format(so);
+        return so == null
+                ? ""
+                : String.format(
+                        Locale.forLanguageTag("vi-VN"), "%,.0f đ", so);
     }
 
     private static void truong(JPanel form, String nhan, JTextField field) {

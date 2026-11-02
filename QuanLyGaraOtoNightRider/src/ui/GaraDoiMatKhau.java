@@ -197,20 +197,9 @@ public class GaraDoiMatKhau extends JPanel {
         // Xử lý đổi mật khẩu
         btnXacNhan.addActionListener(e -> xuLyDoiMatKhau());
 
-        JButton btnDangXuat = new JButton("Đăng Xuất →");
-        btnDangXuat.setFont(new Font("Arial", Font.BOLD, 14));
-        btnDangXuat.setForeground(new Color(180, 30, 40));
-        btnDangXuat.setBackground(Color.WHITE);
-        btnDangXuat.setFocusPainted(false);
-        btnDangXuat.setBorderPainted(false);
-        btnDangXuat.setContentAreaFilled(false);
-        btnDangXuat.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnDangXuat.addActionListener(e -> xuLyDangXuat());
-
         panelBottomButtons.add(btnHuy);
         panelBottomButtons.add(btnXacNhan);
         panelBottomButtons.add(Box.createHorizontalStrut(10));
-        panelBottomButtons.add(btnDangXuat);
 
         panelCardChinh.add(panelPhiaTren, BorderLayout.NORTH);
         panelCardChinh.add(panelTableSection, BorderLayout.CENTER);
@@ -274,11 +263,11 @@ public class GaraDoiMatKhau extends JPanel {
             // Cập nhật mật khẩu mới xuống SQL Server
             boolean thanhCong = taiKhoanDao.doiMatKhau(tk.getMaTaiKhoan(), mkMoi);
             if (thanhCong) {
-                JOptionPane.showMessageDialog(this, "Đổi mật khẩu cho tài khoản [" + taiKhoan + "] thành công rồi nhé!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Đổi mật khẩu cho tài khoản [" + taiKhoan + "] thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 xoaCacOmatKhau();
                 quayVeTaiKhoan();
             } else {
-                JOptionPane.showMessageDialog(this, "Chưa cập nhật được mật khẩu, hãy kiểm tra lại nhé!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Chưa cập nhật được mật khẩu, hãy kiểm tra lại!", "Thông báo", JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (SQLException ex) {

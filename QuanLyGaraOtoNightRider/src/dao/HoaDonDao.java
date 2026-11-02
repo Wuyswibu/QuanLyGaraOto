@@ -270,4 +270,40 @@ public class HoaDonDao {
             return ps.executeUpdate() > 0;
         }
     }
+    public java.util.Map<String, String> layTrangThaiBanGiao()
+            throws SQLException {
+
+        java.util.Map<String, String> ketQua = new java.util.HashMap<>();
+
+        String sql =
+                "SELECT h.maHoaDon, t.trangThai AS trangThaiTiepNhan "
+                + "FROM dbo.HoaDon h "
+                + "LEFT JOIN dbo.PhieuSuaChua p "
+                + "ON p.maPhieuSuaChua = h.maPhieuSuaChua "
+                + "LEFT JOIN dbo.PhieuTiepNhan t "
+                + "ON t.maTiepNhan = p.maTiepNhan";
+
+        try (PreparedStatement ps = ketNoi().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String trangThai = rs.getString("trangThaiTiepNhan");
+                String hienThi;
+
+                if ("Đã giao xe".equals(trangThai)) {
+                    hienThi = "Đã giao xe";
+                } else if ("Đã hủy".equals(trangThai)) {
+                    hienThi = "Tiếp nhận đã hủy";
+                } else if (trangThai == null) {
+                    hienThi = "Thiếu phiếu tiếp nhận";
+                } else {
+                    hienThi = "Chưa giao xe";
+                }
+
+                ketQua.put(rs.getString("maHoaDon"), hienThi);
+            }
+        }
+
+        return ketQua;
+    }
 }
