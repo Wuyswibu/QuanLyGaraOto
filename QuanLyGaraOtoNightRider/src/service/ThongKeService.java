@@ -123,7 +123,10 @@ public class ThongKeService {
 
     public String[] tinhKhoangNgayTheoKy(String ky, DateTimeFormatter dtfNgay) {
         LocalDate homNay = LocalDate.now();
-        if ("Hôm nay".equals(ky)) {
+        // === BỔ SUNG: Xóa trắng 2 ô ngày khi chọn "Tất cả thời gian" ===
+        if ("Tất cả thời gian".equals(ky)) {
+            return new String[]{"", ""};
+        } else if ("Hôm nay".equals(ky)) {
             return new String[]{homNay.format(dtfNgay), homNay.format(dtfNgay)};
         } else if ("Tháng này".equals(ky)) {
             return new String[]{homNay.withDayOfMonth(1).format(dtfNgay), homNay.format(dtfNgay)};
@@ -133,7 +136,17 @@ public class ThongKeService {
         return null;
     }
 
+    // Giữ nguyên hàm cũ 5 tham số để không ảnh hưởng code khác
     public KetQuaDoanhThu thongKeDoanhThu(String trangThaiLoc, String tuKhoa,
+                                          Map<String, String> mapTenKhachHang,
+                                          Map<String, String> mapBienSoXe,
+                                          DateTimeFormatter dtf) throws SQLException {
+        return thongKeDoanhThu(trangThaiLoc, tuKhoa, null, null, mapTenKhachHang, mapBienSoXe, dtf);
+    }
+
+    // === BỔ SUNG: Hàm thongKeDoanhThu có thêm lọc theo tuNgay và denNgay ===
+    public KetQuaDoanhThu thongKeDoanhThu(String trangThaiLoc, String tuKhoa,
+                                          LocalDate tuNgay, LocalDate denNgay,
                                           Map<String, String> mapTenKhachHang,
                                           Map<String, String> mapBienSoXe,
                                           DateTimeFormatter dtf) throws SQLException {
@@ -160,6 +173,21 @@ public class ThongKeService {
                     && !trangThaiLoc.equalsIgnoreCase(hd.getTrangThai())) {
                 continue;
             }
+
+            // === BỔ SUNG: Kiểm tra điều kiện Từ ngày - Đến ngày ===
+            if (tuNgay != null || denNgay != null) {
+                if (hd.getNgayLap() == null) {
+                    continue;
+                }
+                LocalDate ngayLapHD = hd.getNgayLap().toLocalDate();
+                if (tuNgay != null && ngayLapHD.isBefore(tuNgay)) {
+                    continue;
+                }
+                if (denNgay != null && ngayLapHD.isAfter(denNgay)) {
+                    continue;
+                }
+            }
+            // ======================================================
 
             BigDecimal vat = hd.getVat() != null
                     ? hd.getVat()
@@ -480,8 +508,8 @@ public class ThongKeService {
         }
         return kq;
     }
-    
- // ==================== 5. NGHIỆP VỤ XUẤT EXCEL (.XLS / .CSV) ====================
+
+    // ==================== 5. NGHIỆP VỤ XUẤT EXCEL (.XLS / .CSV) ====================
 
     /**
      * Xuất dữ liệu từ JTable ra file Excel (.xls có kẻ bảng định dạng sẵn hoặc .csv chuẩn UTF-8)

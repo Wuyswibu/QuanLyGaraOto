@@ -8,6 +8,7 @@ import service.ThongKeService.KetQuaDoanhThu;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
@@ -15,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -125,7 +127,34 @@ public class GaraThongKe extends JPanel {
                 txtTuNgay.setText(khoangNgay[0]);
                 txtDenNgay.setText(khoangNgay[1]);
             }
+            // === BỔ SUNG: Tải lại bảng ngay khi chọn kỳ thống kê ===
+            String tuKhoa = txtTimKiemBang.getText().trim();
+            if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
+            taiDuLieuDoanhThuLenBang(cboLocTrangThai.getSelectedItem().toString(), tuKhoa);
         });
+
+        // === BỔ SUNG: Sự kiện lọc Từ ngày - Đến ngày khi nhấn Enter hoặc rời ô nhập ===
+        ActionListener suKienLocTheoNgay = e -> {
+            String tuKhoa = txtTimKiemBang.getText().trim();
+            if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
+            taiDuLieuDoanhThuLenBang(cboLocTrangThai.getSelectedItem().toString(), tuKhoa);
+        };
+        txtTuNgay.addActionListener(suKienLocTheoNgay);
+        txtDenNgay.addActionListener(suKienLocTheoNgay);
+
+        FocusAdapter suKienRoiONgay = new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (kiemTraNgayHopLeTamThoi()) {
+                    String tuKhoa = txtTimKiemBang.getText().trim();
+                    if (tuKhoa.equals(PLACEHOLDER_TIM_KIEM)) tuKhoa = "";
+                    taiDuLieuDoanhThuLenBang(cboLocTrangThai.getSelectedItem().toString(), tuKhoa);
+                }
+            }
+        };
+        txtTuNgay.addFocusListener(suKienRoiONgay);
+        txtDenNgay.addFocusListener(suKienRoiONgay);
+        // ==============================================================================
 
         JPanel panelGridFields = new JPanel(new GridLayout(3, 3, 25, 10));
         panelGridFields.setBackground(Color.WHITE);
@@ -256,6 +285,13 @@ public class GaraThongKe extends JPanel {
         JButton btnMoLapHoaDon = taoNutTrang("Mở Lập hóa đơn");
 
         btnLamMoi.addActionListener(e -> {
+            // === BỔ SUNG: Reset bộ lọc kỳ và ngày khi bấm Làm mới ===
+            dangCapNhatCombo = true;
+            cboKyThongKe.setSelectedIndex(0);
+            txtTuNgay.setText("");
+            txtDenNgay.setText("");
+            dangCapNhatCombo = false;
+            // =======================================================
             txtTimKiemBang.setText(PLACEHOLDER_TIM_KIEM);
             txtTimKiemBang.setForeground(Color.GRAY);
             cboLocTrangThai.setSelectedIndex(0);
@@ -263,7 +299,7 @@ public class GaraThongKe extends JPanel {
             taiDuLieuDoanhThuLenBang("Tất cả", "");
         });
         btnXuatExcel.addActionListener(e ->
-        thongKeService.xuatBangRaExcel(this, tableDoanhThu, "THỐNG KÊ DOANH THU GARA", "ThongKeDoanhThu")
+                thongKeService.xuatBangRaExcel(this, tableDoanhThu, "THỐNG KÊ DOANH THU GARA", "ThongKeDoanhThu")
         );
 
         btnMoLapHoaDon.addActionListener(e -> {
@@ -302,11 +338,52 @@ public class GaraThongKe extends JPanel {
         mapBienSoXe.putAll(thongKeService.layMapBienSoXe());
     }
 
+    // === BỔ SUNG: Hàm phụ kiểm tra nhanh ngày hợp lệ khi rời ô nhập ===
+    private boolean kiemTraNgayHopLeTamThoi() {
+        try {
+            String strTu = txtTuNgay != null ? txtTuNgay.getText().trim() : "";
+            String strDen = txtDenNgay != null ? txtDenNgay.getText().trim() : "";
+            LocalDate tu = strTu.isEmpty() ? null : LocalDate.parse(strTu, dtfNgay);
+            LocalDate den = strDen.isEmpty() ? null : LocalDate.parse(strDen, dtfNgay);
+            return !(tu != null && den != null && tu.isAfter(den));
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     private void taiDuLieuDoanhThuLenBang(String trangThaiLoc, String tuKhoa) {
         try {
+            // === BỔ SUNG: Lấy và kiểm tra khoảng ngày từ txtTuNgay, txtDenNgay ===
+            LocalDate tuNgay = null;
+            LocalDate denNgay = null;
+            String strTuNgay = txtTuNgay != null ? txtTuNgay.getText().trim() : "";
+            String strDenNgay = txtDenNgay != null ? txtDenNgay.getText().trim() : "";
+
+            try {
+                if (!strTuNgay.isEmpty()) {
+                    tuNgay = LocalDate.parse(strTuNgay, dtfNgay);
+                }
+                if (!strDenNgay.isEmpty()) {
+                    denNgay = LocalDate.parse(strDenNgay, dtfNgay);
+                }
+            } catch (DateTimeParseException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Định dạng ngày không hợp lệ! Vui lòng nhập đúng định dạng dd/MM/yyyy.",
+                        "Lỗi định dạng ngày", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (tuNgay != null && denNgay != null && tuNgay.isAfter(denNgay)) {
+                JOptionPane.showMessageDialog(this,
+                        "\"Từ ngày\" không được lớn hơn \"Đến ngày\"!",
+                        "Lỗi khoảng thời gian", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            // =====================================================================
+
             tableModel.setRowCount(0);
             KetQuaDoanhThu kq = thongKeService.thongKeDoanhThu(
-                    trangThaiLoc, tuKhoa, mapTenKhachHang, mapBienSoXe, dtf);
+                    trangThaiLoc, tuKhoa, tuNgay, denNgay, mapTenKhachHang, mapBienSoXe, dtf);
 
             for (Object[] row : kq.dsDongBang) {
                 tableModel.addRow(row);
@@ -321,6 +398,9 @@ public class GaraThongKe extends JPanel {
                 tableDoanhThu.setRowSelectionInterval(0, 0);
                 txtHoaDonDangChon.setText(tableModel.getValueAt(0, 1) + " | " + tableModel.getValueAt(0, 3));
                 txtXeVaPhieuDangChon.setText(tableModel.getValueAt(0, 4) + " | Phiếu: " + tableModel.getValueAt(0, 2));
+            } else {
+                txtHoaDonDangChon.setText("Chưa chọn hóa đơn");
+                txtXeVaPhieuDangChon.setText("Chưa chọn phương tiện");
             }
         } catch (SQLException e) {
             e.printStackTrace();
