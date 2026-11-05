@@ -298,8 +298,10 @@ public class CapNhatTTSuaXeUI extends JPanel {
         txtKyThuatVien.setText(duLieu == null ? "" : duLieu.tenKyThuatVien);
         PhieuSuaChua p = duLieu == null ? null : duLieu.phieu;
         txtMaPhieu.setText(p == null ? "" : p.getMaPhieuSuaChua());
-        txtMaTiepNhan.setText(p == null ? "" : p.getMaTiepNhan());
-        txtLoaiPhieu.setText(p == null ? "" : p.getLoaiPhieu());
+        String maTiepNhan = "";
+        if (p != null) {
+             maTiepNhan = (p.getMaTiepNhan() != null) ? p.getMaTiepNhan().getMaTiepNhan() : "";
+        }        txtLoaiPhieu.setText(p == null ? "" : p.getLoaiPhieu());
         txtTinhTrang.setText(p == null ? "" : p.getTrangThai());
         txtChanDoan.setText(p == null ? "" : p.getChanDoan());
         txtChanDoan.setToolTipText(p == null ? null : p.getChanDoan());

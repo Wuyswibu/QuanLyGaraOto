@@ -9,6 +9,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 
 import connectDB.ConnectDB;
+import entity.PhieuSuaChua;
 import entity.PhieuXuatKho;
 
 public class PhieuXuatKhoDao {
@@ -25,15 +26,16 @@ public class PhieuXuatKhoDao {
 
     private PhieuXuatKho docPhieuXuat(ResultSet rs) throws SQLException {
         Timestamp ngayXuat = rs.getTimestamp("ngayXuat");
-
+        PhieuSuaChua phieuSuaChua = null;
+        phieuSuaChua.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
         PhieuXuatKho phieu = new PhieuXuatKho(
                 rs.getString("maPhieuXuat"),
+                phieuSuaChua,
                 ngayXuat == null ? null : ngayXuat.toLocalDateTime(),
                 rs.getString("lyDoXuat"),
                 rs.getString("trangThai"),
                 rs.getString("ghiChu"));
 
-        phieu.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
 
         return phieu;
     }
@@ -148,13 +150,14 @@ public class PhieuXuatKhoDao {
                 + "ghiChu, maPhieuSuaChua) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
 
+        String maPhieuSuaChua = phieu.getMaPhieuSuaChua().getMaPhieuSuaChua();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, phieu.getMaPhieuXuat());
             ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayXuat()));
             ps.setNString(3, phieu.getLyDoXuat());
             ps.setNString(4, phieu.getTrangThai());
             ps.setNString(5, phieu.getGhiChu());
-            ps.setString(6, phieu.getMaPhieuSuaChua());
+            ps.setString(6, maPhieuSuaChua);
 
             return ps.executeUpdate() > 0;
         }
@@ -165,13 +168,14 @@ public class PhieuXuatKhoDao {
                 + "SET ngayXuat = ?, lyDoXuat = ?, trangThai = ?, "
                 + "ghiChu = ?, maPhieuSuaChua = ? "
                 + "WHERE maPhieuXuat = ?";
+        String maPhieuSuaChua = phieu.getMaPhieuSuaChua().getMaPhieuSuaChua();
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayXuat()));
             ps.setNString(2, phieu.getLyDoXuat());
             ps.setNString(3, phieu.getTrangThai());
             ps.setNString(4, phieu.getGhiChu());
-            ps.setString(5, phieu.getMaPhieuSuaChua());
+            ps.setString(5, maPhieuSuaChua);
             ps.setString(6, phieu.getMaPhieuXuat());
 
             return ps.executeUpdate() > 0;

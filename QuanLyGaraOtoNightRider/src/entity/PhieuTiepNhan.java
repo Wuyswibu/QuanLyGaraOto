@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 public class PhieuTiepNhan {
     private String maTiepNhan;
-    private String maPhuongTien;
-    private String maNhanVien;
+    private Xe maPhuongTien;
+    private NhanVien maNhanVien;
     private LocalDateTime ngayGioTiepNhan;
     private LocalDateTime ngayGioHenTra;
     private int odo;
@@ -19,7 +19,7 @@ public class PhieuTiepNhan {
         this.ngayGioTiepNhan = LocalDateTime.now();
     }
 
-    public PhieuTiepNhan(String maTiepNhan, String maPhuongTien, String maNhanVien, LocalDateTime ngayGioTiepNhan, LocalDateTime ngayGioHenTra, int odo, String mucNhienLieu, String tinhTrangBanDau, String yeuCauKhachHang, String ghiChu, String trangThai) {
+    public PhieuTiepNhan(String maTiepNhan, Xe maPhuongTien, NhanVien maNhanVien, LocalDateTime ngayGioTiepNhan, LocalDateTime ngayGioHenTra, int odo, String mucNhienLieu, String tinhTrangBanDau, String yeuCauKhachHang, String ghiChu, String trangThai) {
 		this.maTiepNhan = maTiepNhan;
 		this.maPhuongTien = maPhuongTien;
 		this.maNhanVien = maNhanVien;
@@ -44,26 +44,28 @@ public class PhieuTiepNhan {
         this.maTiepNhan = maTiepNhan.trim();
     }
 
-    public String getMaPhuongTien() {
+    public Xe getMaPhuongTien() {
         return maPhuongTien;
     }
 
-    public void setMaPhuongTien(String maPhuongTien) {
-        if (maPhuongTien == null || maPhuongTien.trim().isEmpty() || maPhuongTien.trim().length() > 30) {
+    public void setMaPhuongTien(Xe maPhuongTien) {
+    	String ma = maPhuongTien.getMaPhuongTien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phương tiện không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhuongTien = maPhuongTien.trim();
+        this.maPhuongTien = maPhuongTien;
     }
 
-    public String getMaNhanVien() {
+    public NhanVien getMaNhanVien() {
         return maNhanVien;
     }
 
-    public void setMaNhanVien(String maNhanVien) {
-        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+    public void setMaNhanVien(NhanVien maNhanVien) {
+    	String ma = maNhanVien.getMaNhanVien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
         }
-        this.maNhanVien = maNhanVien.trim();
+        this.maNhanVien = maNhanVien;
     }
 
     public LocalDateTime getNgayGioTiepNhan() {

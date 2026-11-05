@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class PhuongThucThanhToan {
     private String maThanhToan;
-    private String maHoaDon;
+    private HoaDon maHoaDon;
     private LocalDateTime ngayThanhToan;
     private String phuongThuc;
     private String maGiaoDich;
@@ -14,7 +14,7 @@ public class PhuongThucThanhToan {
         this.ngayThanhToan = LocalDateTime.now();
     }
 
-    public PhuongThucThanhToan(String maThanhToan, String maHoaDon, LocalDateTime ngayThanhToan, String phuongThuc, String maGiaoDich, String trangThai) {
+    public PhuongThucThanhToan(String maThanhToan, HoaDon maHoaDon, LocalDateTime ngayThanhToan, String phuongThuc, String maGiaoDich, String trangThai) {
 		this.maThanhToan = maThanhToan;
 		this.maHoaDon = maHoaDon;
 		this.ngayThanhToan = ngayThanhToan;
@@ -34,15 +34,16 @@ public class PhuongThucThanhToan {
         this.maThanhToan = maThanhToan.trim();
     }
 
-    public String getMaHoaDon() {
+    public HoaDon getMaHoaDon() {
         return maHoaDon;
     }
 
-    public void setMaHoaDon(String maHoaDon) {
-        if (maHoaDon == null || maHoaDon.trim().isEmpty() || maHoaDon.trim().length() > 30) {
+    public void setMaHoaDon(HoaDon maHoaDon) {
+    	String ma = maHoaDon.getMaHoaDon();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã hóa đơn không được rỗng và tối đa 30 ký tự.");
         }
-        this.maHoaDon = maHoaDon.trim();
+        this.maHoaDon = maHoaDon;
     }
 
     public LocalDateTime getNgayThanhToan() {

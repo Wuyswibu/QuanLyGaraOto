@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import connectDB.ConnectDB;
+import entity.NhanVien;
 import entity.TaiKhoan;
 
 public class TaiKhoanDao {
@@ -22,9 +23,11 @@ public class TaiKhoanDao {
     }
 
     private TaiKhoan docTaiKhoan(ResultSet rs) throws SQLException {
+    	NhanVien nhanVien = new NhanVien();
+    	nhanVien.setMaNhanVien(rs.getString("maNhanVien"));
         return new TaiKhoan(
                 rs.getString("maTaiKhoan"),
-                rs.getString("maNhanVien"),
+                nhanVien,
                 rs.getString("tenDangNhap"),
                 rs.getString("matKhau"),
                 rs.getString("trangThai"));
@@ -145,9 +148,10 @@ public class TaiKhoanDao {
     public boolean themTaiKhoan(TaiKhoan taiKhoan) throws SQLException {
         String sql = "INSERT INTO dbo.TaiKhoan (maTaiKhoan, maNhanVien, tenDangNhap, matKhau, trangThai) VALUES (?, ?, ?, ?, ?)";
 
+        String maNhanVien = taiKhoan.getMaNhanVien().getMaNhanVien();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, taiKhoan.getMaTaiKhoan());
-            ps.setString(2, taiKhoan.getMaNhanVien());
+            ps.setString(2, maNhanVien);
             ps.setString(3, taiKhoan.getTenDangNhap());
             ps.setString(4, taiKhoan.getMatKhau());
             ps.setNString(5, taiKhoan.getTrangThai());
@@ -159,8 +163,9 @@ public class TaiKhoanDao {
     public boolean suaTaiKhoan(TaiKhoan taiKhoan) throws SQLException {
         String sql = "UPDATE dbo.TaiKhoan SET maNhanVien = ?, tenDangNhap = ?, trangThai = ? WHERE maTaiKhoan = ?";
 
+        String maNhanVien = taiKhoan.getMaNhanVien().getMaNhanVien();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, taiKhoan.getMaNhanVien());
+            ps.setString(1, maNhanVien);
             ps.setString(2, taiKhoan.getTenDangNhap());
             ps.setNString(3, taiKhoan.getTrangThai());
             ps.setString(4, taiKhoan.getMaTaiKhoan());

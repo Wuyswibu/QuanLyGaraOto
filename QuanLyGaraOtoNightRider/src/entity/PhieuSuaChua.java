@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class PhieuSuaChua {
     private String maPhieuSuaChua;
-    private String maTiepNhan;
+    private PhieuTiepNhan maTiepNhan;
     private LocalDateTime ngayLap;
     private String chanDoan;
     private String loaiPhieu;
@@ -15,7 +15,7 @@ public class PhieuSuaChua {
         this.ngayLap = LocalDateTime.now();
     }
 
-    public PhieuSuaChua(String maPhieuSuaChua, String maTiepNhan, LocalDateTime ngayLap, String chanDoan, String loaiPhieu, String trangThai, String ghiChu) {
+    public PhieuSuaChua(String maPhieuSuaChua, PhieuTiepNhan maTiepNhan, LocalDateTime ngayLap, String chanDoan, String loaiPhieu, String trangThai, String ghiChu) {
 		this.maPhieuSuaChua = maPhieuSuaChua;
 		this.maTiepNhan = maTiepNhan;
 		this.ngayLap = ngayLap;
@@ -37,15 +37,16 @@ public class PhieuSuaChua {
         this.maPhieuSuaChua = maPhieuSuaChua.trim();
     }
 
-    public String getMaTiepNhan() {
+    public PhieuTiepNhan getMaTiepNhan() {
         return maTiepNhan;
     }
 
-    public void setMaTiepNhan(String maTiepNhan) {
-        if (maTiepNhan == null || maTiepNhan.trim().isEmpty() || maTiepNhan.trim().length() > 30) {
+    public void setMaTiepNhan(PhieuTiepNhan maTiepNhan) {
+    	String ma = maTiepNhan.getMaTiepNhan();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã tiếp nhận không được rỗng và tối đa 30 ký tự.");
         }
-        this.maTiepNhan = maTiepNhan.trim();
+        this.maTiepNhan = maTiepNhan;
     }
 
     public LocalDateTime getNgayLap() {

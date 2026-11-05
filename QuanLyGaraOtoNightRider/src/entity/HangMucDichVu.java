@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 
 public class HangMucDichVu {
     private String maHangMuc;
-    private String maPhieuSuaChua;
-    private String maDichVu;
+    private PhieuSuaChua maPhieuSuaChua;
+    private DichVu maDichVu;
     private String tenHangMuc;
     private String moTa;
     private String trangThai;
@@ -20,7 +20,7 @@ public class HangMucDichVu {
     }
 
 
-    public HangMucDichVu(String maHangMuc, String maPhieuSuaChua, String maDichVu, String tenHangMuc, String moTa, String trangThai, BigDecimal chiPhiDuKien, BigDecimal chiPhiThucTe, String ketQua, String ghiChu) {
+    public HangMucDichVu(String maHangMuc, PhieuSuaChua maPhieuSuaChua, DichVu maDichVu, String tenHangMuc, String moTa, String trangThai, BigDecimal chiPhiDuKien, BigDecimal chiPhiThucTe, String ketQua, String ghiChu) {
 		this.maHangMuc = maHangMuc;
 		this.maPhieuSuaChua = maPhieuSuaChua;
 		this.maDichVu = maDichVu;
@@ -44,27 +44,29 @@ public class HangMucDichVu {
         this.maHangMuc = maHangMuc.trim();
     }
 
-    public String getMaPhieuSuaChua() {
+    public PhieuSuaChua getMaPhieuSuaChua() {
         return maPhieuSuaChua;
     }
 
-    public void setMaPhieuSuaChua(String maPhieuSuaChua) {
-        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty() || maPhieuSuaChua.trim().length() > 30) {
+    public void setMaPhieuSuaChua(PhieuSuaChua maPhieuSuaChua) {
+    	String ma = maPhieuSuaChua.getMaPhieuSuaChua();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException(
                     "Mã phiếu sửa chữa không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhieuSuaChua = maPhieuSuaChua.trim();
+        this.maPhieuSuaChua = maPhieuSuaChua;
     }
 
-    public String getMaDichVu() {
+    public DichVu getMaDichVu() {
         return maDichVu;
     }
 
-    public void setMaDichVu(String maDichVu) {
-        if (maDichVu == null || maDichVu.trim().isEmpty() || maDichVu.trim().length() > 30) {
+    public void setMaDichVu(DichVu maDichVu) {
+    	String ma = maDichVu.getMaDichVu();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã dịch vụ không được rỗng và tối đa 30 ký tự.");
         }
-        this.maDichVu = maDichVu.trim();
+        this.maDichVu = maDichVu;
     }
 
     public String getTenHangMuc() {

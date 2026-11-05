@@ -5,7 +5,7 @@ public class TaiKhoan {
     public static final String KHOA = "Khóa";
 
     private String maTaiKhoan;
-    private String maNhanVien;
+    private NhanVien maNhanVien;
     private String tenDangNhap;
     private String matKhau;
     private String trangThai;
@@ -14,7 +14,7 @@ public class TaiKhoan {
         this.trangThai = HOAT_DONG;
     }
 
-    public TaiKhoan(String maTaiKhoan, String maNhanVien, String tenDangNhap, String matKhau, String trangThai) {
+    public TaiKhoan(String maTaiKhoan, NhanVien maNhanVien, String tenDangNhap, String matKhau, String trangThai) {
         setMaTaiKhoan(maTaiKhoan);
         setMaNhanVien(maNhanVien);
         setTenDangNhap(tenDangNhap);
@@ -33,15 +33,16 @@ public class TaiKhoan {
         this.maTaiKhoan = maTaiKhoan.trim();
     }
 
-    public String getMaNhanVien() {
+    public NhanVien getMaNhanVien() {
         return maNhanVien;
     }
 
-    public void setMaNhanVien(String maNhanVien) {
-        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+    public void setMaNhanVien(NhanVien maNhanVien) {
+    	String ma = maNhanVien.getMaNhanVien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
         }
-        this.maNhanVien = maNhanVien.trim();
+        this.maNhanVien = maNhanVien;
     }
 
     public String getTenDangNhap() {

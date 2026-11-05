@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 import connectDB.ConnectDB;
 import entity.PhieuSuaChua;
+import entity.PhieuTiepNhan;
 
 public class PhieuSuaChuaDao {
 
@@ -77,10 +78,11 @@ public class PhieuSuaChuaDao {
     }
     private PhieuSuaChua docPhieu(ResultSet rs) throws SQLException {
         Timestamp ngayLap = rs.getTimestamp("ngayLap");
-
+        PhieuTiepNhan phieuTiepNhan = new PhieuTiepNhan();
+        phieuTiepNhan.setMaTiepNhan(rs.getString("maTiepNhan"));
         return new PhieuSuaChua(
                 rs.getString("maPhieuSuaChua"),
-                rs.getString("maTiepNhan"),
+                phieuTiepNhan,
                 ngayLap == null ? null : ngayLap.toLocalDateTime(),
                 rs.getString("chanDoan"),
                 rs.getString("loaiPhieu"),
@@ -198,9 +200,10 @@ public class PhieuSuaChuaDao {
                 + "chanDoan, loaiPhieu, trangThai, ghiChu) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
+        String maTiepNhan = phieu.getMaTiepNhan().getMaTiepNhan();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, phieu.getMaPhieuSuaChua());
-            ps.setString(2, phieu.getMaTiepNhan());
+            ps.setString(2, maTiepNhan);
             ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayLap()));
 
             if (phieu.getChanDoan() == null) {
@@ -228,8 +231,9 @@ public class PhieuSuaChuaDao {
                 + "loaiPhieu = ?, trangThai = ?, ghiChu = ? "
                 + "WHERE maPhieuSuaChua = ?";
 
+        String maTiepNhan = phieu.getMaTiepNhan().getMaTiepNhan();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, phieu.getMaTiepNhan());
+            ps.setString(1,maTiepNhan);
             ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayLap()));
 
             if (phieu.getChanDoan() == null) {

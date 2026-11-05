@@ -4,8 +4,8 @@ import java.time.LocalDate;
 
 public class PhanCongCa {
     private String maPhanCongCa;
-    private String maNhanVien;
-    private String maCa;
+    private NhanVien maNhanVien;
+    private CaLamViec maCa;
     private LocalDate ngayLamViec;
     private String trangThai;
     private String ghiChu;
@@ -13,7 +13,7 @@ public class PhanCongCa {
     public PhanCongCa() {
     }
 
-    public PhanCongCa(String maPhanCongCa, String maNhanVien, String maCa, LocalDate ngayLamViec, String trangThai, String ghiChu) {
+    public PhanCongCa(String maPhanCongCa, NhanVien maNhanVien, CaLamViec maCa, LocalDate ngayLamViec, String trangThai, String ghiChu) {
 		this.maPhanCongCa = maPhanCongCa;
 		this.maNhanVien = maNhanVien;
 		this.maCa = maCa;
@@ -33,26 +33,28 @@ public class PhanCongCa {
         this.maPhanCongCa = maPhanCongCa.trim();
     }
 
-    public String getMaNhanVien() {
+    public NhanVien getMaNhanVien() {
         return maNhanVien;
     }
 
-    public void setMaNhanVien(String maNhanVien) {
-        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+    public void setMaNhanVien(NhanVien maNhanVien) {
+    	String ma = maNhanVien.getMaNhanVien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
         }
-        this.maNhanVien = maNhanVien.trim();
+        this.maNhanVien = maNhanVien;
     }
 
-    public String getMaCa() {
+    public CaLamViec getMaCa() {
         return maCa;
     }
 
-    public void setMaCa(String maCa) {
-        if (maCa == null || maCa.trim().isEmpty() || maCa.trim().length() > 30) {
+    public void setMaCa(CaLamViec maCa) {
+    	String ma = maCa.getMaCa();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã ca không được rỗng và tối đa 30 ký tự.");
         }
-        this.maCa = maCa.trim();
+        this.maCa = maCa;
     }
 
     public LocalDate getNgayLamViec() {

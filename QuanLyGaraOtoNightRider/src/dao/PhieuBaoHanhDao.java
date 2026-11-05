@@ -10,6 +10,8 @@ import java.util.ArrayList;
 
 import connectDB.ConnectDB;
 import entity.PhieuBaoHanh;
+import entity.PhieuSuaChua;
+import entity.Xe;
 
 public class PhieuBaoHanhDao {
 
@@ -25,11 +27,14 @@ public class PhieuBaoHanhDao {
 
     private PhieuBaoHanh docPhieu(ResultSet rs) throws SQLException {
         Timestamp ngayYeuCau = rs.getTimestamp("ngayYeuCau");
-
+        PhieuSuaChua phieuSuaChua = new PhieuSuaChua();
+        phieuSuaChua.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
+        Xe phuongTien = new Xe();
+        phuongTien.setMaPhuongTien(rs.getString("maPhuongTien"));
         return new PhieuBaoHanh(
                 rs.getString("maBaoHanh"),
-                rs.getString("maPhieuSuaChua"),
-                rs.getString("maPhuongTien"),
+                phieuSuaChua,
+                phuongTien,
                 ngayYeuCau == null
                         ? null : ngayYeuCau.toLocalDateTime(),
                 rs.getString("noiDungYeuCau"),
@@ -193,10 +198,12 @@ public class PhieuBaoHanhDao {
                 + "ketQuaXuLy, lyDoTuChoi, trangThai) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        String maPhieuSuaChua = phieu.getMaPhieuSuaChua().getMaPhieuSuaChua();
+        String maPhuongTien = phieu.getMaPhuongTien().getMaPhuongTien();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, phieu.getMaBaoHanh());
-            ps.setString(2, phieu.getMaPhieuSuaChua());
-            ps.setString(3, phieu.getMaPhuongTien());
+            ps.setString(2, maPhieuSuaChua);
+            ps.setString(3, maPhuongTien);
             ps.setTimestamp(
                     4, Timestamp.valueOf(phieu.getNgayYeuCau()));
             ps.setNString(5, phieu.getNoiDungYeuCau());
@@ -233,9 +240,11 @@ public class PhieuBaoHanhDao {
                 + "lyDoTuChoi = ?, trangThai = ? "
                 + "WHERE maBaoHanh = ?";
 
+        String maPhieuSuaChua = phieu.getMaPhieuSuaChua().getMaPhieuSuaChua();
+        String maPhuongTien = phieu.getMaPhuongTien().getMaPhuongTien();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, phieu.getMaPhieuSuaChua());
-            ps.setString(2, phieu.getMaPhuongTien());
+            ps.setString(1, maPhieuSuaChua);
+            ps.setString(2, maPhuongTien);
             ps.setTimestamp(
                     3, Timestamp.valueOf(phieu.getNgayYeuCau()));
             ps.setNString(4, phieu.getNoiDungYeuCau());

@@ -9,6 +9,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 
 import connectDB.ConnectDB;
+import entity.HoaDon;
 import entity.PhuongThucThanhToan;
 
 public class PhuongThucThanhToanDao {
@@ -25,10 +26,11 @@ public class PhuongThucThanhToanDao {
 
     private PhuongThucThanhToan docThanhToan(ResultSet rs) throws SQLException {
         Timestamp ngayThanhToan = rs.getTimestamp("ngayThanhToan");
-
+        HoaDon hoaDon = new HoaDon();
+        hoaDon.setMaHoaDon(rs.getString("maHoaDon"));
         return new PhuongThucThanhToan(
                 rs.getString("maThanhToan"),
-                rs.getString("maHoaDon"),
+                hoaDon,
                 ngayThanhToan == null
                         ? null : ngayThanhToan.toLocalDateTime(),
                 rs.getString("phuongThuc"),
@@ -166,9 +168,10 @@ public class PhuongThucThanhToanDao {
                 + "phuongThuc, maGiaoDich, trangThai) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
 
+        String maHoaDon = thanhToan.getMaHoaDon().getMaHoaDon();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, thanhToan.getMaThanhToan());
-            ps.setString(2, thanhToan.getMaHoaDon());
+            ps.setString(2, maHoaDon);
             ps.setTimestamp(
                     3, Timestamp.valueOf(thanhToan.getNgayThanhToan()));
             ps.setNString(4, thanhToan.getPhuongThuc());

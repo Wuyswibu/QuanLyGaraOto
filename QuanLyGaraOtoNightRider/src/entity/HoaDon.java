@@ -9,10 +9,10 @@ public class HoaDon {
     public static final String DA_HUY = "Đã hủy";
 
     private String maHoaDon;
-    private String maPhieuSuaChua;
-    private String maKhachHang;
-    private String maPhuongTien;
-    private String maNhanVien;
+    private PhieuSuaChua maPhieuSuaChua;
+    private KhachHang maKhachHang;
+    private Xe maPhuongTien;
+    private NhanVien maNhanVien;
     private LocalDateTime ngayLap;
     private BigDecimal vat;
     private String trangThai;
@@ -22,7 +22,7 @@ public class HoaDon {
         this.trangThai = CHUA_THANH_TOAN;
     }
 
-    public HoaDon(String maHoaDon, String maPhieuSuaChua, String maKhachHang, String maPhuongTien, String maNhanVien, LocalDateTime ngayLap, BigDecimal vat, String trangThai) {
+    public HoaDon(String maHoaDon, PhieuSuaChua maPhieuSuaChua, KhachHang maKhachHang, Xe maPhuongTien, NhanVien maNhanVien, LocalDateTime ngayLap, BigDecimal vat, String trangThai) {
         this.maHoaDon = maHoaDon;
         this.maPhieuSuaChua = maPhieuSuaChua;
         this.maKhachHang = maKhachHang;
@@ -43,48 +43,52 @@ public class HoaDon {
         this.maHoaDon = maHoaDon.trim();
     }
 
-    public String getMaPhieuSuaChua() {
+    public PhieuSuaChua getMaPhieuSuaChua() {
         return maPhieuSuaChua;
     }
 
-    public void setMaPhieuSuaChua(String maPhieuSuaChua) {
-        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty() || maPhieuSuaChua.trim().length() > 30) {
+    public void setMaPhieuSuaChua(PhieuSuaChua maPhieuSuaChua) {
+    	String ma = maPhieuSuaChua.getMaPhieuSuaChua();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phiếu sửa chữa không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhieuSuaChua = maPhieuSuaChua.trim();
+        this.maPhieuSuaChua = maPhieuSuaChua;
     }
 
-    public String getMaKhachHang() {
+    public KhachHang getMaKhachHang() {
         return maKhachHang;
     }
 
-    public void setMaKhachHang(String maKhachHang) {
-        if (maKhachHang == null || maKhachHang.trim().isEmpty() || maKhachHang.trim().length() > 30) {
+    public void setMaKhachHang(KhachHang maKhachHang) {
+    	String ma = maKhachHang.getMaKhachHang();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã khách hàng không được rỗng và tối đa 30 ký tự.");
         }
-        this.maKhachHang = maKhachHang.trim();
+        this.maKhachHang = maKhachHang;
     }
 
-    public String getMaPhuongTien() {
+    public Xe getMaPhuongTien() {
         return maPhuongTien;
     }
 
-    public void setMaPhuongTien(String maPhuongTien) {
-        if (maPhuongTien == null || maPhuongTien.trim().isEmpty() || maPhuongTien.trim().length() > 30) {
+    public void setMaPhuongTien(Xe maPhuongTien) {
+    	String ma = maPhuongTien.getMaPhuongTien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phương tiện không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhuongTien = maPhuongTien.trim();
+        this.maPhuongTien = maPhuongTien;
     }
 
-    public String getMaNhanVien() {
+    public NhanVien getMaNhanVien() {
         return maNhanVien;
     }
 
-    public void setMaNhanVien(String maNhanVien) {
-        if (maNhanVien == null || maNhanVien.trim().isEmpty() || maNhanVien.trim().length() > 30) {
+    public void setMaNhanVien(NhanVien maNhanVien) {
+    	String ma = maNhanVien.getMaNhanVien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã nhân viên không được rỗng và tối đa 30 ký tự.");
         }
-        this.maNhanVien = maNhanVien.trim();
+        this.maNhanVien = maNhanVien;
     }
 
     public LocalDateTime getNgayLap() {

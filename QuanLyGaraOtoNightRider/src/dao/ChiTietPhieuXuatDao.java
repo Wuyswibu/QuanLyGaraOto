@@ -8,122 +8,122 @@ import java.util.ArrayList;
 
 import connectDB.ConnectDB;
 import entity.ChiTietPhieuXuat;
+import entity.PhieuXuatKho;
+import entity.PhuTung;
 
 public class ChiTietPhieuXuatDao {
 
-    private Connection ketNoi() throws SQLException {
-        Connection conn = ConnectDB.getConnection();
+	private Connection ketNoi() throws SQLException {
+		Connection conn = ConnectDB.getConnection();
 
-        if (conn == null || conn.isClosed()) {
-            throw new SQLException("Chưa kết nối cơ sở dữ liệu.");
-        }
+		if (conn == null || conn.isClosed()) {
+			throw new SQLException("Chưa kết nối cơ sở dữ liệu.");
+		}
 
-        return conn;
-    }
+		return conn;
+	}
 
-    private ChiTietPhieuXuat docChiTiet(ResultSet rs) throws SQLException {
-        return new ChiTietPhieuXuat(
-                rs.getString("maPhieuXuat"),
-                rs.getString("maPhuTung"),
-                rs.getInt("soLuong"),
-                rs.getBigDecimal("donGia"));
-    }
+	private ChiTietPhieuXuat docChiTiet(ResultSet rs) throws SQLException {
+		PhieuXuatKho phieuXuat = new PhieuXuatKho();
+		phieuXuat.setMaPhieuXuat(rs.getString("maPhieuXuat"));
+		PhuTung phuTung = new PhuTung();
+		phuTung.setMaPhuTung(rs.getString("maPhuTung"));
 
-    public ArrayList<ChiTietPhieuXuat> layDanhSachChiTiet() throws SQLException {
-        ArrayList<ChiTietPhieuXuat> danhSach = new ArrayList<>();
+		return new ChiTietPhieuXuat(phieuXuat,phuTung, rs.getInt("soLuong"),
+				rs.getBigDecimal("donGia"));
+	}
 
-        String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia "
-                + "FROM dbo.ChiTietPhieuXuat "
-                + "ORDER BY maPhieuXuat, maPhuTung";
+	public ArrayList<ChiTietPhieuXuat> layDanhSachChiTiet() throws SQLException {
+		ArrayList<ChiTietPhieuXuat> danhSach = new ArrayList<>();
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                danhSach.add(docChiTiet(rs));
-            }
-        }
+		String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia " + "FROM dbo.ChiTietPhieuXuat "
+				+ "ORDER BY maPhieuXuat, maPhuTung";
 
-        return danhSach;
-    }
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+			while (rs.next()) {
+				danhSach.add(docChiTiet(rs));
+			}
+		}
 
-    public ArrayList<ChiTietPhieuXuat> timTheoMaPhieuXuat(String maPhieuXuat) throws SQLException {
-        ArrayList<ChiTietPhieuXuat> danhSach = new ArrayList<>();
+		return danhSach;
+	}
 
-        String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia "
-                + "FROM dbo.ChiTietPhieuXuat "
-                + "WHERE maPhieuXuat = ? ORDER BY maPhuTung";
+	public ArrayList<ChiTietPhieuXuat> timTheoMaPhieuXuat(String maPhieuXuat) throws SQLException {
+		ArrayList<ChiTietPhieuXuat> danhSach = new ArrayList<>();
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, maPhieuXuat);
+		String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia " + "FROM dbo.ChiTietPhieuXuat "
+				+ "WHERE maPhieuXuat = ? ORDER BY maPhuTung";
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    danhSach.add(docChiTiet(rs));
-                }
-            }
-        }
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+			ps.setString(1, maPhieuXuat);
 
-        return danhSach;
-    }
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					danhSach.add(docChiTiet(rs));
+				}
+			}
+		}
 
-    public ChiTietPhieuXuat timTheoKhoa(String maPhieuXuat, String maPhuTung) throws SQLException {
-        String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia "
-                + "FROM dbo.ChiTietPhieuXuat "
-                + "WHERE maPhieuXuat = ? AND maPhuTung = ?";
+		return danhSach;
+	}
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, maPhieuXuat);
-            ps.setString(2, maPhuTung);
+	public ChiTietPhieuXuat timTheoKhoa(String maPhieuXuat, String maPhuTung) throws SQLException {
+		String sql = "SELECT maPhieuXuat, maPhuTung, soLuong, donGia " + "FROM dbo.ChiTietPhieuXuat "
+				+ "WHERE maPhieuXuat = ? AND maPhuTung = ?";
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return docChiTiet(rs);
-                }
-            }
-        }
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+			ps.setString(1, maPhieuXuat);
+			ps.setString(2, maPhuTung);
 
-        return null;
-    }
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return docChiTiet(rs);
+				}
+			}
+		}
 
-    public boolean themChiTiet(ChiTietPhieuXuat chiTiet) throws SQLException {
-        String sql = "INSERT INTO dbo.ChiTietPhieuXuat "
-                + "(maPhieuXuat, maPhuTung, soLuong, donGia) "
-                + "VALUES (?, ?, ?, ?)";
+		return null;
+	}
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, chiTiet.getMaPhieuXuat());
-            ps.setString(2, chiTiet.getMaPhuTung());
-            ps.setInt(3, chiTiet.getSoLuong());
-            ps.setBigDecimal(4, chiTiet.getDonGia());
+	public boolean themChiTiet(ChiTietPhieuXuat chiTiet) throws SQLException {
+		String sql = "INSERT INTO dbo.ChiTietPhieuXuat " + "(maPhieuXuat, maPhuTung, soLuong, donGia) "
+				+ "VALUES (?, ?, ?, ?)";
+		String maPhieuXuat = chiTiet.getMaPhieuXuat().getMaPhieuXuat();
+		String maPhuTung = chiTiet.getMaPhuTung().getMaPhuTung();
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+			ps.setString(1, maPhieuXuat);
+			ps.setString(2, maPhuTung);
+			ps.setInt(3, chiTiet.getSoLuong());
+			ps.setBigDecimal(4, chiTiet.getDonGia());
 
-            return ps.executeUpdate() > 0;
-        }
-    }
+			return ps.executeUpdate() > 0;
+		}
+	}
 
-    public boolean suaChiTiet(ChiTietPhieuXuat chiTiet) throws SQLException {
-        String sql = "UPDATE dbo.ChiTietPhieuXuat "
-                + "SET soLuong = ?, donGia = ? "
-                + "WHERE maPhieuXuat = ? AND maPhuTung = ?";
+	public boolean suaChiTiet(ChiTietPhieuXuat chiTiet) throws SQLException {
+		String sql = "UPDATE dbo.ChiTietPhieuXuat " + "SET soLuong = ?, donGia = ? "
+				+ "WHERE maPhieuXuat = ? AND maPhuTung = ?";
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setInt(1, chiTiet.getSoLuong());
-            ps.setBigDecimal(2, chiTiet.getDonGia());
-            ps.setString(3, chiTiet.getMaPhieuXuat());
-            ps.setString(4, chiTiet.getMaPhuTung());
+		String maPhieuXuat = chiTiet.getMaPhieuXuat().getMaPhieuXuat();
+		String maPhuTung = chiTiet.getMaPhuTung().getMaPhuTung();
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+			ps.setInt(1, chiTiet.getSoLuong());
+			ps.setBigDecimal(2, chiTiet.getDonGia());
+			ps.setString(3, maPhieuXuat);
+			ps.setString(4, maPhuTung);
 
-            return ps.executeUpdate() > 0;
-        }
-    }
+			return ps.executeUpdate() > 0;
+		}
+	}
 
-    public boolean xoaChiTiet(String maPhieuXuat, String maPhuTung) throws SQLException {
-        String sql = "DELETE FROM dbo.ChiTietPhieuXuat "
-                + "WHERE maPhieuXuat = ? AND maPhuTung = ?";
+	public boolean xoaChiTiet(String maPhieuXuat, String maPhuTung) throws SQLException {
+		String sql = "DELETE FROM dbo.ChiTietPhieuXuat " + "WHERE maPhieuXuat = ? AND maPhuTung = ?";
 
-        try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, maPhieuXuat);
-            ps.setString(2, maPhuTung);
+		try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
+			ps.setString(1, maPhieuXuat);
+			ps.setString(2, maPhuTung);
 
-            return ps.executeUpdate() > 0;
-        }
-    }
+			return ps.executeUpdate() > 0;
+		}
+	}
 }

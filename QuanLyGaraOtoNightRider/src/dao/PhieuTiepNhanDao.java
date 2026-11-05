@@ -8,7 +8,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import connectDB.ConnectDB;
+import entity.NhanVien;
 import entity.PhieuTiepNhan;
+import entity.Xe;
 
 public class PhieuTiepNhanDao {
     // ==================== KẾT NỐI VÀ KHỞI TẠO ====================
@@ -39,10 +41,15 @@ public class PhieuTiepNhanDao {
     private PhieuTiepNhan docPhieu(ResultSet rs) throws SQLException {
         Timestamp ngayNhan = rs.getTimestamp("ngayGioTiepNhan");
         Timestamp ngayHen = rs.getTimestamp("ngayGioHenTra");
+        
+        Xe phuongTien = new Xe();
+        phuongTien.setMaPhuongTien(rs.getString("maPhuongTien"));
+        NhanVien nhanVien = new NhanVien();
+        nhanVien.setMaNhanVien(rs.getString("maNhanVien"));
         return new PhieuTiepNhan(
                 rs.getString("maTiepNhan"),
-                rs.getString("maPhuongTien"),
-                rs.getString("maNhanVien"),
+                phuongTien, 
+                nhanVien,
                 ngayNhan == null ? null : ngayNhan.toLocalDateTime(),
                 ngayHen == null ? null : ngayHen.toLocalDateTime(),
                 rs.getInt("odo"),
@@ -144,10 +151,14 @@ final ResultSet rs = ps.executeQuery();) {
 
     public boolean themPhieuTiepNhan(PhieuTiepNhan phieu) throws SQLException {
                 String sql = "INSERT INTO dbo.PhieuTiepNhan (maTiepNhan, maPhuongTien, maNhanVien, ngayGioTiepNhan, ngayGioHenTra, odo, mucNhienLieu, tinhTrangBanDau, yeuCauKhachHang, ghiChu, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                String maPhuongTien = phieu.getMaPhuongTien().getMaPhuongTien();
+                String maNhanVien = phieu.getMaNhanVien().getMaNhanVien();
+
                 try (final PreparedStatement ps = ketNoi().prepareStatement(sql);) {
                     ps.setString(1, phieu.getMaTiepNhan());
-                    ps.setString(2, phieu.getMaPhuongTien());
-                    ps.setString(3, phieu.getMaNhanVien());
+                    ps.setString(2, maPhuongTien);
+                    ps.setString(3, maNhanVien);
                     ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayGioTiepNhan()));
                     if (phieu.getNgayGioHenTra() == null) {
                         ps.setNull(5, Types.TIMESTAMP);
@@ -172,9 +183,12 @@ final ResultSet rs = ps.executeQuery();) {
 
     public boolean suaPhieuTiepNhan(PhieuTiepNhan phieu) throws SQLException {
                 String sql = "UPDATE dbo.PhieuTiepNhan SET maPhuongTien = ?, maNhanVien = ?, ngayGioTiepNhan = ?, ngayGioHenTra = ?, odo = ?, mucNhienLieu = ?, tinhTrangBanDau = ?, yeuCauKhachHang = ?, ghiChu = ?, trangThai = ? WHERE maTiepNhan = ?";
+                
+                String maPhuongTien = phieu.getMaPhuongTien().getMaPhuongTien();
+                String maNhanVien = phieu.getMaNhanVien().getMaNhanVien();
                 try (final PreparedStatement ps = ketNoi().prepareStatement(sql);) {
-                    ps.setString(1, phieu.getMaPhuongTien());
-                    ps.setString(2, phieu.getMaNhanVien());
+                    ps.setString(1, maPhuongTien);
+                    ps.setString(2, maNhanVien);
                     ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayGioTiepNhan()));
                     if (phieu.getNgayGioHenTra() == null) {
                         ps.setNull(4, Types.TIMESTAMP);

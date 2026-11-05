@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public class NhanVien {
     private String maNhanVien;
-    private String maPhanQuyen;
+    private PhanQuyen maPhanQuyen;
     private String tenChuc;
     private String hoTen;
     private String soDienThoai;
@@ -17,7 +17,7 @@ public class NhanVien {
     }
 
 
-    public NhanVien(String maNhanVien, String maPhanQuyen, String tenChuc, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
+    public NhanVien(String maNhanVien, PhanQuyen maPhanQuyen, String tenChuc, String hoTen, String soDienThoai, String email, LocalDate ngaySinh, LocalDate ngayVaoLam, String trangThai) {
 
 		this.maNhanVien = maNhanVien;
 		this.maPhanQuyen = maPhanQuyen;
@@ -42,15 +42,16 @@ public class NhanVien {
         this.maNhanVien = maNhanVien.trim();
     }
 
-    public String getMaPhanQuyen() {
+    public PhanQuyen getMaPhanQuyen() {
         return maPhanQuyen;
     }
 
-    public void setMaPhanQuyen(String maPhanQuyen) {
-        if (maPhanQuyen == null || maPhanQuyen.trim().isEmpty() || maPhanQuyen.trim().length() > 30) {
+    public void setMaPhanQuyen(PhanQuyen maPhanQuyen) {
+    	String ma = maPhanQuyen.getMaPhanQuyen();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phân quyền không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhanQuyen = maPhanQuyen.trim();
+        this.maPhanQuyen = maPhanQuyen;
     }
     public String getTenChuc() {
         return tenChuc;

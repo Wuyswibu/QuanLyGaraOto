@@ -8,6 +8,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 
 import connectDB.ConnectDB;
+import entity.PhieuSuaChua;
 import entity.PhuTung;
 
 public class PhuTungDao {
@@ -23,9 +24,11 @@ public class PhuTungDao {
     }
 
     private PhuTung docPhuTung(ResultSet rs) throws SQLException {
+    	PhieuSuaChua phieuSuaChua = new PhieuSuaChua();
+    	phieuSuaChua.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
         return new PhuTung(
                 rs.getString("maPhuTung"),
-                rs.getString("maPhieuSuaChua"),
+                phieuSuaChua,
                 rs.getString("tenPhuTung"),
                 rs.getString("moTa"),
                 rs.getString("donViTinh"),
@@ -150,13 +153,14 @@ public class PhuTungDao {
                 + "mucTonToiThieu, trangThai) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        String maPhieuSuaChua = phuTung.getMaPhieuSuaChua().getMaPhieuSuaChua();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, phuTung.getMaPhuTung());
 
             if (phuTung.getMaPhieuSuaChua() == null) {
                 ps.setNull(2, Types.VARCHAR);
             } else {
-                ps.setString(2, phuTung.getMaPhieuSuaChua());
+                ps.setString(2, maPhieuSuaChua);
             }
 
             ps.setNString(3, phuTung.getTenPhuTung());
@@ -182,12 +186,13 @@ public class PhuTungDao {
                 + "SET maPhieuSuaChua = ?, tenPhuTung = ?, moTa = ?, "
                 + "donViTinh = ?, donGia = ?, mucTonToiThieu = ?, "
                 + "trangThai = ? WHERE maPhuTung = ?";
+        String maPhieuSuaChua = phuTung.getMaPhieuSuaChua().getMaPhieuSuaChua();
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             if (phuTung.getMaPhieuSuaChua() == null) {
                 ps.setNull(1, Types.VARCHAR);
             } else {
-                ps.setString(1, phuTung.getMaPhieuSuaChua());
+                ps.setString(1, maPhieuSuaChua);
             }
 
             ps.setNString(2, phuTung.getTenPhuTung());

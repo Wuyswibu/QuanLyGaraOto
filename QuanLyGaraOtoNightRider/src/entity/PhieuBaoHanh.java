@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 public class PhieuBaoHanh {
     private String maBaoHanh;
-    private String maPhieuSuaChua;
-    private String maPhuongTien;
+    private PhieuSuaChua maPhieuSuaChua;
+    private Xe maPhuongTien;
     private LocalDateTime ngayYeuCau;
     private String noiDungYeuCau;
     private String ketQuaKiemTra;
@@ -17,7 +17,7 @@ public class PhieuBaoHanh {
         this.ngayYeuCau = LocalDateTime.now();
     }
 
-    public PhieuBaoHanh(String maBaoHanh, String maPhieuSuaChua, String maPhuongTien, LocalDateTime ngayYeuCau, String noiDungYeuCau, String ketQuaKiemTra, String ketQuaXuLy, String lyDoTuChoi, String trangThai) {
+    public PhieuBaoHanh(String maBaoHanh, PhieuSuaChua maPhieuSuaChua, Xe maPhuongTien, LocalDateTime ngayYeuCau, String noiDungYeuCau, String ketQuaKiemTra, String ketQuaXuLy, String lyDoTuChoi, String trangThai) {
 		this.maBaoHanh = maBaoHanh;
 		this.maPhieuSuaChua = maPhieuSuaChua;
 		this.maPhuongTien = maPhuongTien;
@@ -40,27 +40,29 @@ public class PhieuBaoHanh {
         this.maBaoHanh = maBaoHanh.trim();
     }
 
-    public String getMaPhieuSuaChua() {
+    public PhieuSuaChua getMaPhieuSuaChua() {
         return maPhieuSuaChua;
     }
 
-    public void setMaPhieuSuaChua(String maPhieuSuaChua) {
-        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty() || maPhieuSuaChua.trim().length() > 30) {
+    public void setMaPhieuSuaChua(PhieuSuaChua maPhieuSuaChua) {
+    	String ma = maPhieuSuaChua.getMaPhieuSuaChua();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException(
                     "Mã phiếu sửa chữa không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhieuSuaChua = maPhieuSuaChua.trim();
+        this.maPhieuSuaChua = maPhieuSuaChua;
     }
 
-    public String getMaPhuongTien() {
+    public Xe getMaPhuongTien() {
         return maPhuongTien;
     }
 
-    public void setMaPhuongTien(String maPhuongTien) {
-        if (maPhuongTien == null || maPhuongTien.trim().isEmpty() || maPhuongTien.trim().length() > 30) {
+    public void setMaPhuongTien(Xe maPhuongTien) {
+    	String ma = maPhuongTien.getMaPhuongTien();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phương tiện không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhuongTien = maPhuongTien.trim();
+        this.maPhuongTien = maPhuongTien;
     }
 
     public LocalDateTime getNgayYeuCau() {

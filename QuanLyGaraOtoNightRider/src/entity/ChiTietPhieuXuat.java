@@ -3,41 +3,44 @@ package entity;
 import java.math.BigDecimal;
 
 public class ChiTietPhieuXuat {
-    private String maPhieuXuat;
-    private String maPhuTung;
+    private PhieuXuatKho maPhieuXuat;
+    private PhuTung maPhuTung;
     private int soLuong;
     private BigDecimal donGia;
 
     public ChiTietPhieuXuat() {
     }
 
-    public ChiTietPhieuXuat(String maPhieuXuat, String maPhuTung, int soLuong, BigDecimal donGia) {
+    public ChiTietPhieuXuat(PhieuXuatKho maPhieuXuat, PhuTung maPhuTung, int soLuong, BigDecimal donGia) {
 		this.maPhieuXuat = maPhieuXuat;
 		this.maPhuTung = maPhuTung;
 		this.soLuong = soLuong;
 		this.donGia = donGia;
 	}
 
-	public String getMaPhieuXuat() {
+	public PhieuXuatKho getMaPhieuXuat() {
         return maPhieuXuat;
     }
 
-    public void setMaPhieuXuat(String maPhieuXuat) {
-        if (maPhieuXuat == null || maPhieuXuat.trim().isEmpty() || maPhieuXuat.trim().length() > 30) {
+    public void setMaPhieuXuat(PhieuXuatKho maPhieuXuat) {
+    	
+    	String ma = maPhieuXuat.getMaPhieuXuat();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phiếu xuất không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhieuXuat = maPhieuXuat.trim();
+        this.maPhieuXuat = maPhieuXuat;
     }
 
-    public String getMaPhuTung() {
+    public PhuTung getMaPhuTung() {
         return maPhuTung;
     }
 
-    public void setMaPhuTung(String maPhuTung) {
-        if (maPhuTung == null || maPhuTung.trim().isEmpty() || maPhuTung.trim().length() > 30) {
+    public void setMaPhuTung(PhuTung maPhuTung) {
+    	String ma = maPhuTung.getMaPhuTung();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã phụ tùng không được rỗng và tối đa 30 ký tự.");
         }
-        this.maPhuTung = maPhuTung.trim();
+        this.maPhuTung = maPhuTung;
     }
 
     public int getSoLuong() {

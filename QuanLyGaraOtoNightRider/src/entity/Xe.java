@@ -5,7 +5,7 @@ public class Xe {
     public static final String NGUNG_THEO_DOI = "Ngừng theo dõi";
 
     private String maPhuongTien;
-    private String maKhachHang;
+    private KhachHang maKhachHang;
     private String bienSo;
     private String mauXe;
     private String trangThai;
@@ -14,7 +14,7 @@ public class Xe {
         this.trangThai = HOAT_DONG;
     }
 
-    public Xe(String maPhuongTien, String maKhachHang, String bienSo, String mauXe, String trangThai) {
+    public Xe(String maPhuongTien, KhachHang maKhachHang, String bienSo, String mauXe, String trangThai) {
 		super();
 		this.maPhuongTien = maPhuongTien;
 		this.maKhachHang = maKhachHang;
@@ -34,15 +34,16 @@ public class Xe {
         this.maPhuongTien = maPhuongTien.trim();
     }
 
-    public String getMaKhachHang() {
+    public KhachHang getMaKhachHang() {
         return maKhachHang;
     }
 
-    public void setMaKhachHang(String maKhachHang) {
-        if (maKhachHang == null || maKhachHang.trim().isEmpty() || maKhachHang.trim().length() > 30) {
+    public void setMaKhachHang(KhachHang maKhachHang) {
+    	String ma = maKhachHang.getMaKhachHang();
+        if (ma == null || ma.trim().isEmpty() || ma.trim().length() > 30) {
             throw new IllegalArgumentException("Mã khách hàng không được rỗng và tối đa 30 ký tự.");
         }
-        this.maKhachHang = maKhachHang.trim();
+        this.maKhachHang = maKhachHang;
     }
 
     public String getBienSo() {

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 import connectDB.ConnectDB;
 import entity.NhanVien;
+import entity.PhanQuyen;
 
 public class NhanVienDao {
 
@@ -26,10 +27,12 @@ public class NhanVienDao {
     private NhanVien docNhanVien(ResultSet rs) throws SQLException {
         Date ngaySinh = rs.getDate("ngaySinh");
         Date ngayVaoLam = rs.getDate("ngayVaoLam");
-
+        PhanQuyen phanQuyen = new PhanQuyen();
+        phanQuyen.setMaPhanQuyen(rs.getString("maPhanQuyen"));
+        phanQuyen.setTenChuc(rs.getString("tenChuc"));
         return new NhanVien(
                 rs.getString("maNhanVien"),
-                rs.getString("maPhanQuyen"),
+                phanQuyen,
                 rs.getString("tenChuc"),
                 rs.getString("hoTen"),
                 rs.getString("soDienThoai"),
@@ -55,15 +58,16 @@ public class NhanVienDao {
 
             PreparedStatement stmt = con.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
-
+            
             while (rs.next()) {
                 NhanVien nv = new NhanVien();
+                PhanQuyen pq = new PhanQuyen();
                 nv.setMaNhanVien(rs.getString("maNhanVien"));
                 nv.setHoTen(rs.getString("hoTen"));
                 nv.setSoDienThoai(rs.getString("soDienThoai"));
                 nv.setEmail(rs.getString("email"));
-                nv.setMaPhanQuyen(rs.getString("maPhanQuyen"));
-                nv.setTenChuc(rs.getString("tenChuc")); // Tên chức vụ từ bảng PhanQuyen
+                pq.setMaPhanQuyen(rs.getString("maPhanQuyen")); // này của đối tượng PhanQuyen
+                pq.setTenChuc(rs.getString("tenChuc")); // Tên chức vụ từ bảng PhanQuyen
 
                 java.sql.Date sqlNgayVao = rs.getDate("ngayVaoLam");
                 if (sqlNgayVao != null) {
@@ -79,7 +83,7 @@ public class NhanVienDao {
         return danhSach;
     }
 
-    public NhanVien timTheoMa(String maNhanVien) throws SQLException {
+    public NhanVien timTheoMaNV(String maNhanVien) throws SQLException {
         String sql =
                 "SELECT nv.maNhanVien, nv.maPhanQuyen, pq.tenChuc, "
                 + "nv.hoTen, nv.soDienThoai, nv.email, "
@@ -90,7 +94,8 @@ public class NhanVienDao {
                 + "WHERE nv.maNhanVien = ?";
 
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, maNhanVien);
+            
+        	ps.setString(1, maNhanVien);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? docNhanVien(rs) : null;
@@ -192,9 +197,11 @@ public class NhanVienDao {
                 + "email, ngaySinh, ngayVaoLam, trangThai) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
+        String maPhanQuyen = nhanVien.getMaPhanQuyen().getMaPhanQuyen();
+        
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, nhanVien.getMaNhanVien());
-            ps.setString(2, nhanVien.getMaPhanQuyen());
+            ps.setString(2, maPhanQuyen);
             ps.setNString(3, nhanVien.getHoTen());
 
             if (nhanVien.getSoDienThoai() == null) {
@@ -228,8 +235,10 @@ public class NhanVienDao {
                 + "email = ?, ngaySinh = ?, ngayVaoLam = ?, "
                 + "trangThai = ? WHERE maNhanVien = ?";
 
+        String maPhanQuyen = nhanVien.getMaPhanQuyen().getMaPhanQuyen();
+
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, nhanVien.getMaPhanQuyen());
+            ps.setString(1, maPhanQuyen);
             ps.setNString(2, nhanVien.getHoTen());
 
             if (nhanVien.getSoDienThoai() == null) {

@@ -8,7 +8,9 @@ import java.sql.Types;
 import java.util.ArrayList;
 
 import connectDB.ConnectDB;
+import entity.DichVu;
 import entity.HangMucDichVu;
+import entity.PhieuSuaChua;
 
 public class HangMucDichVuDao {
 
@@ -23,10 +25,15 @@ public class HangMucDichVuDao {
     }
 
     private HangMucDichVu docHangMuc(ResultSet rs) throws SQLException {
+    	PhieuSuaChua phieuSuaChua = new PhieuSuaChua();
+    	DichVu dichVu = new DichVu();
+    	phieuSuaChua.setMaPhieuSuaChua(rs.getString("maPhieuSuaChua"));
+    	dichVu.setMaDichVu(rs.getString("maDichVu"));
+    	
         return new HangMucDichVu(
                 rs.getString("maHangMuc"),
-                rs.getString("maPhieuSuaChua"),
-                rs.getString("maDichVu"),
+                phieuSuaChua,
+                dichVu,
                 rs.getString("tenHangMuc"),
                 rs.getString("moTa"),
                 rs.getString("trangThai"),
@@ -114,10 +121,12 @@ public class HangMucDichVuDao {
                 + "chiPhiThucTe, ketQua, ghiChu) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        String maPhieuSuaChua = hangMuc.getMaPhieuSuaChua().getMaPhieuSuaChua();
+        String maDichVu = hangMuc.getMaDichVu().getMaDichVu();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
             ps.setString(1, hangMuc.getMaHangMuc());
-            ps.setString(2, hangMuc.getMaPhieuSuaChua());
-            ps.setString(3, hangMuc.getMaDichVu());
+            ps.setString(2, maPhieuSuaChua);
+            ps.setString(3, maDichVu);
             ps.setNString(4, hangMuc.getTenHangMuc());
 
             if (hangMuc.getMoTa() == null) {
@@ -152,10 +161,13 @@ public class HangMucDichVuDao {
                 + "tenHangMuc = ?, moTa = ?, trangThai = ?, "
                 + "chiPhiDuKien = ?, chiPhiThucTe = ?, "
                 + "ketQua = ?, ghiChu = ? WHERE maHangMuc = ?";
-
+        
+        
+        String maPhieuSuaChua = hangMuc.getMaPhieuSuaChua().getMaPhieuSuaChua();
+        String maDichVu = hangMuc.getMaDichVu().getMaDichVu();
         try (PreparedStatement ps = ketNoi().prepareStatement(sql)) {
-            ps.setString(1, hangMuc.getMaPhieuSuaChua());
-            ps.setString(2, hangMuc.getMaDichVu());
+        	ps.setString(2, maPhieuSuaChua);
+            ps.setString(3, maDichVu);
             ps.setNString(3, hangMuc.getTenHangMuc());
 
             if (hangMuc.getMoTa() == null) {

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class PhieuXuatKho {
     private String maPhieuXuat;
-    private String maPhieuSuaChua;
+    private PhieuSuaChua maPhieuSuaChua;
     private LocalDateTime ngayXuat;
     private String lyDoXuat;
     private String trangThai;
@@ -14,13 +14,20 @@ public class PhieuXuatKho {
         this.ngayXuat = LocalDateTime.now();
     }
 
-    public PhieuXuatKho(String maPhieuXuat, LocalDateTime ngayXuat, String lyDoXuat, String trangThai, String ghiChu) {
+   
+
+	public PhieuXuatKho(String maPhieuXuat, PhieuSuaChua maPhieuSuaChua, LocalDateTime ngayXuat, String lyDoXuat,
+			String trangThai, String ghiChu) {
+		super();
 		this.maPhieuXuat = maPhieuXuat;
+		this.maPhieuSuaChua = maPhieuSuaChua;
 		this.ngayXuat = ngayXuat;
 		this.lyDoXuat = lyDoXuat;
 		this.trangThai = trangThai;
 		this.ghiChu = ghiChu;
 	}
+
+
 
 	public String getMaPhieuXuat() {
         return maPhieuXuat;
@@ -33,22 +40,23 @@ public class PhieuXuatKho {
         this.maPhieuXuat = maPhieuXuat.trim();
     }
     
-    public String getMaPhieuSuaChua() {
+    public PhieuSuaChua getMaPhieuSuaChua() {
         return maPhieuSuaChua;
     }
 
-    public void setMaPhieuSuaChua(String maPhieuSuaChua) {
-        if (maPhieuSuaChua == null || maPhieuSuaChua.trim().isEmpty()) {
+    public void setMaPhieuSuaChua(PhieuSuaChua maPhieuSuaChua) {
+    	String ma = maPhieuSuaChua.getMaPhieuSuaChua();
+        if (ma == null || ma.trim().isEmpty()) {
             this.maPhieuSuaChua = null;
             return;
         }
 
-        if (maPhieuSuaChua.trim().length() > 30) {
+        if (ma.trim().length() > 30) {
             throw new IllegalArgumentException(
                     "Mã phiếu sửa chữa tối đa 30 ký tự.");
         }
 
-        this.maPhieuSuaChua = maPhieuSuaChua.trim();
+        this.maPhieuSuaChua = maPhieuSuaChua;
     }
 
     public LocalDateTime getNgayXuat() {

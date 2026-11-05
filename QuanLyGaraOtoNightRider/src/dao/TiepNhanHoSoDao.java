@@ -21,7 +21,9 @@ public class TiepNhanHoSoDao {
             r.getString("soDienThoai"), r.getString("email"), r.getString("diaChi"), r.getBoolean("trangThai"));
     }
     private Xe xe(ResultSet r) throws SQLException {
-        return new Xe(r.getString("maPhuongTien"), r.getString("maKhachHang"),
+    	KhachHang khachHang = new KhachHang();
+        khachHang.setMaKhachHang(r.getString("maKhachHang"));
+        return new Xe(r.getString("maPhuongTien"), khachHang,
             r.getString("bienSo"), r.getString("mauXe"), r.getString("trangThai"));
     }
     public KhachHang khachTheoMa(String ma, boolean khoa) throws SQLException {
@@ -99,7 +101,7 @@ public class TiepNhanHoSoDao {
     public void themXe(Xe x) throws SQLException {
         try (PreparedStatement p = ps("INSERT INTO dbo.PhuongTien "
                 + "(maPhuongTien,maKhachHang,bienSo,mauXe,trangThai) VALUES (?,?,?,?,?)")) {
-            p.setString(1,x.getMaPhuongTien()); p.setString(2,x.getMaKhachHang());
+            p.setString(1,x.getMaPhuongTien()); p.setString(2,x.getMaKhachHang().getMaKhachHang());
             p.setString(3,x.getBienSo()); p.setNString(4,x.getMauXe()); p.setNString(5,x.getTrangThai());
             if (p.executeUpdate()!=1) throw new SQLException("Không thêm được xe.");
         }

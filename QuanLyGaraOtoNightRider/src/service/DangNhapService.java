@@ -9,50 +9,41 @@ import entity.TaiKhoan;
 
 public class DangNhapService {
 
-    private final TaiKhoanDao taiKhoanDao = new TaiKhoanDao();
-    private final NhanVienDao nhanVienDao = new NhanVienDao();
+	private final TaiKhoanDao taiKhoanDao = new TaiKhoanDao();
+	private final NhanVienDao nhanVienDao = new NhanVienDao();
 
-    public NhanVien dangNhap(String tenDangNhap, String matKhau)
-            throws SQLException {
+	public NhanVien dangNhap(String tenDangNhap, String matKhau) throws SQLException {
 
-        String ten = tenDangNhap == null ? "" : tenDangNhap.trim();
+		String ten = tenDangNhap == null ? "" : tenDangNhap.trim();
 
-        if (ten.isEmpty() || matKhau == null || matKhau.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu."
-            );
-        }
+		if (ten.isEmpty() || matKhau == null || matKhau.isEmpty()) {
+			throw new IllegalArgumentException("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+		}
 
-        TaiKhoan taiKhoan = taiKhoanDao.timTheoTenDangNhap(ten);
+		TaiKhoan taiKhoan = taiKhoanDao.timTheoTenDangNhap(ten);
 
-        // So sánh đúng mật khẩu, không trim và không bỏ qua hoa/thường.
-        if (taiKhoan == null
-                || !matKhau.equals(taiKhoan.getMatKhau())) {
-            throw new IllegalArgumentException(
-                    "Tên đăng nhập hoặc mật khẩu không đúng."
-            );
-        }
+		// So sánh đúng mật khẩu, không trim và không bỏ qua hoa/thường.
+		if (taiKhoan == null || !matKhau.equals(taiKhoan.getMatKhau())) {
+			throw new IllegalArgumentException("Tên đăng nhập hoặc mật khẩu không đúng.");
+		}
 
-        if (!TaiKhoan.HOAT_DONG.equals(taiKhoan.getTrangThai())) {
-            throw new IllegalArgumentException("Tài khoản đã bị khóa.");
-        }
+		if (!TaiKhoan.HOAT_DONG.equals(taiKhoan.getTrangThai())) {
+			throw new IllegalArgumentException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
+		}
 
-        NhanVien nhanVien = nhanVienDao.timTheoMa(
-                taiKhoan.getMaNhanVien()
-        );
+		NhanVien nhanVien = taiKhoan.getMaNhanVien();
 
-        if (nhanVien == null) {
-            throw new IllegalArgumentException(
-                    "Không tìm thấy nhân viên liên kết với tài khoản."
-            );
-        }
+		if (nhanVien.getTrangThai() == null) {
+			nhanVien = nhanVienDao.timTheoMaNV(nhanVien.getMaNhanVien().trim());
+			if (nhanVien == null) {
+				throw new IllegalArgumentException("Không tìm thấy nhân viên liên kết với tài khoản.");
+			}
+		}
 
-        if (!"Đang làm".equals(nhanVien.getTrangThai())) {
-            throw new IllegalArgumentException(
-                    "Nhân viên đã ngừng làm việc, không thể đăng nhập."
-            );
-        }
-        PhanQuyenService.napQuyenDangNhap(nhanVien);
-        return nhanVien;
-    }
+		if (!"Đang làm".equals(nhanVien.getTrangThai())) {
+			throw new IllegalArgumentException("Nhân viên đã ngừng làm việc, không thể đăng nhập.");
+		}
+		PhanQuyenService.napQuyenDangNhap(nhanVien);
+		return nhanVien;
+	}
 }
